@@ -1381,18 +1381,74 @@ def append(
     self,
     appended: Chunk | ChunkLoop | ChunkReflow,
 ) -> None:
-    """Appends a chunk to the circuit being built.
+    """Appends a circuit chunk, or other object, to the circuit being built.
 
-    The input flows of the appended chunk must exactly match the open outgoing flows of the
-    circuit so far.
+    The input flows of the appended chunk must exactly match the open outgoing flows of
+    the circuit so far.
 
     Args:
         appended: The object to append to the circuit.
+
+            This can be a Chunk, a ChunkReflow, or a ChunkLoop.
 
             Unless `skip_verification_before_append=True` was specified when constructing the
             compiler, the `verify` method of this object will be called in order to ensure it
             is well form. If verification is skipped and the object is not well-formed, the
             compiler may output an invalid Stim circuit (e.g. with non-deterministic detectors).
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+        >>> lz = sf.PauliMap({0: 'Z'}, obs_name='L_REP_CODE_ZZ')
+        >>> idle_chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(0, 1) 1
+        ...         QUBIT_COORDS(1, 1) 2
+        ...         R 1
+        ...         CX 0 1 2 1
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=zz, measurement_indices=[0]),
+        ...         sf.Flow(end=zz, measurement_indices=[0]),
+        ...         sf.Flow(start=lz, end=lz),
+        ...     ]
+        ... )
+
+        >>> compiler = sf.ChunkCompiler()
+        >>> compiler.append(idle_chunk.start_code().transversal_init_chunk(basis='Z'))
+        >>> compiler.append(idle_chunk * 100)
+        >>> compiler.append(idle_chunk.end_code().transversal_measure_chunk(basis='Z'))
+        >>> compiler.finish_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            QUBIT_COORDS(0, 1) 1
+            QUBIT_COORDS(1, 1) 2
+            R 0 2 1
+            CX 0 1 2 1
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            REPEAT 98 {
+                R 1
+                CX 0 1 2 1
+                M 1
+                DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+                SHIFT_COORDS(0, 0, 1)
+                TICK
+            }
+            R 1
+            CX 0 1 2 1
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            M 2 0
+            DETECTOR(0.5, 0.5, 0) rec[-3] rec[-2] rec[-1]
+            OBSERVABLE_INCLUDE(0) rec[-1]
+        ''')
     """
 ```
 
@@ -1624,9 +1680,51 @@ def finish_circuit(
 ) -> stim.Circuit:
     """Returns the circuit built by the compiler.
 
-    Performs some final translation steps:
-    - Re-indexing the qubits to be in a sorted order.
-    - Re-indexing the observables to omit discarded observable flows.
+    Also performs some final polishing steps on the circuit, such as re-indexing the
+    qubits to be in a sorted-by-position order and re-indexing the observables to omit
+    unused indices due to e.g. discarded observable flows.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+        >>> lz = sf.PauliMap({0: 'Z'}, obs_name='L_ZI')
+        >>> lx = sf.PauliMap({0: 'X', 1 + 1j: 'X'}, obs_name='L_XX')
+        >>> idle_chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(0, 1) 1
+        ...         QUBIT_COORDS(1, 1) 2
+        ...         R 1
+        ...         CX 0 1 2 1
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=zz, measurement_indices=[0]),
+        ...         sf.Flow(end=zz, measurement_indices=[0]),
+        ...         sf.Flow(start=lz, end=lz),
+        ...         sf.Flow(start=lx, end=lx),
+        ...     ]
+        ... )
+
+        >>> compiler = sf.ChunkCompiler()
+        >>> compiler.append(idle_chunk.start_code().transversal_init_chunk(basis='Z'))
+        >>> compiler.append(idle_chunk)  # Note: L_XX discarded by transversal chunks.
+        >>> compiler.append(idle_chunk.end_code().transversal_measure_chunk(basis='Z'))
+        >>> compiler.finish_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            QUBIT_COORDS(0, 1) 1
+            QUBIT_COORDS(1, 1) 2
+            R 0 2 1
+            CX 0 1 2 1
+            M 1
+            DETECTOR(0.5, 0.5, 0) rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            M 2 0
+            DETECTOR(0.5, 0.5, 0) rec[-3] rec[-2] rec[-1]
+            OBSERVABLE_INCLUDE(0) rec[-1]
+        ''')
     """
 ```
 
@@ -2048,6 +2146,47 @@ def from_auto_rewrite(
     inputs: Iterable[PauliMap],
     out2in: "dict[PauliMap, list[PauliMap] | Literal['auto']]",
 ) -> ChunkReflow:
+    """Creates a ChunkReflow while allowing for some products to solved automatically.
+
+    In particular, the `out2in` dictionary can map an output to the string "auto"
+    instead of to an explicit list of PauliMap inputs. The method will then solve for
+    the product of inputs that produces the output.
+
+    Args:
+        inputs: The input Pauli products that are available for use when producing an
+            output Pauli product.
+        out2in: A dictionary mapping output Pauli products to an input Pauli product,
+            or list of input Pauli products, or the string "auto" in order to
+            automatically find a satisfying list of Pauli products that produces the
+            output.
+
+    Returns:
+        A stimflow.ChunkReflow instance containing the desired output-to-input mappings.
+
+    Raises:
+        ValueError:
+            An output was mapped to "auto", but could not be formed as a product of the
+            available inputs.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> xi = sf.PauliMap({0: "X"})
+        >>> ix = sf.PauliMap({1: "X"})
+        >>> xx = sf.PauliMap({0: "X", 1: "X"})
+        >>> sf.ChunkReflow.from_auto_rewrite(
+        ...     inputs=[xi, xx],
+        ...     out2in={ix: "auto", xi: "auto"},
+        ... )
+        stimflow.ChunkReflow(
+            out2in={
+                stimflow.PauliMap({(1+0j): 'X'}): [
+                    stimflow.PauliMap({0j: 'X'}),
+                    stimflow.PauliMap.from_xs([0j, (1+0j)]),
+                ],
+                stimflow.PauliMap({0j: 'X'}): [stimflow.PauliMap({0j: 'X'})],
+            },
+        )
+    """
 ```
 
 <a name="stimflow.ChunkReflow.from_auto_rewrite_transitions_using_stable"></a>
@@ -3460,7 +3599,20 @@ def with_obs_name(
 ) -> PauliMap:
     """Returns the same PauliMap, but with the given name.
 
-    Names are used to identify logical operators.
+    Names are used to identify logical operators. Other operators use `None` as their
+    name.
+
+    Args:
+        name: The new name.
+
+    Examples:
+        >>> import stimflow as sf
+
+        >>> sf.PauliMap({0: "Z"}).with_obs_name("test")
+        stimflow.PauliMap({0j: 'Z'}, obs_name='test')
+
+        >>> sf.PauliMap({0: "Z"}, obs_name='do not forget me').with_obs_name(None)
+        stimflow.PauliMap({0j: 'Z'})
     """
 ```
 
@@ -3614,10 +3766,39 @@ def find_logical_error(
 # (in class stimflow.StabilizerCode)
 @functools.cached_property
 def flat_logicals(self) -> tuple[PauliMap, ...]:
-    """Returns a list of the logical operators defined by the stabilizer code.
+    """Returns a tuple of the logical operators defined by the stabilizer code.
 
     It's "flat" because paired X/Z logicals are returned separately instead of
     as a tuple.
+
+    Returns:
+        The tuple of logical operators.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> code = sf.StabilizerCode(
+        ...     stabilizers=[],
+        ...     logicals=[
+        ...         (
+        ...             sf.PauliMap({"X": [0, 1, 2]}, obs_name="pair_LX"),
+        ...             sf.PauliMap({"Z": [0j, 1j, 2j]}, obs_name="pair_LZ"),
+        ...         ),
+        ...         sf.PauliMap({"X": [3, 4, 5]}, obs_name="commuting_x0"),
+        ...         sf.PauliMap({"X": [6, 7, 8]}, obs_name="commuting_x1"),
+        ...     ],
+        ...     scattered_logicals=[
+        ...         sf.PauliMap({"X": [10, 11, 12]}, obs_name="scattered_x"),
+        ...         sf.PauliMap({"Y": [10, 11j, 12j]}, obs_name="scattered_y"),
+        ...     ],
+        ... )
+        >>> for logical in code.flat_logicals:
+        ...     print(logical)
+        (obs_name='pair_LX') X0*X1*X2
+        (obs_name='pair_LZ') Z0*Z1j*Z2j
+        (obs_name='commuting_x0') X3*X4*X5
+        (obs_name='commuting_x1') X6*X7*X8
+        (obs_name='scattered_x') X10*X11*X12
+        (obs_name='scattered_y') Y11j*Y12j*Y10
     """
 ```
 
@@ -4450,20 +4631,50 @@ def append_reindexed_content_to_circuit(
     obs_i2i: "dict[int, int | Literal['discard']]",
     rewrite_detector_time_coordinates: bool = False,
 ) -> None:
-    """Reindexes content and appends it to a circuit.
+    """Reindexes content from one circuit while appending it to another.
 
-    Note that QUBIT_COORDS instructions are skipped.
+    For example, if two circuits use different qubit-position-to-qubit-index mappings, this
+    method can be used to account for the difference while appending.
+
+    Note that `QUBIT_COORDS` instructions in the `content` circuit are skipped. They aren't
+    appended to `out_circuit`.
 
     Args:
         out_circuit: The output circuit. The circuit being edited.
         content: The circuit to be appended to the output circuit.
         qubit_i2i: A dictionary specifying how qubit indices are remapped. Indices outside the
             map are not changed.
-        obs_i2i: A dictionary specifying how observable indices are remapped. Indices outside the
-            map are not changed.
+        obs_i2i: A dictionary specifying how observable indices are remapped. Indices
+            outside the map are not changed. Indices can be mapped to the string "discard"
+            in order to discard `OBSERVABLE_INCLUDE` operations from the source that target
+            that index (rather than rewriting the index and appending it to the destination
+            circuit).
         rewrite_detector_time_coordinates: Defaults to False. When set to True, SHIFT_COORD and
             DETECTOR instructions are automatically rewritten to track the passage of time without
             using the same detector position twice at the same time.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> out_circuit = stim.Circuit("H 5")
+        >>> sf.append_reindexed_content_to_circuit(
+        ...     out_circuit=out_circuit,
+        ...     content=stim.Circuit('''
+        ...          CX 0 1
+        ...          M 0 1
+        ...          OBSERVABLE_INCLUDE(0) rec[-2]
+        ...          OBSERVABLE_INCLUDE(1) rec[-1]
+        ...     '''),
+        ...     qubit_i2i={0: 100, 1: 101},
+        ...     obs_i2i={1: 0, 0: "discard"},
+        ... )
+        >>> out_circuit
+        stim.Circuit('''
+            H 5
+            CX 100 101
+            M 100 101
+            OBSERVABLE_INCLUDE(0) rec[-1]
+        ''')
     """
 ```
 
@@ -4533,6 +4744,60 @@ def gate_counts_for_circuit(
     Feedback instructions like `CX rec[-1] 0` become the gate "feedback".
 
     Sweep instructions like `CX sweep[2] 0` become the gate "sweep".
+
+
+    Args:
+        circuit: The circuit to count gates from.
+
+    Returns:
+        A `collections.Counter` mapping gate names to gate counts.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> gates = sf.gate_counts_for_circuit(stim.Circuit('''
+        ...     QUBIT_COORDS(0, 0) 0
+        ...     H 0 1 2 3
+        ...     CX 0 1
+        ...     TICK
+        ...     CX 2 3
+        ...     MZZ 2 3
+        ... '''))
+        >>> for k, v in sorted(gates.items()):
+        ...     print(f'{k}: {v}')
+        CX: 2
+        H: 4
+        MZZ: 1
+        QUBIT_COORDS: 1
+        TICK: 1
+
+        >>> gates = sf.gate_counts_for_circuit(stim.Circuit('''
+        ...     MPP X0*X1 X0*Y1*Z2
+        ...     CX rec[-1] 2 rec[-1] 3 sweep[0] 2
+        ... '''))
+        >>> for k, v in sorted(gates.items()):
+        ...     print(f'{k}: {v}')
+        MXX: 1
+        MXYZ: 1
+        feedback: 2
+        sweep: 1
+
+        >>> gates = sf.gate_counts_for_circuit(stim.Circuit('''
+        ...     CX 0 1
+        ...     REPEAT 1000 {
+        ...         H 0 1
+        ...         MPAD 0 0 0 0
+        ...         DETECTOR rec[-1] rec[-2]
+        ...         TICK
+        ...     }
+        ... '''))
+        >>> for k, v in sorted(gates.items()):
+        ...     print(f'{k}: {v}')
+        CX: 1
+        DETECTOR: 1000
+        H: 2000
+        MPAD: 4000
+        TICK: 1000
     """
 ```
 
@@ -4552,6 +4817,42 @@ def gates_used_by_circuit(
     Feedback instructions like `CX rec[-1] 0` become the gate "feedback".
 
     Sweep instructions like `CX sweep[2] 0` become the gate "sweep".
+
+    Args:
+        circuit: The circuit to get gates from.
+
+    Returns:
+        The set of names of gates being used.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> gates = sf.gates_used_by_circuit(stim.Circuit('''
+        ...     QUBIT_COORDS(0, 0) 0
+        ...     H 0 1
+        ...     CX 0 1
+        ...     TICK
+        ...     CX 2 3
+        ...     MZZ 2 3
+        ... '''))
+        >>> sorted(gates)
+        ['CX', 'H', 'MZZ', 'QUBIT_COORDS', 'TICK']
+        >>> gates = sf.gates_used_by_circuit(stim.Circuit('''
+        ...     MPP X0*X1 X0*Y1*Z2
+        ... '''))
+        >>> sorted(gates)
+        ['MXX', 'MXYZ']
+        >>> gates = sf.gates_used_by_circuit(stim.Circuit('''
+        ...     M 0
+        ...     CX rec[-1] 2
+        ... '''))
+        >>> sorted(gates)
+        ['M', 'feedback']
+        >>> gates = sf.gates_used_by_circuit(stim.Circuit('''
+        ...     CX sweep[0] 2
+        ... '''))
+        >>> sorted(gates)
+        ['sweep']
     """
 ```
 
@@ -4759,6 +5060,24 @@ def stim_circuit_with_transformed_coords(
 
     Returns:
         The transformed circuit.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> sf.stim_circuit_with_transformed_coords(stim.Circuit('''
+        ...     QUBIT_COORDS(0, 0) 0
+        ...     QUBIT_COORDS(1, 0) 1
+        ...     CX 0 1
+        ...     M 1
+        ...     DETECTOR(2, 3) rec[-1]
+        ... '''), lambda e: e*2j + 100)
+        stim.Circuit('''
+            QUBIT_COORDS(100, 0) 0
+            QUBIT_COORDS(100, 2) 1
+            CX 0 1
+            M 1
+            DETECTOR(94, 4) rec[-1]
+        ''')
     """
 ```
 

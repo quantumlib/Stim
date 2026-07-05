@@ -177,7 +177,20 @@ class PauliMap:
     def with_obs_name(self, name: Any) -> PauliMap:
         """Returns the same PauliMap, but with the given name.
 
-        Names are used to identify logical operators.
+        Names are used to identify logical operators. Other operators use `None` as their
+        name.
+
+        Args:
+            name: The new name.
+
+        Examples:
+            >>> import stimflow as sf
+
+            >>> sf.PauliMap({0: "Z"}).with_obs_name("test")
+            stimflow.PauliMap({0j: 'Z'}, obs_name='test')
+
+            >>> sf.PauliMap({0: "Z"}, obs_name='do not forget me').with_obs_name(None)
+            stimflow.PauliMap({0j: 'Z'})
         """
         return PauliMap(self, obs_name=name)
 
