@@ -61,6 +61,7 @@ def _parse_transition_1(op: stim.CircuitInstruction, match: Any, sim: str) -> Le
     args_tuples = split_arguments(match.group("args"))
     transitions = []
     for a in args_tuples:
+        if len(a) != 2: raise ValueError(f"Malformed argument '{a}' in tag '{op.tag}'.")
         p = float(a[0])
         m = LEAKAGE_TRANSITIONS_1_MATCH.fullmatch(a[1])
         if not m: raise ValueError(f"Malformed transition '{a[1]}' in tag '{op.tag}'.")
@@ -78,6 +79,7 @@ def _parse_transition_2(op: stim.CircuitInstruction, match: Any, sim: str) -> Le
     args_tuples = split_arguments(match.group("args"))
     transitions = []
     for a in args_tuples:
+        if len(a) != 2: raise ValueError(f"Malformed argument '{a}' in tag '{op.tag}'.")
         p = float(a[0])
         m = LEAKAGE_TRANSITIONS_2_MATCH.fullmatch(a[1])
         if not m: raise ValueError(f"Malformed transition '{a[1]}' in tag '{op.tag}'.")
@@ -88,7 +90,10 @@ def _parse_transition_2(op: stim.CircuitInstruction, match: Any, sim: str) -> Le
 
 def _parse_projection_z(op: stim.CircuitInstruction, match: Any, sim: str) -> LeakageMeasurementParams:
     args_tuples = split_arguments(match.group("args"))
-    projections = [(float(a[0]), int(a[1])) for a in args_tuples]
+    projections = []
+    for a in args_tuples:
+        if len(a) != 2: raise ValueError(f"Malformed argument '{a}' in tag '{op.tag}'.")
+        projections.append((float(a[0]), int(a[1])))
     return LeakageMeasurementParams(args=tuple(projections), targets=None, from_tag=op.tag)
 
 def _parse_measurement(op: stim.CircuitInstruction, match: Any, sim: str) -> LeakageMeasurementParams:

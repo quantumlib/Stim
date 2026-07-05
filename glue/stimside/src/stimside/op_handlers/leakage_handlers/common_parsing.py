@@ -12,7 +12,7 @@ CONDITION_TAG_MATCH = re.compile(
 )
 
 # Matches "LEAKAGE_MEASUREMENT: (prob, state), ... : target, ..."
-MEASURE_TAG_MATCH = re.compile(r"LEAKAGE_MEASUREMENT\s*:(?P<args>.+):(?P<targets>.+)")
+MEASURE_TAG_MATCH = re.compile(r"(?P<name>LEAKAGE_MEASUREMENT)\s*:(?P<args>.+):(?P<targets>.+)")
 
 # Matches "state-->state" or "state<->state"
 # Allows multi-digit states and 'U'
@@ -44,7 +44,7 @@ def split_arguments(args: str) -> list[tuple[str, ...]]:
     """
     stripped_args = args.strip()
     if not stripped_args:
-        return []
+        raise ValueError("Empty arguments")
     
     if not (stripped_args.startswith("(") and stripped_args.endswith(")")):
         raise ValueError(f"Arguments must be enclosed in parentheses: '{args}'")
