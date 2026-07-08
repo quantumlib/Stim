@@ -8,6 +8,7 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageConditioningParams,
     LeakageMeasurementParams
 )
+from stimside.op_handlers.leakage_handlers.common_parsing import try_as_integer
 
 # ##############################################################################
 # Tests for successful parsing
@@ -80,7 +81,7 @@ def test_bad_tags():
     I_ERROR[LEAKAGE MALFORMED TAG]
     """
     )
-    with pytest.raises(ValueError, match="Malformed LEAKAGE tag"):
+    with pytest.raises(ValueError, match="Malformed leakage tag structure"):
         ltp.parse_leakage_tag(circuit[0])
 
     circuit = stim.Circuit(
@@ -88,7 +89,7 @@ def test_bad_tags():
     I_ERROR[LEAKAGE_UNRECOGNIZED_TAG: (arg)]
     """
     )
-    with pytest.raises(ValueError, match="Unrecognised LEAKAGE tag"):
+    with pytest.raises(ValueError, match="Unrecognised leakage tag name"):
         ltp.parse_leakage_tag(circuit[0])
 
     circuit = stim.Circuit(
@@ -96,7 +97,7 @@ def test_bad_tags():
         II_ERROR[LEAKAGE_CONTROLLED_ERROR: (0.1, 2-->X) (0.2, 3-->Z)] 0 1 2 3
         """
     )
-    with pytest.raises(ValueError, match="Use CONDITIONED_ON"):
+    with pytest.raises(ValueError, match="is not supported in the"):
         ltp.parse_leakage_tag(circuit[0])
 
     circuit = stim.Circuit(
@@ -104,7 +105,7 @@ def test_bad_tags():
         I_ERROR[LEAKAGE_TRANSITION_1: (0.1, 1-->2, 3)] 0
         """
     )
-    with pytest.raises(ValueError, match="Malformed parsed argument"):
+    with pytest.raises(ValueError, match="Malformed argument"):
         ltp.parse_leakage_tag(circuit[0])
 
     circuit = stim.Circuit(
@@ -112,7 +113,7 @@ def test_bad_tags():
         I_ERROR[LEAKAGE_TRANSITION_1: (0.1, 1->2)] 0
         """
     )
-    with pytest.raises(ValueError, match="Malformed LEAKAGE_TRANSITION_1 argument"):
+    with pytest.raises(ValueError, match="Malformed transition"):
         ltp.parse_leakage_tag(circuit[0])
 
     circuit = stim.Circuit(
@@ -120,7 +121,7 @@ def test_bad_tags():
         II_ERROR[LEAKAGE_TRANSITION_2: (0.1, 1_1-->2_0, 3)] 0 1
         """
     )
-    with pytest.raises(ValueError, match="Malformed parsed argument"):
+    with pytest.raises(ValueError, match="Malformed argument"):
         ltp.parse_leakage_tag(circuit[0])
 
     circuit = stim.Circuit(
@@ -128,7 +129,7 @@ def test_bad_tags():
         II_ERROR[LEAKAGE_TRANSITION_2: (0.1, 1_1->2_0)] 0 1
         """
     )
-    with pytest.raises(ValueError, match="Malformed LEAKAGE_TRANSITIONS_2 transitions argument"):
+    with pytest.raises(ValueError, match="Malformed transition"):
         ltp.parse_leakage_tag(circuit[0])
 
     """Tests that leakage tags are attached to gates of the correct arity."""
@@ -199,5 +200,5 @@ def test_parse_in_circuit_nested_repeats():
 
 def test_try_as_integer():
     """Tests the try_as_integer helper function."""
-    assert ltp.try_as_integer("2") == 2
-    assert ltp.try_as_integer("U") == "U"
+    assert try_as_integer("2") == 2
+    assert try_as_integer("U") == "U"
