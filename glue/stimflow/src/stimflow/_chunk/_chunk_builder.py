@@ -985,29 +985,6 @@ class ChunkBuilder:
                     self._rec(measure_key_func(t), [self._num_measurements])
                 self._num_measurements += 1
 
-    def _2q_targets_to_qubit_index_pairs_with_original_index(
-        self,
-        *,
-        data: stim.GateData,
-    ) -> list[tuple[int, int, int]]:
-        index_swapped = data.name in _SWAP_CONJUGATED_MAP
-        index_sorted = data.is_symmetric_gate
-
-        targets = tuple(tuple(cast(Any, pair)) for pair in targets)
-        current_index_pairs: list[tuple[int, int, int]] = []
-        for k in range(len(targets)):
-            a, b = targets[k]
-            if a in self._buffered_seen or b in self._buffered_seen:
-                self._buffered_targets_2q.extend(sorted(current_index_pairs))
-                self._buffered_seen.clear()
-            ai = self.q2i.get(a)
-            bi = self.q2i.get(b)
-            if ai is not None and bi is not None:
-                if index_swapped or (index_sorted and ai > bi):
-                    ai, bi = bi, ai
-                current_index_pairs.append((ai, bi, k))
-        return sorted(current_index_pairs)
-
     def _append_2q(
         self,
         *,
