@@ -33,16 +33,66 @@ class NoiseRule:
         after: dict[str, float | tuple[float, ...]] | None = None,
         flip_result: float = 0,
     ):
-        """
+        """Initializes a NoiseRule.
 
         Args:
-            after: A dictionary mapping noise rule names to their probability argument.
-                For example, {"DEPOLARIZE2": 0.01, "X_ERROR": 0.02} will add two qubit
-                depolarization with parameter 0.01 and also add 2% bit flip noise. These
-                noise channels occur after all other operations in the moment and are applied
-                to the same targets as the relevant operation.
+            before: A name-to-argument mapping of noise instructions to add before some
+                instruction that is being made noisy. For example,
+                    after={"DEPOLARIZE2": 0.01, "X_ERROR": 0.02}
+                will add two qubit depolarization with parameter 0.01 and also add 2%
+                bit flip noise. These noise channels occur before all other operations
+                in the moment and are applied to the same targets as the relevant operation.
+            after: A name-to-argument mapping of noise instructions to add after some
+                instruction that is being made noisy. For example,
+                    after={"DEPOLARIZE2": 0.01, "X_ERROR": 0.02}
+                will add two qubit depolarization with parameter 0.01 and also add 2%
+                bit flip noise. These noise channels occur after all other operations
+                in the moment and are applied to the same targets as the relevant operation.
             flip_result: The probability that a measurement result should be reported incorrectly.
                 Only valid when applied to operations that produce measurement results.
+
+        Examples:
+            >>> import stim
+            >>> import stimflow as sf
+            >>> noise = sf.NoiseModel(gate_rules={
+            ...     'R': sf.NoiseRule(after={"X_ERROR": 5e-3}),
+            ...     'M': sf.NoiseRule(flip_result=1e-3),
+            ...     'CZ': sf.NoiseRule(after={"Z_ERROR": 3e-3, "DEPOLARIZE2": 1e-3}),
+            ...     'H': sf.NoiseRule(before={"PAULI_CHANNEL_1": (1e-3, 1e-2, 1e-3)}),
+            ... })
+            >>> noise.noisy_circuit(stim.Circuit('''
+            ...     R 1
+            ...     TICK
+            ...     H 1
+            ...     TICK
+            ...     CZ 0 1
+            ...     TICK
+            ...     CZ 2 1
+            ...     TICK
+            ...     H 1
+            ...     TICK
+            ...     M 1
+            ... '''))
+            stim.Circuit('''
+                R 1
+                X_ERROR(0.005) 1
+                TICK
+                PAULI_CHANNEL_1(0.001, 0.01, 0.001) 1
+                H 1
+                TICK
+                CZ 0 1
+                DEPOLARIZE2(0.001) 0 1
+                Z_ERROR(0.003) 0 1
+                TICK
+                CZ 2 1
+                DEPOLARIZE2(0.001) 2 1
+                Z_ERROR(0.003) 2 1
+                TICK
+                PAULI_CHANNEL_1(0.001, 0.01, 0.001) 1
+                H 1
+                TICK
+                M(0.001) 1
+            ''')
         """
         if after is None:
             after = {}

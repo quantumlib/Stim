@@ -544,7 +544,7 @@ def test_tagged_layers_not_affected():
     builder.append("H", [0 + 0j])
     builder.append("tick")
     builder.append("H", [0 + 0j], tag="tag")
-    actual = stimflow.transpile_to_z_basis_interaction_circuit(builder.circuit)
+    actual = stimflow.transpile_to_z_basis_interaction_circuit(builder.finish_chunk().circuit)
     assert builder.q2i == {0: 0}
     expected = stim.Circuit(
         """
@@ -566,7 +566,7 @@ def test_tagged_layers_not_affected_2q():
     builder.append("CNOT", [(0 + 0j, 1 + 0j)], tag="test")
     builder.append("tick")
     builder.append("M", [0 + 0j, 1 + 0j])
-    actual = stimflow.transpile_to_z_basis_interaction_circuit(builder.circuit)
+    actual = stimflow.transpile_to_z_basis_interaction_circuit(builder.finish_chunk().circuit)
     assert builder.q2i == {0: 0, 1: 1}
     expected = stim.Circuit(
         """
@@ -593,7 +593,7 @@ def test_tagged_layers_simultaneous_ops():
     builder.append("X", [2])
     builder.append("tick")
     builder.append("M", [0 + 0j, 1 + 0j])
-    actual = stimflow.transpile_to_z_basis_interaction_circuit(builder.circuit)
+    actual = stimflow.transpile_to_z_basis_interaction_circuit(builder.finish_chunk().circuit)
     assert builder.q2i == {0: 0, 1: 1, 2: 2}
     expected = stim.Circuit(
         """
@@ -619,7 +619,7 @@ def test_tagged_layers_with_measurements():
     builder.append("CNOT", [(0 + 0j, 1 + 0j)], tag="test")
     builder.append("tick")
     builder.append("M", [0 + 0j, 1 + 0j], tag="test again")
-    actual = stimflow.transpile_to_z_basis_interaction_circuit(builder.circuit)
+    actual = stimflow.transpile_to_z_basis_interaction_circuit(builder.finish_chunk().circuit)
     assert builder.q2i == {0: 0, 1: 1}
     expected = stim.Circuit(
         """

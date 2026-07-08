@@ -12,7 +12,22 @@ from stimflow._core._flow import Flow
 from stimflow._core._pauli_map import PauliMap
 from stimflow._core._tile import Tile
 
-_SWAP_CONJUGATED_MAP = {"XCZ": "CX", "YCZ": "CY", "YCX": "XCY", "SWAPCX": "CXSWAP"}
+_SWAP_CONJUGATED_MAP: dict[str, str] = {"XCZ": "CX", "YCZ": "CY", "YCX": "XCY", "SWAPCX": "CXSWAP"}
+_SELF_COMMUTING_2Q_GATES: frozenset[str] = frozenset([
+    "CZ",
+    "XCX",
+    "YCY",
+    "SQRT_XX",
+    "SQRT_ZZ",
+    "SQRT_YY",
+    "II",
+    "II_ERROR",
+    "DEPOLARIZE2",
+    "PAULI_CHANNEL_2",
+    "MXX",
+    "MZZ",
+    "MYY",
+])
 
 
 class ChunkBuilder:
@@ -108,7 +123,7 @@ class ChunkBuilder:
         self.allowed_qubits: set[complex] | None = None if allowed_qubits is None else set(allowed_qubits)
         self._num_measurements: int = 0
         self._recorded_measurements: dict[Any, list[int]] = {}
-        self.circuit: stim.Circuit = stim.Circuit()
+        self._circuit: stim.Circuit = stim.Circuit()
         self.q2i: dict[complex, int] = {}
         self.o2i: dict[Any, int] = {}
         self._flows: list[Flow] = []
@@ -117,6 +132,10 @@ class ChunkBuilder:
         self._flows_with_auto_end: list[Flow] = []
         self._discarded_output_flows: list[PauliMap] = []
         self._discarded_input_flows: list[PauliMap] = []
+        self._buffered_targets_1q: list[int] = []
+        self._buffered_targets_2q: list[tuple[int, int]] = []
+        self._buffered_gate: str | None = None
+        self._buffered_tag: str = ""
 
         # Index allowed qubits.
         if allowed_qubits is not None:
@@ -538,6 +557,8 @@ class ChunkBuilder:
     ) -> Chunk:
         """Finishes producing the circuit."""
 
+        self._flush_buffered_gate()
+
         from stimflow._chunk._flow_util import _solve_auto_flow_starts
         from stimflow._chunk._flow_util import _solve_auto_flow_ends
         from stimflow._chunk._flow_util import _solve_auto_flow_ms
@@ -548,25 +569,25 @@ class ChunkBuilder:
 
         solved_starts = _solve_auto_flow_starts(
             flows=self._flows_with_auto_start,
-            circuit=self.circuit,
+            circuit=self._circuit,
             q2i=self.q2i,
             failure_out=start_fails,
         )
         solved_ends = _solve_auto_flow_ends(
             flows=self._flows_with_auto_end,
-            circuit=self.circuit,
+            circuit=self._circuit,
             q2i=self.q2i,
             failure_out=end_fails,
         )
         solved_ms = _solve_auto_flow_ms(
             flows=self._flows_with_auto_ms,
-            circuit=self.circuit,
+            circuit=self._circuit,
             q2i=self.q2i,
             o2i=self.o2i,
             failure_out=measure_fails,
         )
 
-        out_circuit = self.circuit.copy()
+        out_circuit = self._circuit.copy()
         if start_fails or end_fails or measure_fails:
             lines = []
             if start_fails:
@@ -630,6 +651,31 @@ class ChunkBuilder:
             wants_to_merge_with_prev=wants_to_merge_with_prev,
         )
 
+    def _flush_buffered_gate(self):
+        if self._buffered_gate is None:
+            return
+
+        data = stim.gate_data(self._buffered_gate)
+        if data.is_single_qubit_gate:
+            indices = sorted(self._buffered_targets_1q)
+        elif data.is_two_qubit_gate:
+            indices = []
+            _canonicalize_2q_indices(
+                targets=self._buffered_targets_2q,
+                out_indices=indices,
+                is_symmetric_gate=data.is_symmetric_gate,
+                out_original_order=None,
+            )
+        else:
+            raise NotImplementedError(f'{data=}')
+
+        self._circuit.append(self._buffered_gate, indices, tag=self._buffered_tag)
+        self._buffered_gate = None
+        self._buffered_tag = ""
+        self._buffered_targets_2q.clear()
+        self._buffered_targets_1q.clear()
+
+
     def append(
         self,
         gate: str,
@@ -657,7 +703,7 @@ class ChunkBuilder:
             b = builder.q2i[5]
             c = builder.q2i[0]
             d = builder.q2i[1j]
-            builder.circuit.append('CZ', [a, b, c, d])
+            builder._circuit.append('CZ', [a, b, c, d])
 
         you would say
 
@@ -717,22 +763,41 @@ class ChunkBuilder:
         __tracebackhide__ = True
         data = stim.gate_data(gate)
 
-        if data.name == "TICK":
+        if self._buffered_gate != _SWAP_CONJUGATED_MAP.get(data.name, data.name) or self._buffered_tag != tag or arg is not None:
+            self._flush_buffered_gate()
+
+        if data.is_two_qubit_gate:
+            self._append_2q(
+                gate=gate,
+                data=data,
+                targets=cast(Any, targets),
+                arg=arg,
+                measure_key_func=cast(Any, measure_key_func),
+                tag=tag,
+                unknown_qubit_append_mode=unknown_qubit_append_mode,
+            )
+        elif data.name == "TICK":
             if arg is not None:
                 raise ValueError(f"TICK takes no arguments but got {arg=}.")
             if targets:
                 raise ValueError(f"TICK takes no targets but got {targets=}.")
-            self.circuit.append("TICK", tag=tag)
+            self._circuit.append("TICK", tag=tag)
 
         elif data.name == "SHIFT_COORDS":
             if arg is None:
                 raise ValueError(f"SHIFT_COORDS expects {arg=} to not be None.")
             if targets:
                 raise ValueError(f"SHIFT_COORDS takes no targets but got {targets=}.")
-            self.circuit.append("SHIFT_COORDS", [], arg, tag=tag)
+            self._circuit.append("SHIFT_COORDS", [], arg, tag=tag)
 
-        elif data.name == "DETECTOR" or data.name == "OBSERVABLE_INCLUDE":
-            if isinstance(targets, PauliMap) and data.name == "OBSERVABLE_INCLUDE":
+        elif data.name == "DETECTOR":
+            t0 = self._num_measurements
+            times = self.lookup_measurement_indices(targets)
+            rec_targets = [stim.target_rec(t - t0) for t in sorted(times)]
+            self._circuit.append(data.name, rec_targets, arg, tag=tag)
+
+        elif data.name == "OBSERVABLE_INCLUDE":
+            if isinstance(targets, PauliMap):
                 if arg is None and targets.obs_name is None:
                     raise ValueError(
                         "Received a stimflow.PauliMap target for an OBSERVABLE_INCLUDE instruction, but can't figure out its name.\n"
@@ -768,7 +833,7 @@ class ChunkBuilder:
                     unknown_qubit_append_mode=unknown_qubit_append_mode,
                 )
                 ps = targets.to_stim_pauli_string(self.q2i)
-                self.circuit.append(
+                self._circuit.append(
                     data.name,
                     [stim.target_pauli(q, ps[q]) for q in ps.pauli_indices()],
                     arg,
@@ -778,7 +843,7 @@ class ChunkBuilder:
                 t0 = self._num_measurements
                 times = self.lookup_measurement_indices(targets)
                 rec_targets = [stim.target_rec(t - t0) for t in sorted(times)]
-                self.circuit.append(data.name, rec_targets, arg, tag=tag)
+                self._circuit.append(data.name, rec_targets, arg, tag=tag)
 
         elif data.name == "MPP":
             self._append_mpp(
@@ -811,18 +876,7 @@ class ChunkBuilder:
                     for q in qs:
                         i = self.q2i[q]
                         stim_targets.append(stim.target_pauli(i, targets[0][q]))
-                    self.circuit.append("CORRELATED_ERROR", stim_targets, arg, tag=tag)
-
-        elif data.is_two_qubit_gate:
-            self._append_2q(
-                gate=gate,
-                data=data,
-                targets=cast(Any, targets),
-                arg=arg,
-                measure_key_func=cast(Any, measure_key_func),
-                tag=tag,
-                unknown_qubit_append_mode=unknown_qubit_append_mode,
-            )
+                    self._circuit.append("CORRELATED_ERROR", stim_targets, arg, tag=tag)
 
         elif data.is_single_qubit_gate:
             self._append_1q(
@@ -881,7 +935,7 @@ class ChunkBuilder:
                     stim_targets.append(stim.target_combiner())
                 stim_targets.pop()
 
-        self.circuit.append(gate, stim_targets, arg, tag=tag)
+        self._circuit.append(gate, stim_targets, arg, tag=tag)
 
         for target in targets:
             if measure_key_func is not None:
@@ -917,13 +971,42 @@ class ChunkBuilder:
         if not indices:
             return
 
-        self.circuit.append(gate, [e[0] for e in indices], arg, tag=tag)
+        if arg is None and not data.produces_measurements:
+            self._buffered_gate = data.name
+            self._buffered_tag = tag
+            self._buffered_targets_1q.extend([e[0] for e in indices])
+            return
+
+        self._circuit.append(gate, [e[0] for e in indices], arg, tag=tag)
         if data.produces_measurements:
             for _, k in indices:
                 t = targets[k]
                 if measure_key_func is not None:
                     self._rec(measure_key_func(t), [self._num_measurements])
                 self._num_measurements += 1
+
+    def _2q_targets_to_qubit_index_pairs_with_original_index(
+        self,
+        *,
+        data: stim.GateData,
+    ) -> list[tuple[int, int, int]]:
+        index_swapped = data.name in _SWAP_CONJUGATED_MAP
+        index_sorted = data.is_symmetric_gate
+
+        targets = tuple(tuple(cast(Any, pair)) for pair in targets)
+        current_index_pairs: list[tuple[int, int, int]] = []
+        for k in range(len(targets)):
+            a, b = targets[k]
+            if a in self._buffered_seen or b in self._buffered_seen:
+                self._buffered_targets_2q.extend(sorted(current_index_pairs))
+                self._buffered_seen.clear()
+            ai = self.q2i.get(a)
+            bi = self.q2i.get(b)
+            if ai is not None and bi is not None:
+                if index_swapped or (index_sorted and ai > bi):
+                    ai, bi = bi, ai
+                current_index_pairs.append((ai, bi, k))
+        return sorted(current_index_pairs)
 
     def _append_2q(
         self,
@@ -955,30 +1038,44 @@ class ChunkBuilder:
 
         # Canonicalize gate and target pairs.
         targets = [tuple(cast(Any, pair)) for pair in targets]
-        index_pairs: list[tuple[int, int, int]] = []
+        unsorted_index_pairs: list[tuple[int, int]] = []
         index_swapped = data.name in _SWAP_CONJUGATED_MAP
-        index_sorted = data.is_symmetric_gate
-        for k in range(len(targets)):
-            a, b = targets[k]
+        kept_targets = []
+        for a, b in targets:
             ai = self.q2i.get(a)
             bi = self.q2i.get(b)
+            if index_swapped:
+                ai, bi = bi, ai
             if ai is not None and bi is not None:
-                if index_swapped or (index_sorted and ai > bi):
-                    ai, bi = bi, ai
-                index_pairs.append((ai, bi, k))
-        index_pairs = sorted(index_pairs)
-        if not index_pairs:
+                unsorted_index_pairs.append((ai, bi))
+                kept_targets.append((a, b))
+        if not unsorted_index_pairs:
             return
 
         if index_swapped:
             gate = _SWAP_CONJUGATED_MAP[data.name]
+            data = stim.gate_data(gate)
 
-        self.circuit.append(gate, [i for pair in index_pairs for i in pair[:2]], arg, tag=tag)
+        if arg is None and not data.produces_measurements:
+            self._buffered_gate = data.name
+            self._buffered_tag = tag
+            self._buffered_targets_2q.extend(unsorted_index_pairs)
+            return
 
-        # Record both qubit orderings.
+        indices = []
+        original_order = []
+        _canonicalize_2q_indices(
+            targets=unsorted_index_pairs,
+            is_symmetric_gate=data.is_symmetric_gate,
+            out_indices=indices,
+            out_original_order=original_order,
+        )
+        self._circuit.append(gate, indices, arg, tag=tag)
+
+        # Record a measurement key for both qubit orderings.
         if data.produces_measurements:
-            for _, _, k in index_pairs:
-                a, b = targets[k]
+            for k in original_order:
+                a, b = kept_targets[k]
                 if measure_key_func is not None:
                     k1 = measure_key_func((a, b))
                     k2 = measure_key_func((b, a))
@@ -1016,4 +1113,35 @@ class ChunkBuilder:
         rec_targets = [stim.target_rec(t - t0) for t in sorted(times)]
         for rec in rec_targets:
             for i in indices:
-                self.circuit.append(gate, [rec, i])
+                self._circuit.append(gate, [rec, i])
+
+
+def _canonicalize_2q_indices(
+    *,
+    targets: Iterable[tuple[int, int]],
+    is_symmetric_gate: bool,
+    out_indices: list[int],
+    out_original_order: list[int] | None,
+):
+    seen_qubits = set()
+    buffered_targets: list[tuple[int, int, int]] = []
+
+    def _flush_buffer():
+        for a, b, k in sorted(buffered_targets):
+            out_indices.append(a)
+            out_indices.append(b)
+            if out_original_order is not None:
+                out_original_order.append(k)
+        buffered_targets.clear()
+        seen_qubits.clear()
+
+    for k, (a, b) in enumerate(targets):
+        if is_symmetric_gate and a > b:
+            a, b = b, a
+        if a in seen_qubits or b in seen_qubits:
+            _flush_buffer()
+        seen_qubits.add(a)
+        seen_qubits.add(b)
+        buffered_targets.append((a, b, k))
+
+    _flush_buffer()
