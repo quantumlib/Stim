@@ -35,6 +35,12 @@ jobs:
           {os: ubuntu-24.04, dist: cp313-manylinux_x86_64},
           {os: ubuntu-24.04, dist: cp314-manylinux_x86_64},
 
+          {os: ubuntu-24.04-arm, dist: cp310-manylinux_aarch64},
+          {os: ubuntu-24.04-arm, dist: cp311-manylinux_aarch64},
+          {os: ubuntu-24.04-arm, dist: cp312-manylinux_aarch64},
+          {os: ubuntu-24.04-arm, dist: cp313-manylinux_aarch64},
+          {os: ubuntu-24.04-arm, dist: cp314-manylinux_aarch64},
+
           # manylinux_i686 disabled because scipy isn't prebuilt and fails to build.
           #
           # The actual error seen in github actions:
