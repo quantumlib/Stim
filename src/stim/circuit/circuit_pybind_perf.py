@@ -185,7 +185,7 @@ def benchmark(
         return wrap(original_method)
 
 
-@benchmark(goal_millis=8.4, units={"targets": 2000})
+@benchmark(goal_micros=27, units={"targets": 2000})
 def benchmark_circuit_append_int():
     c = stim.Circuit()
     targets = [0, 1] * 1000
@@ -196,7 +196,7 @@ def benchmark_circuit_append_int():
     return benchmark_go(run)
 
 
-@benchmark(goal_millis=6.5, units={"targets": 2000})
+@benchmark(goal_micros=100, units={"targets": 2000})
 def benchmark_circuit_append_gate_targets():
     c = stim.Circuit()
     targets = [stim.GateTarget(0), stim.GateTarget(1)] * 1000
@@ -207,7 +207,7 @@ def benchmark_circuit_append_gate_targets():
     return benchmark_go(run)
 
 
-@benchmark(goal_micros=84, units={"targets": 2000})
+@benchmark(goal_micros=370, units={"targets": 2000})
 def benchmark_circuit_append_pauli_strings():
     c = stim.Circuit()
     targets = [stim.PauliString("XX")] * 1000

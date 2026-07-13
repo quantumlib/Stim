@@ -150,59 +150,57 @@ void circuit_insert(Circuit &self, pybind11::ssize_t &index, pybind11::object &o
     }
 }
 
+template <typename T>
+static void handle_to_gate_targets_helper(const T &iterable_obj, std::vector<uint32_t> &out, bool can_iterate) {
+    pybind11::detail::make_caster<GateTarget> caster_gate_target;
+    pybind11::detail::make_caster<uint32_t> caster_u32;
+    pybind11::detail::make_caster<std::string_view> caster_string_view;
+    pybind11::detail::make_caster<FlexPauliString> caster_pauli_string;
+
+    for (const pybind11::handle &obj : iterable_obj) {
+        if (caster_u32.load(obj, true)) {
+            uint32_t value = caster_u32;
+            // Note: for backwards compatibility, it isn't checked that the u32 actually
+            // corresponds to a qubit target.
+            out.push_back(GateTarget{value}.data);
+
+        } else if (caster_gate_target.load(obj, false)) {
+            GateTarget value = caster_gate_target;
+            out.push_back(value.data);
+
+        } else if (caster_string_view.load(obj, false)) {
+            std::string_view text = pybind11::cast<std::string_view>(obj);
+            out.push_back(GateTarget::from_target_str(text).data);
+
+        } else if (caster_pauli_string.load(obj, false)) {
+            FlexPauliString ps = pybind11::cast<FlexPauliString>(obj);
+            bool first = true;
+            ps.value.ref().for_each_active_pauli([&](size_t q) {
+                if (!first) {
+                    out.push_back(GateTarget::combiner().data);
+                }
+                first = false;
+                out.push_back(GateTarget::pauli_xz(q, ps.value.xs[q], ps.value.zs[q]).data);
+            });
+            if (first) {
+                throw std::invalid_argument("Don't know how to target an empty stim.PauliString");
+            }
+
+        } else if (can_iterate && pybind11::isinstance(obj, pybind11::module::import("collections.abc").attr("Iterable"))) {
+            handle_to_gate_targets_helper(obj, out, false);
+
+        } else {
+            std::stringstream ss;
+            ss << "Don't know how to target the object `";
+            ss << pybind11::cast<std::string_view>(pybind11::repr(obj));
+            ss << "`.";
+            throw std::invalid_argument(ss.str());
+        }
+    }
+}
+
 void handle_to_gate_targets(const pybind11::handle &obj, std::vector<uint32_t> &out, bool can_iterate) {
-    try {
-        FlexPauliString ps = pybind11::cast<FlexPauliString>(obj);
-        bool first = true;
-        ps.value.ref().for_each_active_pauli([&](size_t q) {
-            if (!first) {
-                out.push_back(GateTarget::combiner().data);
-            }
-            first = false;
-            out.push_back(GateTarget::pauli_xz(q, ps.value.xs[q], ps.value.zs[q]).data);
-        });
-        if (first) {
-            throw std::invalid_argument("Don't know how to target an empty stim.PauliString");
-        }
-        return;
-    } catch (const pybind11::cast_error &ex) {
-    }
-
-    try {
-        std::string_view text = pybind11::cast<std::string_view>(obj);
-        out.push_back(GateTarget::from_target_str(text).data);
-        return;
-    } catch (const pybind11::cast_error &ex) {
-    }
-
-    try {
-        out.push_back(pybind11::cast<GateTarget>(obj).data);
-        return;
-    } catch (const pybind11::cast_error &ex) {
-    }
-
-    try {
-        out.push_back(GateTarget{pybind11::cast<uint32_t>(obj)}.data);
-        return;
-    } catch (const pybind11::cast_error &ex) {
-    }
-
-    if (can_iterate) {
-        pybind11::module collections = pybind11::module::import("collections.abc");
-        pybind11::object iterable_type = collections.attr("Iterable");
-        if (pybind11::isinstance(obj, iterable_type)) {
-            for (const auto &t : obj) {
-                handle_to_gate_targets(t, out, false);
-            }
-            return;
-        }
-    }
-
-    std::stringstream ss;
-    ss << "Don't know how to target the object `";
-    ss << pybind11::cast<std::string_view>(pybind11::repr(obj));
-    ss << "`.";
-    throw std::invalid_argument(ss.str());
+    handle_to_gate_targets_helper(std::span<const pybind11::handle>{&obj, 1}, out, can_iterate);
 }
 
 void circuit_append(
