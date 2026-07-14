@@ -138,6 +138,17 @@ class Chunk:
             for flow in flows:
                 if flow.obs_name is not None and flow.obs_name not in o2i:
                     o2i[flow.obs_name] = len(o2i)
+        else:
+            for k, v in o2i.items():
+                if isinstance(k, PauliMap):
+                    obs_name_repr = 'some_observable_name' if k.obs_name is None else repr(k.obs_name)
+                    raise ValueError(
+                        f"Used an observable, instead of its name, as a key for o2i.\n"
+                        f"Did you mean\n"
+                        f"    o2i={{..., {obs_name_repr}: {v!r}, ...}}\n"
+                        f"instead of\n"
+                        f"    o2i={{..., {k!r}: {v!r}, ...}}\n"
+                        f"?")
 
         self.q2i: dict[complex, int] = q2i
         self.o2i: dict[Any, int] = o2i
@@ -321,6 +332,8 @@ class Chunk:
     def __repr__(self) -> str:
         lines = ["stimflow.Chunk("]
         lines.append(f"    q2i={self.q2i!r},")
+        if self.o2i:
+            lines.append(f"    o2i={self.o2i!r},")
         lines.append(f"    circuit={self.circuit!r},".replace("\n", "\n    "))
         if self.flows:
             lines.append(f"    flows=[")

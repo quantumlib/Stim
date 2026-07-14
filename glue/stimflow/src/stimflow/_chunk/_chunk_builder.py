@@ -58,50 +58,77 @@ class ChunkBuilder:
         >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_obs_name("LZ")
         >>> builder.add_flow(start=obs, end=obs)
         >>> chunk = builder.finish_chunk()
-
         >>> chunk.verify()
-        >>> print(chunk.to_closed_circuit())
-        QUBIT_COORDS(0, 0) 0
-        QUBIT_COORDS(0.5, 0) 1
-        QUBIT_COORDS(1, 0) 2
-        QUBIT_COORDS(1.5, 0) 3
-        QUBIT_COORDS(2, 0) 4
-        QUBIT_COORDS(2.5, 0) 5
-        QUBIT_COORDS(3, 0) 6
-        QUBIT_COORDS(3.5, 0) 7
-        QUBIT_COORDS(4, 0) 8
-        QUBIT_COORDS(4.5, 0) 9
-        QUBIT_COORDS(5, 0) 10
-        OBSERVABLE_INCLUDE(0) Z0
-        TICK
-        MPP Z0*Z2 Z4*Z6 Z8*Z10
-        TICK
-        MPP Z2*Z4 Z6*Z8
-        TICK
-        R 9 7 5 3 1
-        TICK
-        CX 8 9 6 7 4 5 2 3 0 1
-        TICK
-        CX 8 7 6 5 4 3 2 1 10 9
-        TICK
-        M 9 7 5 3 1
-        DETECTOR(4.5, 0, 0) rec[-8] rec[-5]
-        DETECTOR(3.5, 0, 0) rec[-6] rec[-4]
-        DETECTOR(2.5, 0, 0) rec[-9] rec[-3]
-        DETECTOR(1.5, 0, 0) rec[-7] rec[-2]
-        DETECTOR(0.5, 0, 0) rec[-10] rec[-1]
-        SHIFT_COORDS(0, 0, 1)
-        TICK
-        MPP Z0*Z2 Z4*Z6 Z8*Z10
-        TICK
-        MPP Z2*Z4 Z6*Z8
-        DETECTOR(0.5, 0, 0) rec[-6] rec[-5]
-        DETECTOR(2.5, 0, 0) rec[-8] rec[-4]
-        DETECTOR(4.5, 0, 0) rec[-10] rec[-3]
-        DETECTOR(1.5, 0, 0) rec[-7] rec[-2]
-        DETECTOR(3.5, 0, 0) rec[-9] rec[-1]
-        TICK
-        OBSERVABLE_INCLUDE(0) Z0
+        >>> chunk
+        stimflow.Chunk(
+            q2i={4.5: 0, 3.5: 1, 2.5: 2, 1.5: 3, 0.5: 4, 4.0: 5, 3.0: 6, 2.0: 7, 1.0: 8, 0.0: 9, 5.0: 10},
+            circuit=stim.Circuit('''
+                R 0 1 2 3 4
+                TICK
+                CX 5 0 6 1 7 2 8 3 9 4
+                TICK
+                CX 5 1 6 2 7 3 8 4 10 0
+                TICK
+                M 0 1 2 3 4
+            '''),
+            flows=[
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
+                    measurement_indices=(0,),
+                    center=(4.5+0j),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
+                    measurement_indices=(0,),
+                    center=(4.5+0j),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
+                    measurement_indices=(1,),
+                    center=(3.5+0j),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
+                    measurement_indices=(1,),
+                    center=(3.5+0j),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
+                    measurement_indices=(2,),
+                    center=(2.5+0j),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
+                    measurement_indices=(2,),
+                    center=(2.5+0j),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
+                    measurement_indices=(3,),
+                    center=(1.5+0j),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
+                    measurement_indices=(3,),
+                    center=(1.5+0j),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([0j, (1+0j)]),
+                    measurement_indices=(4,),
+                    center=(0.5+0j),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([0j, (1+0j)]),
+                    measurement_indices=(4,),
+                    center=(0.5+0j),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
+                    end=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
+                    center=0j,
+                ),
+            ],
+        )
     """
 
     def __init__(
@@ -759,6 +786,135 @@ class ChunkBuilder:
                 - 'skip': When a qubit position outside `allowed_qubits` is encountered,
                     ignore it. Note that, for two-qubit and multi-qubit operations, this
                     will ignore the pair or group of targets containing the skipped position.
+
+        Examples:
+            >>> import stim
+            >>> import stimflow as sf
+
+            >>> # Build a repetition code idling chunk.
+            >>> d = 5
+            >>> data_qubits = range(d)
+            >>> measure_qubits = [q + 0.5 for q in data_qubits[::-1]]
+            >>> builder = sf.ChunkBuilder()
+            >>> builder.append("R", measure_qubits)
+            >>> builder.append("TICK")
+            >>> builder.append("CX", [(m-0.5, m) for m in measure_qubits])
+            >>> builder.append("TICK")
+            >>> builder.append("CX", [(m+0.5, m) for m in measure_qubits])
+            >>> builder.append("TICK")
+            >>> builder.append("M", measure_qubits)
+            >>> for m in measure_qubits:
+            ...     stabilizer = sf.PauliMap.from_zs([m-0.5, m+0.5])
+            ...     builder.add_flow(start=stabilizer, measurements=[m])
+            ...     builder.add_flow(end=stabilizer, measurements=[m])
+            >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_obs_name("LZ")
+            >>> builder.add_flow(start=obs, end=obs)
+            >>> chunk = builder.finish_chunk()
+            >>> chunk.verify()
+            >>> chunk
+            stimflow.Chunk(
+                q2i={4.5: 0, 3.5: 1, 2.5: 2, 1.5: 3, 0.5: 4, 4.0: 5, 3.0: 6, 2.0: 7, 1.0: 8, 0.0: 9, 5.0: 10},
+                circuit=stim.Circuit('''
+                    R 0 1 2 3 4
+                    TICK
+                    CX 5 0 6 1 7 2 8 3 9 4
+                    TICK
+                    CX 5 1 6 2 7 3 8 4 10 0
+                    TICK
+                    M 0 1 2 3 4
+                '''),
+                flows=[
+                    stimflow.Flow(
+                        start=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
+                        measurement_indices=(0,),
+                        center=(4.5+0j),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
+                        measurement_indices=(0,),
+                        center=(4.5+0j),
+                    ),
+                    stimflow.Flow(
+                        start=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
+                        measurement_indices=(1,),
+                        center=(3.5+0j),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
+                        measurement_indices=(1,),
+                        center=(3.5+0j),
+                    ),
+                    stimflow.Flow(
+                        start=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
+                        measurement_indices=(2,),
+                        center=(2.5+0j),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
+                        measurement_indices=(2,),
+                        center=(2.5+0j),
+                    ),
+                    stimflow.Flow(
+                        start=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
+                        measurement_indices=(3,),
+                        center=(1.5+0j),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
+                        measurement_indices=(3,),
+                        center=(1.5+0j),
+                    ),
+                    stimflow.Flow(
+                        start=stimflow.PauliMap.from_zs([0j, (1+0j)]),
+                        measurement_indices=(4,),
+                        center=(0.5+0j),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_zs([0j, (1+0j)]),
+                        measurement_indices=(4,),
+                        center=(0.5+0j),
+                    ),
+                    stimflow.Flow(
+                        start=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
+                        end=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
+                        center=0j,
+                    ),
+                ],
+            )
+
+            >>> # Fancy OBSERVABLE_INCLUDE stuff.
+            >>> builder = sf.ChunkBuilder()
+            >>> obs = sf.PauliMap({"Z": [0, 1, 2]}, obs_name="LZ")
+            >>> builder.append("RX", [0, 1, 2])
+            >>> builder.append("OBSERVABLE_INCLUDE", obs)
+            >>> builder.add_flow(end=sf.PauliMap({"X": [0, 1]}))
+            >>> builder.add_flow(end=sf.PauliMap({"X": [1, 2]}))
+            >>> builder.add_flow(end=obs)
+            >>> chunk = builder.finish_chunk()
+            >>> chunk.verify()
+            >>> chunk
+            stimflow.Chunk(
+                q2i={0: 0, 1: 1, 2: 2},
+                o2i={'LZ': 0},
+                circuit=stim.Circuit('''
+                    RX 0 1 2
+                    OBSERVABLE_INCLUDE(0) Z0 Z1 Z2
+                '''),
+                flows=[
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_xs([0j, (1+0j)]),
+                        center=(0.5+0j),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_xs([(1+0j), (2+0j)]),
+                        center=(1.5+0j),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_zs([0j, (1+0j), (2+0j)], obs_name='LZ'),
+                        center=(1+0j),
+                    ),
+                ],
+            )
         """
         __tracebackhide__ = True
         data = stim.gate_data(gate)
@@ -800,16 +956,16 @@ class ChunkBuilder:
             if isinstance(targets, PauliMap):
                 if arg is None and targets.obs_name is None:
                     raise ValueError(
-                        "Received a stimflow.PauliMap target for an OBSERVABLE_INCLUDE instruction, but can't figure out its name.\n"
-                        "(The name is used in order to give consistent index to OBSERVABLE_INCLUDE instructions.)\n"
-                        "(The mapping is stored in the field `stimflow.ChunkBuilder.o2i`.)\n"
+                        "Can't figure out the index to use for an OBSERVABLE_INCLUDE instruction.\n"
                         "\n"
                         "You can do either of the following to fix the error:\n"
-                        "   (a) Pass in a PauliMap with a name (see `stimflow.PauliMap.with_obs_name(name)`)\n"
-                        "   (b) Do a manual override by adding `arg=index` to the `stimflow.ChunkBuilder.append` call\n"
+                        "    (a) Automatic indexing (recommended).\n"
+                        "        Name the given observable, e.g. via `stimflow.PauliMap.with_obs_name`.\n"
+                        "        A consistent index will automatically be associated with the name.\n"
+                        "    (b) Manual indexing.\n"
+                        "        Add an `arg=index` to the `stimflow.ChunkBuilder.append` call.\n"
                         "\n"
-                        "Note that, if you do both (a) and (b), the builder will remember the "
-                        "name-to-index association."
+                        "Note that, if you do both (a) and (b), the builder will remember the name-to-index association.\n"
                     )
                 elif arg is not None and targets.obs_name is not None:
                     if not isinstance(arg, (int, float)) or arg != int(arg):
@@ -822,8 +978,11 @@ class ChunkBuilder:
                             f"Specified {arg=} and {targets=} but {self.o2i[targets.obs_name]=} is "
                             f"inconsistent with {arg=}."
                         )
-                elif arg is None:
+                elif arg is None and targets.obs_name is not None:
                     arg = self._ensure_obs_index_of(targets.obs_name)
+                elif arg is not None and targets.obs_name is None:
+                    # Manual indexing with no associated name.
+                    pass
 
                 self._ensure_indices(
                     targets.keys(),
