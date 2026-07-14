@@ -186,7 +186,7 @@ def benchmark(
 
 
 @benchmark(goal_micros=27, units={"targets": 2000})
-def benchmark_circuit_append_int():
+def benchmark_circuit_append_int_in_large_chunks():
     c = stim.Circuit()
     targets = [0, 1] * 1000
 
@@ -196,8 +196,20 @@ def benchmark_circuit_append_int():
     return benchmark_go(run)
 
 
-@benchmark(goal_micros=100, units={"targets": 2000})
-def benchmark_circuit_append_gate_targets():
+@benchmark(goal_micros=320, units={"targets": 2000})
+def benchmark_circuit_append_int_in_small_chunks():
+    c = stim.Circuit()
+    targets = [0, 1]
+
+    def run():
+        c.clear()
+        for _ in range(1000):
+            c.append("CX", targets)
+    return benchmark_go(run)
+
+
+@benchmark(goal_micros=25, units={"targets": 2000})
+def benchmark_circuit_append_gate_targets_in_large_chunks():
     c = stim.Circuit()
     targets = [stim.GateTarget(0), stim.GateTarget(1)] * 1000
 
@@ -207,8 +219,8 @@ def benchmark_circuit_append_gate_targets():
     return benchmark_go(run)
 
 
-@benchmark(goal_micros=370, units={"targets": 2000})
-def benchmark_circuit_append_pauli_strings():
+@benchmark(goal_micros=46, units={"targets": 2000})
+def benchmark_circuit_append_pauli_strings_in_large_chunks():
     c = stim.Circuit()
     targets = [stim.PauliString("XX")] * 1000
 
@@ -219,13 +231,25 @@ def benchmark_circuit_append_pauli_strings():
 
 
 @benchmark(goal_micros=15, units={"targets": 2000})
-def benchmark_circuit_append_text():
+def benchmark_circuit_append_text_in_large_chunks():
     c = stim.Circuit()
     content = "CX" + " 0 1" * 1000
 
     def run():
         c.clear()
         c.append_from_stim_program_text(content)
+    return benchmark_go(run)
+
+
+@benchmark(goal_micros=190, units={"targets": 2000})
+def benchmark_circuit_append_text_in_small_chunks():
+    c = stim.Circuit()
+    content = "CX 0 1"
+
+    def run():
+        c.clear()
+        for _ in range(1000):
+            c.append_from_stim_program_text(content)
     return benchmark_go(run)
 
 
