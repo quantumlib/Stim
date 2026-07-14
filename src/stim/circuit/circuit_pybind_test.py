@@ -734,8 +734,6 @@ def test_shortest_graphlike_error_msgs():
     """)
     with pytest.raises(ValueError, match=r"NO OBSERVABLES(.|\n)*NO DETECTORS"):
         c.shortest_graphlike_error()
-    with pytest.raises(ValueError, match=""):
-        c.shortest_graphlike_error()
 
     c = stim.Circuit("""
         M 0
@@ -2414,4 +2412,26 @@ def test_append_circuit_to_circuit():
         H 0
         X 1
         Z 2
+    """)
+
+
+def test_append_odd_types():
+    circuit = stim.Circuit()
+    circuit.append("CX", np.array([0, 1], dtype=np.uint8))
+    circuit.append("H", np.array([2, 3], dtype=np.int16))
+    circuit.append("MPP", ["X2", "Z3"])
+    circuit.append("H", 5)
+    circuit.append("H", "6")
+    circuit.append("MPP", "Z3")
+    circuit.append("CX", ["rec[-1]", 3])
+    circuit.append("MPP", stim.PauliString("XYZ"))
+    circuit.append("MPP", [stim.PauliString("XX")])
+    assert circuit == stim.Circuit("""
+        CX 0 1
+        H 2 3
+        MPP X2 Z3
+        H 5 6
+        MPP Z3
+        CX rec[-1] 3
+        MPP X0*Y1*Z2 X0*X1
     """)
