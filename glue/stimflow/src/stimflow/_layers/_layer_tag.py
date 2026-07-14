@@ -15,18 +15,18 @@ class LayerTag(Layer):
         return LayerTag(circuit=self.circuit)
 
     def touched(self) -> set[int]:  # set of qubit touched by it
-        if isinstance(self.circuit[0], stim.CircuitRepeatBlock):
-            raise NotImplementedError(
-                "No tags allowed on circuit repeat blocks, "
-                "since I need target_groups for defining which qubits are touched"
-            )
-        touched_set = {
-            target.qubit_value
-            for target_group in self.circuit[0].target_groups()
-            for target in target_group
-            if target.is_qubit_target
-        }
-        return {q for q in touched_set if isinstance(q, int)}
+        def _touched(inst: stim.CircuitInstruction | stim.CircuitRepeatBlock) -> set[int]:
+            if isinstance(inst, stim.CircuitRepeatBlock):
+                return {q for inner_inst in inst.body_copy() for q in _touched(inner_inst)}
+            touched_set = {
+                target.qubit_value
+                for target_group in inst.target_groups()
+                for target in target_group
+                if target.is_qubit_target
+            }
+            return {q for q in touched_set if isinstance(q, int)}
+
+        return _touched(self.circuit[0])
 
     def to_z_basis(self) -> list[Layer]:
         return [self]

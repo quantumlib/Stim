@@ -70,3 +70,18 @@ def test_touched() -> None:
     # In MPP, targets are Pauli targets/combiners.
     # We verify touched() handles target groups gracefully.
     assert isinstance(layer_mpp.touched(), set)
+
+    # Test that when self.circuit[0] is a CircuitRepeatBlock, touched() iterates
+    # through the block and finds all qubit targets.
+    layer_repeat = LayerTag(
+        circuit=stim.Circuit(
+            """
+            REPEAT 5 {
+                CX 0 1
+                TICK
+                M 2 3
+            }
+        """
+        )
+    )
+    assert layer_repeat.touched() == {0, 1, 2, 3}
