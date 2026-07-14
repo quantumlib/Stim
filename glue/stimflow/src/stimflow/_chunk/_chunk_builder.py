@@ -302,6 +302,46 @@ class ChunkBuilder:
             )
         return xor_sorted(result)
 
+    def add_obs_name_index(self, obs_name: str, obs_index: int) -> None:
+        """Associates an explicit stim observable index with a stimflow observable name.
+
+        Note that the name-to-index association typically happens automatically. For example,
+        `builder.append("OBSERVABLE_INCLUDE", some_named_obs)` will automatically pick an unused
+        index to use if `some_named_obs`'s name is not already indexed.
+
+        Args:
+            obs_name: The name of the observable to use when referring it in stimflow.
+            obs_index: The index to use when referring to the observable in a stim circuit.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> builder = sf.ChunkBuilder()
+            >>> obs = sf.PauliMap({0: "Z"}, obs_name="LX")
+            >>> builder.add_obs_name_index(obs.obs_name, 5)
+            >>> builder.append("OBSERVABLE_INCLUDE", obs)
+            >>> builder.finish_chunk()
+            stimflow.Chunk(
+                q2i={0j: 0},
+                o2i={'LX': 5},
+                circuit=stim.Circuit('''
+                    OBSERVABLE_INCLUDE(5) Z0
+                '''),
+            )
+        """
+        if isinstance(obs_name, PauliMap):
+            raise ValueError("Passed a `stimflow.PauliMap`, instead of its `obs_name`, into `stimflow.ChunkBuilder.add_obs_name_index`.\n"
+                             f"    Got {obs_name=!r}")
+        if obs_name is None:
+            raise ValueError(f"Expected an observable name but got {obs_name=!r}.")
+        old_arg = self.o2i.setdefault(obs_name, obs_index)
+        if old_arg != obs_index:
+            raise ValueError(
+                f"Called add_obs_name_index({obs_name=}, {obs_index=}) but {obs_name=} "
+                f"was already mapped to a different index ({old_arg}).\n"
+                f"For example, this can happen if you call `builder.append('OBSERVABLE_INCLUDE', ...)` before "
+                f"calling `builder.add_obs_name_index` due to the append method picking an automatic index."
+            )
+
     def add_discarded_flow_input(self, flow: PauliMap | Tile) -> None:
         """Annotates that an input stabilizer won't be used.
 
@@ -975,8 +1015,10 @@ class ChunkBuilder:
                         self.o2i[targets.obs_name] = int(arg)
                     elif old_arg != arg:
                         raise ValueError(
-                            f"Specified {arg=} and {targets=} but {self.o2i[targets.obs_name]=} is "
-                            f"inconsistent with {arg=}."
+                            f"Got {targets=} and {arg=}, but that arg is inconsistent with the previously "
+                            f"specified index of {self.o2i[targets.obs_name]} for the observable.\n"
+                            f"    To use the existing index, drop the `arg` argument.\n"
+                            f"    To force the index, drop the observable's name (e.g. `obs.with_obs_name(None)`)."
                         )
                 elif arg is None and targets.obs_name is not None:
                     arg = self._ensure_obs_index_of(targets.obs_name)

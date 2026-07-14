@@ -1,6 +1,7 @@
 import numpy as np
 import stim
 
+import pytest
 import stimflow
 
 
@@ -408,3 +409,28 @@ def test_auto_obs():
             center=1,
         ),
     )
+
+
+def test_obs_indexing():
+    builder = stimflow.ChunkBuilder()
+    with pytest.raises(ValueError, match="index"):
+        builder.append("OBSERVABLE_INCLUDE", stimflow.PauliMap({"Z": [0]}))
+    assert builder.o2i.get('LL') is None
+    builder.append("OBSERVABLE_INCLUDE", stimflow.PauliMap({"Z": [0]}, obs_name='LL'))
+    assert builder.o2i.get('LL') == 0
+    builder.add_obs_name_index('LL', 0)
+    with pytest.raises(ValueError, match="different index"):
+        builder.add_obs_name_index('LL', 1)
+    assert builder.finish_chunk().circuit == stim.Circuit("""
+        OBSERVABLE_INCLUDE(0) Z0
+    """)
+
+    builder = stimflow.ChunkBuilder()
+    builder.add_obs_name_index('LL', 3)
+    assert builder.o2i.get('LL') == 3
+    with pytest.raises(ValueError, match="inconsistent"):
+        builder.append("OBSERVABLE_INCLUDE", stimflow.PauliMap({"Z": [0]}, obs_name='LL'), arg=2)
+    builder.append("OBSERVABLE_INCLUDE", stimflow.PauliMap({"Z": [0]}, obs_name='LL'))
+    assert builder.finish_chunk().circuit == stim.Circuit("""
+        OBSERVABLE_INCLUDE(3) Z0
+    """)
