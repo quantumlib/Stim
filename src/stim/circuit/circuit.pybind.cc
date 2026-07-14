@@ -158,8 +158,10 @@ static void handle_to_gate_targets_helper(T &it, const T2 &end, std::vector<uint
         pybind11::detail::make_caster<uint32_t> caster_u32;
         while (caster_u32.load(*it, true)) {
             uint32_t value = caster_u32;
-            // Note: for backwards compatibility, it isn't checked that the u32 actually
-            // corresponds to a qubit target.
+            // Note: for backwards compatibility, it isn't checked that the u32
+            // corresponds to a qubit target rather than e.g. a measurement record.
+            // This means the GateTarget can be malformed in various ways, which
+            // must be caught by later validation (e.g. CircuitInstruction::validate).
             out.push_back(GateTarget{value}.data);
             ++it;
             if (it == end) {
@@ -180,10 +182,13 @@ static void handle_to_gate_targets_helper(T &it, const T2 &end, std::vector<uint
         }
 
         pybind11::detail::make_caster<std::string_view> caster_string_view;
-        while (it != end && caster_string_view.load(*it, false)) {
+        while (caster_string_view.load(*it, false)) {
             std::string_view text = caster_string_view;
             out.push_back(GateTarget::from_target_str(text).data);
             ++it;
+            if (it == end) {
+                return;
+            }
             progress = true;
         }
 
