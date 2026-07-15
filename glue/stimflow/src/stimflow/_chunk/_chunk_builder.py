@@ -75,57 +75,46 @@ class ChunkBuilder:
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
                     measurement_indices=(0,),
-                    center=(4.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
                     measurement_indices=(0,),
-                    center=(4.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
                     measurement_indices=(1,),
-                    center=(3.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
                     measurement_indices=(1,),
-                    center=(3.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
                     measurement_indices=(2,),
-                    center=(2.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
                     measurement_indices=(2,),
-                    center=(2.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
                     measurement_indices=(3,),
-                    center=(1.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
                     measurement_indices=(3,),
-                    center=(1.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([0j, (1+0j)]),
                     measurement_indices=(4,),
-                    center=(0.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([0j, (1+0j)]),
                     measurement_indices=(4,),
-                    center=(0.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
                     end=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
-                    center=0j,
                 ),
             ],
         )
@@ -867,57 +856,46 @@ class ChunkBuilder:
                     stimflow.Flow(
                         start=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
                         measurement_indices=(0,),
-                        center=(4.5+0j),
                     ),
                     stimflow.Flow(
                         end=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
                         measurement_indices=(0,),
-                        center=(4.5+0j),
                     ),
                     stimflow.Flow(
                         start=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
                         measurement_indices=(1,),
-                        center=(3.5+0j),
                     ),
                     stimflow.Flow(
                         end=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
                         measurement_indices=(1,),
-                        center=(3.5+0j),
                     ),
                     stimflow.Flow(
                         start=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
                         measurement_indices=(2,),
-                        center=(2.5+0j),
                     ),
                     stimflow.Flow(
                         end=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
                         measurement_indices=(2,),
-                        center=(2.5+0j),
                     ),
                     stimflow.Flow(
                         start=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
                         measurement_indices=(3,),
-                        center=(1.5+0j),
                     ),
                     stimflow.Flow(
                         end=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
                         measurement_indices=(3,),
-                        center=(1.5+0j),
                     ),
                     stimflow.Flow(
                         start=stimflow.PauliMap.from_zs([0j, (1+0j)]),
                         measurement_indices=(4,),
-                        center=(0.5+0j),
                     ),
                     stimflow.Flow(
                         end=stimflow.PauliMap.from_zs([0j, (1+0j)]),
                         measurement_indices=(4,),
-                        center=(0.5+0j),
                     ),
                     stimflow.Flow(
                         start=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
                         end=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
-                        center=0j,
                     ),
                 ],
             )
@@ -943,15 +921,12 @@ class ChunkBuilder:
                 flows=[
                     stimflow.Flow(
                         end=stimflow.PauliMap.from_xs([0j, (1+0j)]),
-                        center=(0.5+0j),
                     ),
                     stimflow.Flow(
                         end=stimflow.PauliMap.from_xs([(1+0j), (2+0j)]),
-                        center=(1.5+0j),
                     ),
                     stimflow.Flow(
                         end=stimflow.PauliMap.from_zs([0j, (1+0j), (2+0j)], obs_name='LZ'),
-                        center=(1+0j),
                     ),
                 ],
             )

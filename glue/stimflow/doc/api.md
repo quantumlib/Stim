@@ -10,6 +10,7 @@
     - [`stimflow.Chunk.find_logical_error`](#stimflow.Chunk.find_logical_error)
     - [`stimflow.Chunk.flattened`](#stimflow.Chunk.flattened)
     - [`stimflow.Chunk.from_circuit_with_mpp_boundaries`](#stimflow.Chunk.from_circuit_with_mpp_boundaries)
+    - [`stimflow.Chunk.missing_flow_generators`](#stimflow.Chunk.missing_flow_generators)
     - [`stimflow.Chunk.start_code`](#stimflow.Chunk.start_code)
     - [`stimflow.Chunk.start_interface`](#stimflow.Chunk.start_interface)
     - [`stimflow.Chunk.start_patch`](#stimflow.Chunk.start_patch)
@@ -490,6 +491,63 @@ def from_circuit_with_mpp_boundaries(
 ) -> Chunk:
 ```
 
+<a name="stimflow.Chunk.missing_flow_generators"></a>
+```python
+# stimflow.Chunk.missing_flow_generators
+
+# (in class stimflow.Chunk)
+def missing_flow_generators(
+    self,
+) -> list[Flow]:
+    """Finds linearly independent flow generators that could be added to the chunk.
+
+    This method is intended as a debugging method when you're struggling to identify
+    the flow you forgot to declare. Beware that, just because this method returns a
+    flow, it doesn't you should actually declare it. For example, gauges in a subsystem
+    code correspond to flows you likely don't want to declare. Further beware that, just
+    because this method doesn't return a flow, it doesn't mean you don't want to declare
+    it. For example, if you intended to declare the X->X and Y->Y and Z->Z flows of a
+    logical qubit, but forgot to declare the Y->Y, this method will not return that flow
+    (because it's the product of the other two).
+
+    Returns:
+        A list of flows that the chunk's circuit supports, and that are linearly independent
+        of each other and of the existing flows declared by the chunk.
+
+    Raises:
+        ValueError: The flows declared by the chunk aren't valid. Can't infer which ones
+            are missing if the existing ones aren't valid in the first place.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> chunk = sf.Chunk(
+        ...    # Distance 2 rep code idle cycle.
+        ...    circuit=stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(1, 0) 1
+        ...         QUBIT_COORDS(2, 0) 2
+        ...         R 1
+        ...         CX 0 1 2 1
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(
+        ...             start=sf.PauliMap.from_zs([0, 2]),
+        ...             measurement_indices=[0],
+        ...         ),
+        ...     ],
+        ... )
+
+        >>> for e in chunk.missing_flow_generators():
+        ...     print(e)
+        1 -> Z[1+0j]*rec[0]
+        1 -> Z[0+0j]*Z[2+0j]*rec[0]
+        Z[2+0j] -> Z[2+0j]
+        X[0+0j]*X[2+0j] -> X[0+0j]*X[2+0j]
+    """
+```
+
 <a name="stimflow.Chunk.start_code"></a>
 ```python
 # stimflow.Chunk.start_code
@@ -721,6 +779,7 @@ def with_edits(
     *,
     circuit: stim.Circuit | None = None,
     q2i: dict[complex, int] | None = None,
+    o2i: dict[Any, int] | None = None,
     flows: Iterable[Flow] | None = None,
     discarded_inputs: Iterable[PauliMap] | None = None,
     discarded_outputs: Iterable[PauliMap] | None = None,
@@ -832,57 +891,46 @@ class ChunkBuilder:
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
                     measurement_indices=(0,),
-                    center=(4.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
                     measurement_indices=(0,),
-                    center=(4.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
                     measurement_indices=(1,),
-                    center=(3.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
                     measurement_indices=(1,),
-                    center=(3.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
                     measurement_indices=(2,),
-                    center=(2.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
                     measurement_indices=(2,),
-                    center=(2.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
                     measurement_indices=(3,),
-                    center=(1.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
                     measurement_indices=(3,),
-                    center=(1.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([0j, (1+0j)]),
                     measurement_indices=(4,),
-                    center=(0.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([0j, (1+0j)]),
                     measurement_indices=(4,),
-                    center=(0.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
                     end=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
-                    center=0j,
                 ),
             ],
         )
@@ -1331,57 +1379,46 @@ def append(
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
                     measurement_indices=(0,),
-                    center=(4.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
                     measurement_indices=(0,),
-                    center=(4.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
                     measurement_indices=(1,),
-                    center=(3.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
                     measurement_indices=(1,),
-                    center=(3.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
                     measurement_indices=(2,),
-                    center=(2.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
                     measurement_indices=(2,),
-                    center=(2.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
                     measurement_indices=(3,),
-                    center=(1.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
                     measurement_indices=(3,),
-                    center=(1.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap.from_zs([0j, (1+0j)]),
                     measurement_indices=(4,),
-                    center=(0.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([0j, (1+0j)]),
                     measurement_indices=(4,),
-                    center=(0.5+0j),
                 ),
                 stimflow.Flow(
                     start=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
                     end=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
-                    center=0j,
                 ),
             ],
         )
@@ -1407,15 +1444,12 @@ def append(
             flows=[
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_xs([0j, (1+0j)]),
-                    center=(0.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_xs([(1+0j), (2+0j)]),
-                    center=(1.5+0j),
                 ),
                 stimflow.Flow(
                     end=stimflow.PauliMap.from_zs([0j, (1+0j), (2+0j)], obs_name='LZ'),
-                    center=(1+0j),
                 ),
             ],
         )
@@ -2663,7 +2697,6 @@ def __init__(
         stimflow.Flow(
             start=stimflow.PauliMap({0j: 'X'}),
             measurement_indices=(1,),
-            center=0j,
         )
     """
 ```
@@ -2713,7 +2746,6 @@ def __mul__(
             start=stimflow.PauliMap({(1+0j): 'X', (2+0j): 'Y'}),
             end=stimflow.PauliMap({(2+0j): 'Y', (3+0j): 'Z'}),
             measurement_indices=(-10, -1, 2, 20),
-            center=(2+0j),
         )
     """
 ```
@@ -2763,7 +2795,6 @@ def fused_with_next_flow(
             start=stimflow.PauliMap({(1+0j): 'X'}),
             end=stimflow.PauliMap({(3+0j): 'Z'}),
             measurement_indices=(2, 90, 99, 120),
-            center=(2+0j),
         )
     """
 ```
@@ -2939,12 +2970,46 @@ def __init__(
     extra_coords: Iterable[float] = (),
     tag: str | None = ',
 ):
-    """
+    """Initializes a FlowMetadata instance.
 
     Args:
         extra_coords: Extra numbers to add to DETECTOR coordinate arguments. By default stimflow
             gives each detector an X, Y, and T coordinate. These numbers go afterward.
         tag: A tag to attach to DETECTOR or OBSERVABLE_INCLUDE instructions.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+
+        >>> def metadata_func(flow: sf.Flow) -> sf.FlowMetadata:
+        ...     if 'postselect' in flow.flags:
+        ...         return sf.FlowMetadata(extra_coords=[-1])
+        ...     elif 'color=r' in flow.flags:
+        ...         return sf.FlowMetadata(tag="red")
+        ...     elif 'color=g' in flow.flags:
+        ...         return sf.FlowMetadata(tag="green", extra_coords=[5, 6, 7])
+        ...     elif 'color=b' in flow.flags:
+        ...         return sf.FlowMetadata(tag="blue")
+        ...     else:
+        ...         raise NotImplementedError(f"Couldn't figure out {flow}")
+
+        >>> compiler = sf.ChunkCompiler(metadata_func=metadata_func)
+        >>> compiler.append(sf.Chunk(
+        ...     circuit=stim.Circuit('''
+        ...         QUBIT_COORDS(0) 0
+        ...         R 0
+        ...     '''),
+        ...     flows=[sf.Flow(end=sf.PauliMap.from_zs([0]), flags={"color=g"})],
+        ... ))
+        >>> compiler.append_magic_end_chunk()
+        >>> compiler.finish_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            R 0
+            TICK
+            MPP Z0
+            DETECTOR[green](0, 0, 0, 5, 6, 7) rec[-1]
+        ''')
     """
 ```
 

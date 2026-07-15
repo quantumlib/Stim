@@ -52,7 +52,6 @@ class Flow:
             stimflow.Flow(
                 start=stimflow.PauliMap({0j: 'X'}),
                 measurement_indices=(1,),
-                center=0j,
             )
         """
         if start is not None and not isinstance(start, (PauliMap, Tile)):
@@ -331,7 +330,11 @@ class Flow:
             lines.append(f"    measurement_indices={self.measurement_indices!r},")
         if self.flags:
             lines.append(f"    flags={self.flags!r},")
-        if self.center is not None:
+        if self.start or self.end:
+            inferred_center = sum([*self.start.keys(), *self.end.keys()]) / (len(self.start) + len(self.end))
+        else:
+            inferred_center = None
+        if inferred_center != self.center:
             lines.append(f"    center={self.center!r},")
         if self.sign is not None:
             lines.append(f"    sign={self.sign!r},")
@@ -383,7 +386,6 @@ class Flow:
                 start=stimflow.PauliMap({(1+0j): 'X'}),
                 end=stimflow.PauliMap({(3+0j): 'Z'}),
                 measurement_indices=(2, 90, 99, 120),
-                center=(2+0j),
             )
         """
         if next_flow.start != self.end:
@@ -449,7 +451,6 @@ class Flow:
                 start=stimflow.PauliMap({(1+0j): 'X', (2+0j): 'Y'}),
                 end=stimflow.PauliMap({(2+0j): 'Y', (3+0j): 'Z'}),
                 measurement_indices=(-10, -1, 2, 20),
-                center=(2+0j),
             )
         """
         if self.obs_name != other.obs_name:

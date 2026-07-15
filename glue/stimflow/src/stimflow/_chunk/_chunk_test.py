@@ -580,3 +580,63 @@ def test_verify_distance():
         ],
     )
     chunk.verify_distance_is_at_least(3)
+
+
+def test_missing_flow_generators():
+    assert stimflow.Chunk(
+        circuit=stim.Circuit("""
+            R 0 1
+            H 0
+            CX 0 1
+        """),
+        flows=[],
+        q2i={0 + 1j: 0, 1 + 1j: 1},
+        o2i={},
+    ).missing_flow_generators() == [
+        stimflow.Flow(end=stimflow.PauliMap.from_xs([1j, 1 + 1j])),
+        stimflow.Flow(end=stimflow.PauliMap.from_zs([1j, 1 + 1j])),
+    ]
+
+    assert stimflow.Chunk(
+        circuit=stim.Circuit("""
+            R 0 1
+            H 0
+            CX 0 1
+        """),
+        flows=[stimflow.Flow(end=stimflow.PauliMap.from_ys([1j, 1 + 1j]))],
+        q2i={0 + 1j: 0, 1 + 1j: 1},
+        o2i={},
+    ).missing_flow_generators() == [
+        stimflow.Flow(end=stimflow.PauliMap.from_zs([1j, 1 + 1j])),
+    ]
+
+    chunk = stimflow.Chunk(
+        circuit=stim.Circuit("""
+            R 1
+            CX 0 1 2 1
+            M 1
+        """),
+        flows=[stimflow.Flow(start=stimflow.PauliMap.from_zs([0 + 1j, 2 + 1j]), measurement_indices=[0])],
+        q2i={0 + 1j: 0, 1 + 1j: 1, 2 + 1j: 2},
+        o2i={},
+    )
+    new_flows = chunk.missing_flow_generators()
+    chunk.with_edits(flows=[*chunk.flows, *new_flows]).verify()
+    assert new_flows == [
+        stimflow.Flow(
+            end=stimflow.PauliMap({(1+1j): 'Z'}),
+            measurement_indices=(0,),
+        ),
+        stimflow.Flow(
+            end=stimflow.PauliMap.from_zs([1j, (2+1j)]),
+            measurement_indices=(0,),
+        ),
+        stimflow.Flow(
+            start=stimflow.PauliMap({(2+1j): 'Z'}),
+            end=stimflow.PauliMap({(2+1j): 'Z'}),
+        ),
+        stimflow.Flow(
+            start=stimflow.PauliMap.from_xs([1j, (2+1j)]),
+            end=stimflow.PauliMap.from_xs([1j, (2+1j)]),
+        ),
+    ]
