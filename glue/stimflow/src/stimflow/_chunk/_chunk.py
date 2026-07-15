@@ -112,7 +112,13 @@ class Chunk:
         """
         flows = tuple(flows)
         if q2i is None:
-            q2i = {x + 1j * y: i for i, (x, y) in circuit.get_final_qubit_coordinates().items()}
+            def coords_to_complex(coords: list[float]) -> complex:
+                if len(coords) == 1:
+                    return complex(coords[0])
+                if len(coords) == 2:
+                    return coords[0] + 1j*coords[1]
+                raise NotImplementedError(f"Don't know how to convert circuit qubit coordinates {coords!r} into a complex position.")
+            q2i = {coords_to_complex(coords): i for i, coords in circuit.get_final_qubit_coordinates().items()}
             for flow in flows:
                 for pauli_string in flow.start, flow.end:
                     for q in pauli_string.keys():
@@ -478,6 +484,7 @@ class Chunk:
         *,
         circuit: stim.Circuit | None = None,
         q2i: dict[complex, int] | None = None,
+        o2i: dict[Any, int] | None = None,
         flows: Iterable[Flow] | None = None,
         discarded_inputs: Iterable[PauliMap] | None = None,
         discarded_outputs: Iterable[PauliMap] | None = None,
@@ -487,6 +494,7 @@ class Chunk:
         return Chunk(
             circuit=self.circuit if circuit is None else circuit,
             q2i=self.q2i if q2i is None else q2i,
+            o2i=self.o2i if o2i is None else o2i,
             flows=self.flows if flows is None else flows,
             discarded_inputs=(
                 self.discarded_inputs if discarded_inputs is None else discarded_inputs
@@ -1039,6 +1047,126 @@ class Chunk:
                 if flow.obs_name is None
             ]
         )
+
+    def missing_flow_generators(self) -> list[Flow]:
+        """Finds linearly independent flow generators that could be added to the chunk.
+
+        This method is intended as a debugging method when you're struggling to identify
+        the flow you forgot to declare. Beware that, just because this method returns a
+        flow, it doesn't mean you should actually declare it. For example, gauges in a
+        subsystem code correspond to flows you likely don't want to declare. Further beware
+        that, just because this method doesn't return a flow, it doesn't mean you don't want
+        to declare it. For example, if you intended to declare the X->X and Y->Y and Z->Z
+        flows of a logical qubit, but forgot to declare the Y->Y, this method will not return
+        that flow (because it's the product of the other two).
+
+        Returns:
+            A list of flows that the chunk's circuit supports, and that are linearly independent
+            of each other and of the existing flows declared by the chunk.
+
+        Raises:
+            ValueError: The flows declared by the chunk aren't valid. Can't infer which ones
+                are missing if the existing ones aren't valid in the first place.
+
+        Examples:
+            >>> import stim
+            >>> import stimflow as sf
+            >>> chunk = sf.Chunk(
+            ...    # Distance 2 rep code idle cycle.
+            ...    circuit=stim.Circuit('''
+            ...         QUBIT_COORDS(0, 0) 0
+            ...         QUBIT_COORDS(1, 0) 1
+            ...         QUBIT_COORDS(2, 0) 2
+            ...         R 1
+            ...         CX 0 1 2 1
+            ...         M 1
+            ...     '''),
+            ...     flows=[
+            ...         sf.Flow(
+            ...             start=sf.PauliMap.from_zs([0, 2]),
+            ...             measurement_indices=[0],
+            ...         ),
+            ...     ],
+            ... )
+
+            >>> for e in chunk.missing_flow_generators():
+            ...     print(e)
+            1 -> Z[1+0j]*rec[0]
+            1 -> Z[0+0j]*Z[2+0j]*rec[0]
+            Z[2+0j] -> Z[2+0j]
+            X[0+0j]*X[2+0j] -> X[0+0j]*X[2+0j]
+    """
+        self.verify(allow_overlapping_flows=True)
+
+        table_flows: list[stim.Flow] = []
+        for flow in self.flows:
+            table_flows.append(flow.to_stim_flow(q2i=self.q2i, o2i=self.o2i))
+        num_existing = len(table_flows)
+        table_flows.extend(self.circuit.flow_generators())
+
+        table_inputs: list[stim.PauliString] = [f.input_copy() for f in table_flows]
+        table_outputs: list[stim.PauliString] = [f.output_copy() for f in table_flows]
+        table_measurements: list[set[int]] = [set(f.measurements_copy()) for f in table_flows]
+
+        used_pivot_rows = set()
+        pivot_funcs = [
+            (self.circuit.num_qubits, lambda row, idx: len(table_inputs[row]) > idx and 1 <= table_inputs[row][idx] <= 2),
+            (self.circuit.num_qubits, lambda row, idx: len(table_inputs[row]) > idx and 2 <= table_inputs[row][idx] <= 3),
+            (self.circuit.num_qubits, lambda row, idx: len(table_outputs[row]) > idx and 1 <= table_outputs[row][idx] <= 2),
+            (self.circuit.num_qubits, lambda row, idx: len(table_outputs[row]) > idx and 2 <= table_outputs[row][idx] <= 3),
+            (self.circuit.num_measurements, lambda row, idx: idx in table_measurements[row]),
+        ]
+
+        def elim_step(q: int, func: Callable):
+            for pivot in range(len(table_flows)):
+                if pivot not in used_pivot_rows and func(pivot, q):
+                    break
+            else:
+                return
+            used_pivot_rows.add(pivot)
+            for row in range(len(table_flows)):
+                if pivot != row and func(row, q):
+                    table_measurements[row] ^= table_measurements[pivot]
+                    table_inputs[row] *= table_inputs[pivot]
+                    table_outputs[row] *= table_outputs[pivot]
+                    table_flows[row] *= table_flows[pivot]
+
+        for num, func in pivot_funcs:
+            for idx in range(num):
+                elim_step(idx, func)
+        i2q = {i: q for q, i in self.q2i.items()}
+        i2o = {i: o for o, i in self.o2i.items()}
+        def s2p(s: stim.PauliString) -> PauliMap:
+            return PauliMap({
+                "X": [i2q[i] for i in s.pauli_indices("X")],
+                "Y": [i2q[i] for i in s.pauli_indices("Y")],
+                "Z": [i2q[i] for i in s.pauli_indices("Z")],
+            })
+
+        outputs: list[Flow] = []
+        for row in range(num_existing, len(table_flows)):
+            flow = table_flows[row]
+            inp = s2p(flow.input_copy())
+            out = s2p(flow.output_copy())
+            ms = flow.measurements_copy()
+            obs = flow.included_observables_copy()
+            if len(obs) > 1:
+                raise NotImplementedError(f'len({flow.included_observables_copy()=}) > 1')
+            if obs:
+                name = i2o.get(obs[0])
+                if name is None:
+                    raise ValueError(f"A missing flow used obs index {obs=} but none of the values in the given {o2i=} matched that obs index.")
+                inp = inp.with_obs_name(name)
+                out = out.with_obs_name(name)
+            if inp or out or ms or obs:
+                outputs.append(Flow(
+                    start=inp,
+                    end=out,
+                    measurement_indices=ms,
+                ))
+
+        return outputs
+
 
 
 def _accumulate_observable_indices_used_by_circuit(circuit: stim.Circuit, *, out: set[int]):
