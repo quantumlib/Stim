@@ -85,3 +85,21 @@ def test_touched() -> None:
         )
     )
     assert layer_repeat.touched() == {0, 1, 2, 3}
+
+    # Test that when self.circuit[0] contains nested CircuitRepeatBlocks, touched()
+    # recursively iterates through all nested repeat blocks to find all qubit targets.
+    layer_nested_repeat = LayerTag(
+        circuit=stim.Circuit(
+            """
+            REPEAT 3 {
+                CX 0 1
+                REPEAT 2 {
+                    CX 2 3
+                    TICK
+                    M 4 5
+                }
+            }
+        """
+        )
+    )
+    assert layer_nested_repeat.touched() == {0, 1, 2, 3, 4, 5}
