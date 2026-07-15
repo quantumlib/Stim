@@ -138,6 +138,17 @@ class Chunk:
             for flow in flows:
                 if flow.obs_name is not None and flow.obs_name not in o2i:
                     o2i[flow.obs_name] = len(o2i)
+        else:
+            for k, v in o2i.items():
+                if isinstance(k, PauliMap):
+                    obs_name_repr = 'some_observable_name' if k.obs_name is None else repr(k.obs_name)
+                    raise ValueError(
+                        f"Used an observable, instead of its name, as a key for o2i.\n"
+                        f"Did you mean\n"
+                        f"    o2i={{..., {obs_name_repr}: {v!r}, ...}}\n"
+                        f"instead of\n"
+                        f"    o2i={{..., {k!r}: {v!r}, ...}}\n"
+                        f"?")
 
         self.q2i: dict[complex, int] = q2i
         self.o2i: dict[Any, int] = o2i
@@ -321,6 +332,8 @@ class Chunk:
     def __repr__(self) -> str:
         lines = ["stimflow.Chunk("]
         lines.append(f"    q2i={self.q2i!r},")
+        if self.o2i:
+            lines.append(f"    o2i={self.o2i!r},")
         lines.append(f"    circuit={self.circuit!r},".replace("\n", "\n    "))
         if self.flows:
             lines.append(f"    flows=[")
@@ -538,10 +551,65 @@ class Chunk:
         self,
         *,
         max_search_weight: int,
-        noise: float | NoiseModel = 1e-3,
+        noise: float | NoiseModel | None = 1e-3,
         noiseless_qubits: Iterable[float | int | complex] = (),
         skip_adding_noise: bool = False,
     ) -> int:
+        """Searches for logical errors and returns the length of the shortest one found.
+
+        Args:
+            max_search_weight: Determines how the search is truncated. The search process
+                will ignore errors, or combinations of errors, that produce more detection
+                events than this value. Set to `2` to search for graphlike errors.
+            noise: Determines the noise model to use. If set to a float, then uniform
+                depolarizing noise is used (with the float used as the noise parameter).
+                Defaults to 1e-3 uniform depolarizing noise. If set to None, no noise
+                is added to the circuit (e.g. you may use this if the circuit already
+                contains noise instructions). Can be also be set to an `sf.NoiseModel`.
+            noiseless_qubits: Qubits to not add any noise to when applying the noise
+                model.
+            skip_adding_noise: Defaults to False. When set to True, skips applying the
+                specified noise model to the qubits. This is just a "nicer to read"
+                version of setting `noise=None`.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> import stim
+
+            >>> # Check that a distance 3 rep code protects the Z logical.
+            >>> obs_z = sf.PauliMap({"Z": [0]}, obs_name="LZ")
+            >>> chunk = sf.Chunk(
+            ...     circuit=stim.Circuit('''
+            ...         QUBIT_COORDS(0, 0) 0
+            ...         QUBIT_COORDS(1, 0) 1
+            ...         QUBIT_COORDS(2, 0) 2
+            ...         QUBIT_COORDS(3, 0) 3
+            ...         QUBIT_COORDS(4, 0) 4
+            ...         R 1 3
+            ...         CX 0 1 2 3
+            ...         CX 4 3 2 1
+            ...         M 1 3
+            ...     '''),
+            ...     flows=[
+            ...         sf.Flow(start=sf.PauliMap({"Z": [0, 2]}), measurement_indices=[0]),
+            ...         sf.Flow(end=sf.PauliMap({"Z": [0, 2]}), measurement_indices=[0]),
+            ...         sf.Flow(start=sf.PauliMap({"Z": [2, 4]}), measurement_indices=[1]),
+            ...         sf.Flow(end=sf.PauliMap({"Z": [2, 4]}), measurement_indices=[1]),
+            ...         sf.Flow(start=obs_z, end=obs_z),
+            ...     ],
+            ... )
+            >>> chunk.find_distance(max_search_weight=2)
+            3
+
+            >>> # ...but the X logical isn't protected.
+            >>> obs_x = sf.PauliMap({"X": [0, 2, 4]}, obs_name="LX")
+            >>> chunk = chunk.with_edits(flows=[
+            ...     *chunk.flows,
+            ...     sf.Flow(start=obs_x, end=obs_x),
+            ... ])
+            >>> chunk.find_distance(max_search_weight=2)
+            1
+        """
         err = self.find_logical_error(
             max_search_weight=max_search_weight,
             noise=noise,
@@ -550,11 +618,69 @@ class Chunk:
         )
         return len(err)
 
-    def to_closed_circuit(self) -> stim.Circuit:
-        """Compiles the chunk into a circuit by conjugating with mpp init/end chunks."""
+    def to_closed_circuit(self, *, skip_verification: bool = False) -> stim.Circuit:
+        """Compiles the chunk into a circuit with magical flow initialization / termination.
+
+        Observable flows will be terminated with `OBSERVABLE_INCLUDE` instructions targeting
+        Pauli terms. This allows anticommuting observables to be simultaneously tested when
+        simulating the circuit. Non-observable flows are terminated by `MPP` instructions.
+
+        Args:
+            skip_verification: Defaults to False. When set to False, the method will
+                fail with an error if the chunk is malformed (e.g. declares flows that
+                its circuit doesn't have). When set to True, these errors will be
+                ignored.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> import stim
+            >>> obs_x = sf.PauliMap({"X": [0, 2]}, obs_name="LX")
+            >>> obs_z = sf.PauliMap({"Z": [0]}, obs_name="LZ")
+            >>> chunk = sf.Chunk(
+            ...     circuit=stim.Circuit('''
+            ...         QUBIT_COORDS(0, 0) 0
+            ...         QUBIT_COORDS(1, 0) 1
+            ...         QUBIT_COORDS(2, 0) 2
+            ...         R 1
+            ...         CX 0 1
+            ...         CX 2 1
+            ...         M 1
+            ...     '''),
+            ...     flows=[
+            ...         sf.Flow(start=sf.PauliMap({"Z": [0, 2]}), measurement_indices=[0]),
+            ...         sf.Flow(end=sf.PauliMap({"Z": [0, 2]}), measurement_indices=[0]),
+            ...         sf.Flow(start=obs_x, end=obs_x),
+            ...         sf.Flow(start=obs_z, end=obs_z),
+            ...     ],
+            ... )
+            >>> chunk.to_closed_circuit()
+            stim.Circuit('''
+                QUBIT_COORDS(0, 0) 0
+                QUBIT_COORDS(1, 0) 1
+                QUBIT_COORDS(2, 0) 2
+                OBSERVABLE_INCLUDE(0) X0 X2
+                TICK
+                OBSERVABLE_INCLUDE(1) Z0
+                TICK
+                MPP Z0*Z2
+                TICK
+                R 1
+                CX 0 1 2 1
+                M 1
+                DETECTOR(1, 0, 0) rec[-2] rec[-1]
+                SHIFT_COORDS(0, 0, 1)
+                TICK
+                MPP Z0*Z2
+                DETECTOR(1, 0, 0) rec[-2] rec[-1]
+                TICK
+                OBSERVABLE_INCLUDE(0) X0 X2
+                TICK
+                OBSERVABLE_INCLUDE(1) Z0
+            ''')
+        """
         from stimflow._chunk._chunk_compiler import ChunkCompiler
 
-        compiler = ChunkCompiler()
+        compiler = ChunkCompiler(skip_verification_before_append=True)
         compiler.append_magic_init_chunk(self.start_interface())
         compiler.append(self)
         compiler.append_magic_end_chunk(self.end_interface())
@@ -617,7 +743,7 @@ class Chunk:
         self,
         *,
         max_search_weight: int,
-        noise: float | NoiseModel = 1e-3,
+        noise: float | NoiseModel | None = 1e-3,
         noiseless_qubits: Iterable[float | int | complex] = (),
         skip_adding_noise: bool = False,
     ) -> list[stim.ExplainedError]:
@@ -625,9 +751,10 @@ class Chunk:
         if not skip_adding_noise:
             if isinstance(noise, float):
                 noise = NoiseModel.uniform_depolarizing(1e-3, allow_multiple_uses_of_a_qubit_in_one_tick=True)
-            circuit = noise.noisy_circuit_skipping_mpp_boundaries(
-                circuit, immune_qubit_coords=noiseless_qubits
-            )
+            if noise is not None:
+                circuit = noise.noisy_circuit_skipping_mpp_boundaries(
+                    circuit, immune_qubit_coords=noiseless_qubits
+                )
         if max_search_weight == 2:
             return circuit.shortest_graphlike_error(canonicalize_circuit_errors=True)
         return circuit.search_for_undetectable_logical_errors(

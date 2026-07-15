@@ -61,7 +61,7 @@ def html_viewer(
         )
 
     elif isinstance(obj, Chunk):
-        circuit = obj.to_closed_circuit()
+        circuit = obj.to_closed_circuit(skip_verification=True)
         if background is None:
             start = obj.start_patch()
             end = obj.end_patch()

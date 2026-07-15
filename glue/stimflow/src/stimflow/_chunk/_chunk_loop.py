@@ -27,6 +27,31 @@ class ChunkLoop:
 
     For duck typing purposes, many methods supported by Chunk are supported by
     ChunkLoop.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+        >>> lz = sf.PauliMap({0: 'Z'}, obs_name='L_ZI')
+        >>> lx = sf.PauliMap({0: 'X', 1 + 1j: 'X'}, obs_name='L_XX')
+        >>> idle_chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(0, 1) 1
+        ...         QUBIT_COORDS(1, 1) 2
+        ...         R 1
+        ...         CX 0 1 2 1
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=zz, measurement_indices=[0]),
+        ...         sf.Flow(end=zz, measurement_indices=[0]),
+        ...         sf.Flow(start=lz, end=lz),
+        ...         sf.Flow(start=lx, end=lx),
+        ...     ]
+        ... )
+        >>> idle_ten_times = sf.ChunkLoop([idle_chunk], repetitions=10)
+        >>> idle_ten_times.verify()
     """
 
     def __init__(self, chunks: Iterable[Chunk | ChunkLoop], repetitions: int):
