@@ -1053,12 +1053,12 @@ class Chunk:
 
         This method is intended as a debugging method when you're struggling to identify
         the flow you forgot to declare. Beware that, just because this method returns a
-        flow, it doesn't you should actually declare it. For example, gauges in a subsystem
-        code correspond to flows you likely don't want to declare. Further beware that, just
-        because this method doesn't return a flow, it doesn't mean you don't want to declare
-        it. For example, if you intended to declare the X->X and Y->Y and Z->Z flows of a
-        logical qubit, but forgot to declare the Y->Y, this method will not return that flow
-        (because it's the product of the other two).
+        flow, it doesn't mean you should actually declare it. For example, gauges in a
+        subsystem code correspond to flows you likely don't want to declare. Further beware
+        that, just because this method doesn't return a flow, it doesn't mean you don't want
+        to declare it. For example, if you intended to declare the X->X and Y->Y and Z->Z
+        flows of a logical qubit, but forgot to declare the Y->Y, this method will not return
+        that flow (because it's the product of the other two).
 
         Returns:
             A list of flows that the chunk's circuit supports, and that are linearly independent
