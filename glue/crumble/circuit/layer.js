@@ -2,6 +2,15 @@ import {Operation} from "./operation.js"
 import {GATE_MAP} from "../gates/gateset.js";
 import {groupBy} from "../base/seq.js";
 
+/**
+ * @type {!Map<!string, !string>}
+ */
+const DEMOLITION_MEASURE_BASIS = new Map([
+    ['MR', 'Z'],
+    ['MRX', 'X'],
+    ['MRY', 'Y'],
+]);
+
 class Layer {
     constructor() {
         this.id_ops = /** @type {!Map<!int, !Operation>} */ new Map();
@@ -220,6 +229,16 @@ class Layer {
         let after = new Map();
         let handled = new Set();
 
+        // Record qubits involved in demolition measurements (measure + reset)
+        let demolitionResetQubits = new Set();
+        for (let op of this.id_ops.values()) {
+            if (DEMOLITION_MEASURE_BASIS.has(op.gate.name)) {
+                for (let q of op.id_targets) {
+                    demolitionResetQubits.add(q);
+                }
+            }
+        }
+
         for (let k of before.keys()) {
             let v = before.get(k);
             let op = this.id_ops.get(k);
@@ -237,19 +256,33 @@ class Layer {
                     }
                     b += r;
                 }
-                let a = op.pauliFrameAfter(b);
-                let hasErr = a.startsWith('ERR:');
-                for (let qi = 0; qi < op.id_targets.length; qi++) {
-                    let q = op.id_targets[qi];
-                    if (hasErr) {
-                        after.set(q, 'ERR:' + a[4 + qi]);
-                    } else {
-                        after.set(q, a[qi]);
+                let demolitionBasis = DEMOLITION_MEASURE_BASIS.get(op.gate.name);
+                if (demolitionBasis !== undefined) {
+                    // Only measure now. Defer reset until after markers are handled
+                    let q = op.id_targets[0];
+                    let c = b[0];
+                    after.set(q, (c === 'I' || c === demolitionBasis) ? c : 'ERR:' + c);
+                } else {
+                    let a = op.pauliFrameAfter(b);
+                    let hasErr = a.startsWith('ERR:');
+                    for (let qi = 0; qi < op.id_targets.length; qi++) {
+                        let q = op.id_targets[qi];
+                        if (hasErr) {
+                            after.set(q, 'ERR:' + a[4 + qi]);
+                        } else {
+                            after.set(q, a[qi]);
+                        }
                     }
                 }
             } else {
                 after.set(k, v);
             }
+        }
+
+        // Snapshot operators before reset to distinguish incoming from outgoing markers later
+        let demolitionIncoming = new Map();
+        for (let q of demolitionResetQubits) {
+            demolitionIncoming.set(q, after.get(q));
         }
 
         for (let op of this.markers) {
@@ -293,6 +326,18 @@ class Layer {
                 }
                 after.set(key, pauli);
             }
+        }
+
+        // Apply deferred resets
+        for (let q of demolitionResetQubits) {
+            let incoming = demolitionIncoming.get(q);
+            if (incoming === undefined || incoming === 'I') {
+                // Nothing at reset: a marker here denotes an outgoing operator
+                continue;
+            }
+            // Operator at reset: clean if a marker captured it (now I), else lost (ERR)
+            let post = after.get(q);
+            after.set(q, (post === undefined || post === 'I') ? 'I' : 'ERR:I');
         }
 
         return after;
