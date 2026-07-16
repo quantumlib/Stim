@@ -15,8 +15,17 @@ class LayerTag(Layer):
         return LayerTag(circuit=self.circuit)
 
     def touched(self) -> set[int]:  # set of qubit touched by it
-        tagged_gate_targets = self.circuit[0].target_groups()[0]
-        return {gate_target.qubit_value for gate_target in tagged_gate_targets}
+        stack = [self.circuit[0]]
+        out = set()
+        while stack:
+            cur = stack.pop()
+            if isinstance(cur, stim.CircuitRepeatBlock):
+                stack.extend(cur.body_copy())
+            else:
+                for target in cur.targets_copy():
+                    if target.is_qubit_target:
+                        out.add(target.qubit_value)
+        return out
 
     def to_z_basis(self) -> list[Layer]:
         return [self]
