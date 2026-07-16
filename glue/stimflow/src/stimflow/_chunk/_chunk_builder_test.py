@@ -1,13 +1,14 @@
 import numpy as np
 import stim
 
+import pytest
 import stimflow
 
 
 def test_builder_init():
     builder = stimflow.ChunkBuilder([0, 1j, 3 + 2j])
     assert builder.q2i == {0: 0, 1j: 1, 3 + 2j: 2}
-    assert builder.circuit == stim.Circuit(
+    assert builder.finish_chunk().circuit == stim.Circuit(
         """
         """
     )
@@ -17,7 +18,7 @@ def test_append_tick():
     builder = stimflow.ChunkBuilder([0])
     builder.append("TICK")
     builder.append("TICK")
-    assert builder.circuit == stim.Circuit(
+    assert builder.finish_chunk().circuit == stim.Circuit(
         """
         TICK
         TICK
@@ -28,7 +29,7 @@ def test_append_tick():
 def test_append_shift_coords():
     builder = stimflow.ChunkBuilder([0])
     builder.append("SHIFT_COORDS", arg=[0, 0, 1])
-    assert builder.circuit == stim.Circuit(
+    assert builder.finish_chunk().circuit == stim.Circuit(
         """
         SHIFT_COORDS(0, 0, 1)
         """
@@ -62,7 +63,7 @@ def test_append_measurements_canonical_order():
     assert builder.lookup_measurement_indices([(2, 5)]) == [3]
     assert builder.lookup_measurement_indices([(3, 4)]) == [4]
 
-    assert builder.circuit == stim.Circuit(
+    assert builder.finish_chunk().circuit == stim.Circuit(
         """
         MX 2 3 5
         MZZ 2 5 3 4
@@ -79,7 +80,7 @@ def test_append_mpp():
     assert builder.lookup_measurement_indices([xxx]) == [0]
     assert builder.lookup_measurement_indices([z_z]) == [1]
 
-    assert builder.circuit == stim.Circuit(
+    assert builder.finish_chunk().circuit == stim.Circuit(
         """
         MPP X0*X1*X2 Z0*Z2
         """
@@ -93,7 +94,7 @@ def test_append_observable_include():
     builder.append("M", [2 + 3j, 5 + 7j, 11 + 13j], measure_key_func=lambda e: (e, "X"))
     builder.append("OBSERVABLE_INCLUDE", [(5 + 7j, "X")], arg=2)
 
-    assert builder.circuit == stim.Circuit(
+    assert builder.finish_chunk().circuit == stim.Circuit(
         """
         R 1
         M 0 1 2
@@ -109,7 +110,7 @@ def test_append_detector():
     builder.append("M", [2 + 3j, 5 + 7j, 11 + 13j], measure_key_func=lambda e: (e, "X"))
     builder.append("DETECTOR", [(5 + 7j, "X")], arg=[2, 3, 5])
 
-    assert builder.circuit == stim.Circuit(
+    assert builder.finish_chunk().circuit == stim.Circuit(
         """
         R 1
         M 0 1 2
@@ -168,7 +169,7 @@ def test_make_surface_code_first_round():
     for z in stimflow.sorted_complex(mzs):
         builder.append("DETECTOR", [z], arg=[z.real, z.imag, 0])
 
-    assert builder.circuit == stim.Circuit(
+    assert builder.finish_chunk().circuit == stim.Circuit(
         """
         RX 0 7 9 16
         R 1 2 3 4 5 6 8 10 11 12 13 14 15
@@ -194,7 +195,7 @@ def test_make_surface_code_first_round():
 def test_skip_unknown_1qm():
     builder = stimflow.ChunkBuilder(allowed_qubits=[0, 1, 2, 3])
     builder.append("M", [2, -1, 1, 25, 3], unknown_qubit_append_mode="skip")
-    assert builder.circuit == stim.Circuit(
+    assert builder.finish_chunk().circuit == stim.Circuit(
         """
         M 1 2 3
     """
@@ -208,13 +209,82 @@ def test_skip_unknown_2qm():
     builder = stimflow.ChunkBuilder(allowed_qubits=[0, 1, 2, 3])
     builder.append("MZZ", [(2, 3), (-1, 5), (0, 1)], unknown_qubit_append_mode="skip")
     assert builder.q2i == {0: 0, 1: 1, 2: 2, 3: 3}
-    assert builder.circuit == stim.Circuit(
+    assert builder.finish_chunk().circuit == stim.Circuit(
         """
         MZZ 0 1 2 3
-    """
+        """
     )
     assert builder.lookup_measurement_indices([(0, 1)]) == builder.lookup_measurement_indices([(1, 0)]) == [0]
     assert builder.lookup_measurement_indices([(2, 3)]) == builder.lookup_measurement_indices([(3, 2)]) == [1]
+
+
+def test_single_qubit_gate_coalescing_across_multiple_calls():
+    builder = stimflow.ChunkBuilder(allowed_qubits=range(10))
+    builder.append("H", [4, 5])
+    builder.append("H_XZ", [1, 0])
+    builder.append("H", [11], unknown_qubit_append_mode='skip')
+    builder.append("H", [12], unknown_qubit_append_mode='include')
+    chunk = builder.finish_chunk()
+    assert chunk.q2i[12] == 10
+    assert chunk.circuit == stim.Circuit(
+        """
+        H 0 1 4 5 10
+        """
+    )
+
+
+def test_two_qubit_gate_coalescing_across_multiple_calls():
+    builder = stimflow.ChunkBuilder(allowed_qubits=range(10))
+    builder.append("CX", [(4, 5), (6, 7)])
+    builder.append("ZCX", [(1, 0)])
+    builder.append("XCZ", [(2, 3)])
+    builder.append("CX", [(0, 4)])
+    builder.append("CX", [(3, 12)], unknown_qubit_append_mode='skip')
+    builder.append("CX", [(2, 13)], unknown_qubit_append_mode='include')
+    chunk = builder.finish_chunk()
+    assert chunk.q2i[13] == 10
+    assert chunk.circuit == stim.Circuit(
+        """
+        CX 1 0 3 2 4 5 6 7 0 4 2 10
+        """
+    )
+
+    builder = stimflow.ChunkBuilder(allowed_qubits=range(10))
+    builder.append("CX", [(4, 5)])
+    builder.append("CX", [(1, 0)])
+    builder.append("CZ", [(2, 3)])
+    builder.append("CX", [(6, 7)])
+    assert builder.finish_chunk().circuit == stim.Circuit(
+        """
+        CX 1 0 4 5
+        CZ 2 3
+        CX 6 7
+        """
+    )
+
+    builder = stimflow.ChunkBuilder(allowed_qubits=range(10))
+    builder.append("CX", [(4, 5)])
+    builder.append("CX", [(1, 0)])
+    builder.append("TICK")
+    builder.append("CX", [(6, 7)])
+    assert builder.finish_chunk().circuit == stim.Circuit(
+        """
+        CX 1 0 4 5
+        TICK
+        CX 6 7
+        """
+    )
+
+    builder = stimflow.ChunkBuilder(allowed_qubits=range(10))
+    builder.append("CZ", [(4, 5)])
+    builder.append("CZ", [(1, 0)])
+    builder.append("CZ", [(2, 3)])
+    builder.append("CZ", [(0, 4)])
+    assert builder.finish_chunk().circuit == stim.Circuit(
+        """
+        CZ 0 1 2 3 4 5 0 4
+        """
+    )
 
 
 def test_partial_observable_include_memory_experiment():
@@ -339,3 +409,28 @@ def test_auto_obs():
             center=1,
         ),
     )
+
+
+def test_obs_indexing():
+    builder = stimflow.ChunkBuilder()
+    with pytest.raises(ValueError, match="index"):
+        builder.append("OBSERVABLE_INCLUDE", stimflow.PauliMap({"Z": [0]}))
+    assert builder.o2i.get('LL') is None
+    builder.append("OBSERVABLE_INCLUDE", stimflow.PauliMap({"Z": [0]}, obs_name='LL'))
+    assert builder.o2i.get('LL') == 0
+    builder.add_obs_name_index('LL', 0)
+    with pytest.raises(ValueError, match="different index"):
+        builder.add_obs_name_index('LL', 1)
+    assert builder.finish_chunk().circuit == stim.Circuit("""
+        OBSERVABLE_INCLUDE(0) Z0
+    """)
+
+    builder = stimflow.ChunkBuilder()
+    builder.add_obs_name_index('LL', 3)
+    assert builder.o2i.get('LL') == 3
+    with pytest.raises(ValueError, match="inconsistent"):
+        builder.append("OBSERVABLE_INCLUDE", stimflow.PauliMap({"Z": [0]}, obs_name='LL'), arg=2)
+    builder.append("OBSERVABLE_INCLUDE", stimflow.PauliMap({"Z": [0]}, obs_name='LL'))
+    assert builder.finish_chunk().circuit == stim.Circuit("""
+        OBSERVABLE_INCLUDE(3) Z0
+    """)

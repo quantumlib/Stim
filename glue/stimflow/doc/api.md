@@ -10,6 +10,7 @@
     - [`stimflow.Chunk.find_logical_error`](#stimflow.Chunk.find_logical_error)
     - [`stimflow.Chunk.flattened`](#stimflow.Chunk.flattened)
     - [`stimflow.Chunk.from_circuit_with_mpp_boundaries`](#stimflow.Chunk.from_circuit_with_mpp_boundaries)
+    - [`stimflow.Chunk.missing_flow_generators`](#stimflow.Chunk.missing_flow_generators)
     - [`stimflow.Chunk.start_code`](#stimflow.Chunk.start_code)
     - [`stimflow.Chunk.start_interface`](#stimflow.Chunk.start_interface)
     - [`stimflow.Chunk.start_patch`](#stimflow.Chunk.start_patch)
@@ -31,6 +32,7 @@
     - [`stimflow.ChunkBuilder.add_discarded_flow_input`](#stimflow.ChunkBuilder.add_discarded_flow_input)
     - [`stimflow.ChunkBuilder.add_discarded_flow_output`](#stimflow.ChunkBuilder.add_discarded_flow_output)
     - [`stimflow.ChunkBuilder.add_flow`](#stimflow.ChunkBuilder.add_flow)
+    - [`stimflow.ChunkBuilder.add_obs_name_index`](#stimflow.ChunkBuilder.add_obs_name_index)
     - [`stimflow.ChunkBuilder.append`](#stimflow.ChunkBuilder.append)
     - [`stimflow.ChunkBuilder.append_feedback`](#stimflow.ChunkBuilder.append_feedback)
     - [`stimflow.ChunkBuilder.finish_chunk`](#stimflow.ChunkBuilder.finish_chunk)
@@ -391,10 +393,65 @@ def find_distance(
     self,
     *,
     max_search_weight: int,
-    noise: float | NoiseModel = 0.001,
+    noise: float | NoiseModel | None = 0.001,
     noiseless_qubits: Iterable[float | int | complex] = (),
     skip_adding_noise: bool = False,
 ) -> int:
+    """Searches for logical errors and returns the length of the shortest one found.
+
+    Args:
+        max_search_weight: Determines how the search is truncated. The search process
+            will ignore errors, or combinations of errors, that produce more detection
+            events than this value. Set to `2` to search for graphlike errors.
+        noise: Determines the noise model to use. If set to a float, then uniform
+            depolarizing noise is used (with the float used as the noise parameter).
+            Defaults to 1e-3 uniform depolarizing noise. If set to None, no noise
+            is added to the circuit (e.g. you may use this if the circuit already
+            contains noise instructions). Can be also be set to an `sf.NoiseModel`.
+        noiseless_qubits: Qubits to not add any noise to when applying the noise
+            model.
+        skip_adding_noise: Defaults to False. When set to True, skips applying the
+            specified noise model to the qubits. This is just a "nicer to read"
+            version of setting `noise=None`.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> import stim
+
+        >>> # Check that a distance 3 rep code protects the Z logical.
+        >>> obs_z = sf.PauliMap({"Z": [0]}, obs_name="LZ")
+        >>> chunk = sf.Chunk(
+        ...     circuit=stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(1, 0) 1
+        ...         QUBIT_COORDS(2, 0) 2
+        ...         QUBIT_COORDS(3, 0) 3
+        ...         QUBIT_COORDS(4, 0) 4
+        ...         R 1 3
+        ...         CX 0 1 2 3
+        ...         CX 4 3 2 1
+        ...         M 1 3
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=sf.PauliMap({"Z": [0, 2]}), measurement_indices=[0]),
+        ...         sf.Flow(end=sf.PauliMap({"Z": [0, 2]}), measurement_indices=[0]),
+        ...         sf.Flow(start=sf.PauliMap({"Z": [2, 4]}), measurement_indices=[1]),
+        ...         sf.Flow(end=sf.PauliMap({"Z": [2, 4]}), measurement_indices=[1]),
+        ...         sf.Flow(start=obs_z, end=obs_z),
+        ...     ],
+        ... )
+        >>> chunk.find_distance(max_search_weight=2)
+        3
+
+        >>> # ...but the X logical isn't protected.
+        >>> obs_x = sf.PauliMap({"X": [0, 2, 4]}, obs_name="LX")
+        >>> chunk = chunk.with_edits(flows=[
+        ...     *chunk.flows,
+        ...     sf.Flow(start=obs_x, end=obs_x),
+        ... ])
+        >>> chunk.find_distance(max_search_weight=2)
+        1
+    """
 ```
 
 <a name="stimflow.Chunk.find_logical_error"></a>
@@ -406,7 +463,7 @@ def find_logical_error(
     self,
     *,
     max_search_weight: int,
-    noise: float | NoiseModel = 0.001,
+    noise: float | NoiseModel | None = 0.001,
     noiseless_qubits: Iterable[float | int | complex] = (),
     skip_adding_noise: bool = False,
 ) -> list[stim.ExplainedError]:
@@ -432,6 +489,63 @@ def flattened(
 def from_circuit_with_mpp_boundaries(
     circuit: stim.Circuit,
 ) -> Chunk:
+```
+
+<a name="stimflow.Chunk.missing_flow_generators"></a>
+```python
+# stimflow.Chunk.missing_flow_generators
+
+# (in class stimflow.Chunk)
+def missing_flow_generators(
+    self,
+) -> list[Flow]:
+    """Finds linearly independent flow generators that could be added to the chunk.
+
+    This method is intended as a debugging method when you're struggling to identify
+    the flow you forgot to declare. Beware that, just because this method returns a
+    flow, it doesn't mean you should actually declare it. For example, gauges in a
+    subsystem code correspond to flows you likely don't want to declare. Further beware
+    that, just because this method doesn't return a flow, it doesn't mean you don't want
+    to declare it. For example, if you intended to declare the X->X and Y->Y and Z->Z
+    flows of a logical qubit, but forgot to declare the Y->Y, this method will not return
+    that flow (because it's the product of the other two).
+
+    Returns:
+        A list of flows that the chunk's circuit supports, and that are linearly independent
+        of each other and of the existing flows declared by the chunk.
+
+    Raises:
+        ValueError: The flows declared by the chunk aren't valid. Can't infer which ones
+            are missing if the existing ones aren't valid in the first place.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> chunk = sf.Chunk(
+        ...    # Distance 2 rep code idle cycle.
+        ...    circuit=stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(1, 0) 1
+        ...         QUBIT_COORDS(2, 0) 2
+        ...         R 1
+        ...         CX 0 1 2 1
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(
+        ...             start=sf.PauliMap.from_zs([0, 2]),
+        ...             measurement_indices=[0],
+        ...         ),
+        ...     ],
+        ... )
+
+        >>> for e in chunk.missing_flow_generators():
+        ...     print(e)
+        1 -> Z[1+0j]*rec[0]
+        1 -> Z[0+0j]*Z[2+0j]*rec[0]
+        Z[2+0j] -> Z[2+0j]
+        X[0+0j]*X[2+0j] -> X[0+0j]*X[2+0j]
+    """
 ```
 
 <a name="stimflow.Chunk.start_code"></a>
@@ -498,8 +612,67 @@ def time_reversed(
 # (in class stimflow.Chunk)
 def to_closed_circuit(
     self,
+    *,
+    skip_verification: bool = False,
 ) -> stim.Circuit:
-    """Compiles the chunk into a circuit by conjugating with mpp init/end chunks.
+    """Compiles the chunk into a circuit with magical flow initialization / termination.
+
+    Observable flows will be terminated with `OBSERVABLE_INCLUDE` instructions targeting
+    Pauli terms. This allows anticommuting observables to be simultaneously tested when
+    simulating the circuit. Non-observable flows are terminated by `MPP` instructions.
+
+    Args:
+        skip_verification: Defaults to False. When set to False, the method will
+            fail with an error if the chunk is malformed (e.g. declares flows that
+            its circuit doesn't have). When set to True, these errors will be
+            ignored.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> import stim
+        >>> obs_x = sf.PauliMap({"X": [0, 2]}, obs_name="LX")
+        >>> obs_z = sf.PauliMap({"Z": [0]}, obs_name="LZ")
+        >>> chunk = sf.Chunk(
+        ...     circuit=stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(1, 0) 1
+        ...         QUBIT_COORDS(2, 0) 2
+        ...         R 1
+        ...         CX 0 1
+        ...         CX 2 1
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=sf.PauliMap({"Z": [0, 2]}), measurement_indices=[0]),
+        ...         sf.Flow(end=sf.PauliMap({"Z": [0, 2]}), measurement_indices=[0]),
+        ...         sf.Flow(start=obs_x, end=obs_x),
+        ...         sf.Flow(start=obs_z, end=obs_z),
+        ...     ],
+        ... )
+        >>> chunk.to_closed_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            QUBIT_COORDS(1, 0) 1
+            QUBIT_COORDS(2, 0) 2
+            OBSERVABLE_INCLUDE(0) X0 X2
+            TICK
+            OBSERVABLE_INCLUDE(1) Z0
+            TICK
+            MPP Z0*Z2
+            TICK
+            R 1
+            CX 0 1 2 1
+            M 1
+            DETECTOR(1, 0, 0) rec[-2] rec[-1]
+            SHIFT_COORDS(0, 0, 1)
+            TICK
+            MPP Z0*Z2
+            DETECTOR(1, 0, 0) rec[-2] rec[-1]
+            TICK
+            OBSERVABLE_INCLUDE(0) X0 X2
+            TICK
+            OBSERVABLE_INCLUDE(1) Z0
+        ''')
     """
 ```
 
@@ -606,6 +779,7 @@ def with_edits(
     *,
     circuit: stim.Circuit | None = None,
     q2i: dict[complex, int] | None = None,
+    o2i: dict[Any, int] | None = None,
     flows: Iterable[Flow] | None = None,
     discarded_inputs: Iterable[PauliMap] | None = None,
     discarded_outputs: Iterable[PauliMap] | None = None,
@@ -700,50 +874,66 @@ class ChunkBuilder:
         >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_obs_name("LZ")
         >>> builder.add_flow(start=obs, end=obs)
         >>> chunk = builder.finish_chunk()
-
         >>> chunk.verify()
-        >>> print(chunk.to_closed_circuit())
-        QUBIT_COORDS(0, 0) 0
-        QUBIT_COORDS(0.5, 0) 1
-        QUBIT_COORDS(1, 0) 2
-        QUBIT_COORDS(1.5, 0) 3
-        QUBIT_COORDS(2, 0) 4
-        QUBIT_COORDS(2.5, 0) 5
-        QUBIT_COORDS(3, 0) 6
-        QUBIT_COORDS(3.5, 0) 7
-        QUBIT_COORDS(4, 0) 8
-        QUBIT_COORDS(4.5, 0) 9
-        QUBIT_COORDS(5, 0) 10
-        OBSERVABLE_INCLUDE(0) Z0
-        TICK
-        MPP Z0*Z2 Z4*Z6 Z8*Z10
-        TICK
-        MPP Z2*Z4 Z6*Z8
-        TICK
-        R 9 7 5 3 1
-        TICK
-        CX 8 9 6 7 4 5 2 3 0 1
-        TICK
-        CX 8 7 6 5 4 3 2 1 10 9
-        TICK
-        M 9 7 5 3 1
-        DETECTOR(4.5, 0, 0) rec[-8] rec[-5]
-        DETECTOR(3.5, 0, 0) rec[-6] rec[-4]
-        DETECTOR(2.5, 0, 0) rec[-9] rec[-3]
-        DETECTOR(1.5, 0, 0) rec[-7] rec[-2]
-        DETECTOR(0.5, 0, 0) rec[-10] rec[-1]
-        SHIFT_COORDS(0, 0, 1)
-        TICK
-        MPP Z0*Z2 Z4*Z6 Z8*Z10
-        TICK
-        MPP Z2*Z4 Z6*Z8
-        DETECTOR(0.5, 0, 0) rec[-6] rec[-5]
-        DETECTOR(2.5, 0, 0) rec[-8] rec[-4]
-        DETECTOR(4.5, 0, 0) rec[-10] rec[-3]
-        DETECTOR(1.5, 0, 0) rec[-7] rec[-2]
-        DETECTOR(3.5, 0, 0) rec[-9] rec[-1]
-        TICK
-        OBSERVABLE_INCLUDE(0) Z0
+        >>> chunk
+        stimflow.Chunk(
+            q2i={4.5: 0, 3.5: 1, 2.5: 2, 1.5: 3, 0.5: 4, 4.0: 5, 3.0: 6, 2.0: 7, 1.0: 8, 0.0: 9, 5.0: 10},
+            circuit=stim.Circuit('''
+                R 0 1 2 3 4
+                TICK
+                CX 5 0 6 1 7 2 8 3 9 4
+                TICK
+                CX 5 1 6 2 7 3 8 4 10 0
+                TICK
+                M 0 1 2 3 4
+            '''),
+            flows=[
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
+                    measurement_indices=(0,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
+                    measurement_indices=(0,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
+                    measurement_indices=(1,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
+                    measurement_indices=(1,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
+                    measurement_indices=(2,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
+                    measurement_indices=(2,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
+                    measurement_indices=(3,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
+                    measurement_indices=(3,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([0j, (1+0j)]),
+                    measurement_indices=(4,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([0j, (1+0j)]),
+                    measurement_indices=(4,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
+                    end=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
+                ),
+            ],
+        )
     """
 ```
 
@@ -1028,6 +1218,43 @@ def add_flow(
     """
 ```
 
+<a name="stimflow.ChunkBuilder.add_obs_name_index"></a>
+```python
+# stimflow.ChunkBuilder.add_obs_name_index
+
+# (in class stimflow.ChunkBuilder)
+def add_obs_name_index(
+    self,
+    obs_name: str,
+    obs_index: int,
+) -> None:
+    """Associates an explicit stim observable index with a stimflow observable name.
+
+    Note that the name-to-index association typically happens automatically. For example,
+    `builder.append("OBSERVABLE_INCLUDE", some_named_obs)` will automatically pick an unused
+    index to use if `some_named_obs`'s name is not already indexed.
+
+    Args:
+        obs_name: The name of the observable to use when referring it in stimflow.
+        obs_index: The index to use when referring to the observable in a stim circuit.
+
+    Examples:
+        >>> import stimflow as sf
+        >>> builder = sf.ChunkBuilder()
+        >>> obs = sf.PauliMap({0: "Z"}, obs_name="LX")
+        >>> builder.add_obs_name_index(obs.obs_name, 5)
+        >>> builder.append("OBSERVABLE_INCLUDE", obs)
+        >>> builder.finish_chunk()
+        stimflow.Chunk(
+            q2i={0j: 0},
+            o2i={'LX': 5},
+            circuit=stim.Circuit('''
+                OBSERVABLE_INCLUDE(5) Z0
+            '''),
+        )
+    """
+```
+
 <a name="stimflow.ChunkBuilder.append"></a>
 ```python
 # stimflow.ChunkBuilder.append
@@ -1055,7 +1282,7 @@ def append(
         b = builder.q2i[5]
         c = builder.q2i[0]
         d = builder.q2i[1j]
-        builder.circuit.append('CZ', [a, b, c, d])
+        builder._circuit.append('CZ', [a, b, c, d])
 
     you would say
 
@@ -1111,6 +1338,121 @@ def append(
             - 'skip': When a qubit position outside `allowed_qubits` is encountered,
                 ignore it. Note that, for two-qubit and multi-qubit operations, this
                 will ignore the pair or group of targets containing the skipped position.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+
+        >>> # Build a repetition code idling chunk.
+        >>> d = 5
+        >>> data_qubits = range(d)
+        >>> measure_qubits = [q + 0.5 for q in data_qubits[::-1]]
+        >>> builder = sf.ChunkBuilder()
+        >>> builder.append("R", measure_qubits)
+        >>> builder.append("TICK")
+        >>> builder.append("CX", [(m-0.5, m) for m in measure_qubits])
+        >>> builder.append("TICK")
+        >>> builder.append("CX", [(m+0.5, m) for m in measure_qubits])
+        >>> builder.append("TICK")
+        >>> builder.append("M", measure_qubits)
+        >>> for m in measure_qubits:
+        ...     stabilizer = sf.PauliMap.from_zs([m-0.5, m+0.5])
+        ...     builder.add_flow(start=stabilizer, measurements=[m])
+        ...     builder.add_flow(end=stabilizer, measurements=[m])
+        >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_obs_name("LZ")
+        >>> builder.add_flow(start=obs, end=obs)
+        >>> chunk = builder.finish_chunk()
+        >>> chunk.verify()
+        >>> chunk
+        stimflow.Chunk(
+            q2i={4.5: 0, 3.5: 1, 2.5: 2, 1.5: 3, 0.5: 4, 4.0: 5, 3.0: 6, 2.0: 7, 1.0: 8, 0.0: 9, 5.0: 10},
+            circuit=stim.Circuit('''
+                R 0 1 2 3 4
+                TICK
+                CX 5 0 6 1 7 2 8 3 9 4
+                TICK
+                CX 5 1 6 2 7 3 8 4 10 0
+                TICK
+                M 0 1 2 3 4
+            '''),
+            flows=[
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
+                    measurement_indices=(0,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
+                    measurement_indices=(0,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
+                    measurement_indices=(1,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
+                    measurement_indices=(1,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
+                    measurement_indices=(2,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
+                    measurement_indices=(2,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
+                    measurement_indices=(3,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
+                    measurement_indices=(3,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([0j, (1+0j)]),
+                    measurement_indices=(4,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([0j, (1+0j)]),
+                    measurement_indices=(4,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
+                    end=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
+                ),
+            ],
+        )
+
+        >>> # Fancy OBSERVABLE_INCLUDE stuff.
+        >>> builder = sf.ChunkBuilder()
+        >>> obs = sf.PauliMap({"Z": [0, 1, 2]}, obs_name="LZ")
+        >>> builder.append("RX", [0, 1, 2])
+        >>> builder.append("OBSERVABLE_INCLUDE", obs)
+        >>> builder.add_flow(end=sf.PauliMap({"X": [0, 1]}))
+        >>> builder.add_flow(end=sf.PauliMap({"X": [1, 2]}))
+        >>> builder.add_flow(end=obs)
+        >>> chunk = builder.finish_chunk()
+        >>> chunk.verify()
+        >>> chunk
+        stimflow.Chunk(
+            q2i={0: 0, 1: 1, 2: 2},
+            o2i={'LZ': 0},
+            circuit=stim.Circuit('''
+                RX 0 1 2
+                OBSERVABLE_INCLUDE(0) Z0 Z1 Z2
+            '''),
+            flows=[
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_xs([0j, (1+0j)]),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_xs([(1+0j), (2+0j)]),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([0j, (1+0j), (2+0j)], obs_name='LZ'),
+                ),
+            ],
+        )
     """
 ```
 
@@ -1897,6 +2239,31 @@ class ChunkLoop:
 
     For duck typing purposes, many methods supported by Chunk are supported by
     ChunkLoop.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> zz = sf.PauliMap({0: 'Z', 1 + 1j: 'Z'})
+        >>> lz = sf.PauliMap({0: 'Z'}, obs_name='L_ZI')
+        >>> lx = sf.PauliMap({0: 'X', 1 + 1j: 'X'}, obs_name='L_XX')
+        >>> idle_chunk = sf.Chunk(
+        ...     stim.Circuit('''
+        ...         QUBIT_COORDS(0, 0) 0
+        ...         QUBIT_COORDS(0, 1) 1
+        ...         QUBIT_COORDS(1, 1) 2
+        ...         R 1
+        ...         CX 0 1 2 1
+        ...         M 1
+        ...     '''),
+        ...     flows=[
+        ...         sf.Flow(start=zz, measurement_indices=[0]),
+        ...         sf.Flow(end=zz, measurement_indices=[0]),
+        ...         sf.Flow(start=lz, end=lz),
+        ...         sf.Flow(start=lx, end=lx),
+        ...     ]
+        ... )
+        >>> idle_ten_times = sf.ChunkLoop([idle_chunk], repetitions=10)
+        >>> idle_ten_times.verify()
     """
 ```
 
@@ -2330,7 +2697,6 @@ def __init__(
         stimflow.Flow(
             start=stimflow.PauliMap({0j: 'X'}),
             measurement_indices=(1,),
-            center=0j,
         )
     """
 ```
@@ -2380,7 +2746,6 @@ def __mul__(
             start=stimflow.PauliMap({(1+0j): 'X', (2+0j): 'Y'}),
             end=stimflow.PauliMap({(2+0j): 'Y', (3+0j): 'Z'}),
             measurement_indices=(-10, -1, 2, 20),
-            center=(2+0j),
         )
     """
 ```
@@ -2430,7 +2795,6 @@ def fused_with_next_flow(
             start=stimflow.PauliMap({(1+0j): 'X'}),
             end=stimflow.PauliMap({(3+0j): 'Z'}),
             measurement_indices=(2, 90, 99, 120),
-            center=(2+0j),
         )
     """
 ```
@@ -2606,12 +2970,46 @@ def __init__(
     extra_coords: Iterable[float] = (),
     tag: str | None = ',
 ):
-    """
+    """Initializes a FlowMetadata instance.
 
     Args:
         extra_coords: Extra numbers to add to DETECTOR coordinate arguments. By default stimflow
             gives each detector an X, Y, and T coordinate. These numbers go afterward.
         tag: A tag to attach to DETECTOR or OBSERVABLE_INCLUDE instructions.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+
+        >>> def metadata_func(flow: sf.Flow) -> sf.FlowMetadata:
+        ...     if 'postselect' in flow.flags:
+        ...         return sf.FlowMetadata(extra_coords=[-1])
+        ...     elif 'color=r' in flow.flags:
+        ...         return sf.FlowMetadata(tag="red")
+        ...     elif 'color=g' in flow.flags:
+        ...         return sf.FlowMetadata(tag="green", extra_coords=[5, 6, 7])
+        ...     elif 'color=b' in flow.flags:
+        ...         return sf.FlowMetadata(tag="blue")
+        ...     else:
+        ...         raise NotImplementedError(f"Couldn't figure out {flow}")
+
+        >>> compiler = sf.ChunkCompiler(metadata_func=metadata_func)
+        >>> compiler.append(sf.Chunk(
+        ...     circuit=stim.Circuit('''
+        ...         QUBIT_COORDS(0) 0
+        ...         R 0
+        ...     '''),
+        ...     flows=[sf.Flow(end=sf.PauliMap.from_zs([0]), flags={"color=g"})],
+        ... ))
+        >>> compiler.append_magic_end_chunk()
+        >>> compiler.finish_circuit()
+        stim.Circuit('''
+            QUBIT_COORDS(0, 0) 0
+            R 0
+            TICK
+            MPP Z0
+            DETECTOR[green](0, 0, 0, 5, 6, 7) rec[-1]
+        ''')
     """
 ```
 
@@ -3141,16 +3539,66 @@ def __init__(
     after: dict[str, float | tuple[float, ...]] | None = None,
     flip_result: float = 0,
 ):
-    """
+    """Initializes a NoiseRule.
 
     Args:
-        after: A dictionary mapping noise rule names to their probability argument.
-            For example, {"DEPOLARIZE2": 0.01, "X_ERROR": 0.02} will add two qubit
-            depolarization with parameter 0.01 and also add 2% bit flip noise. These
-            noise channels occur after all other operations in the moment and are applied
-            to the same targets as the relevant operation.
+        before: A name-to-argument mapping of noise instructions to add before some
+            instruction that is being made noisy. For example,
+                after={"DEPOLARIZE2": 0.01, "X_ERROR": 0.02}
+            will add two qubit depolarization with parameter 0.01 and also add 2%
+            bit flip noise. These noise channels occur before all other operations
+            in the moment and are applied to the same targets as the relevant operation.
+        after: A name-to-argument mapping of noise instructions to add after some
+            instruction that is being made noisy. For example,
+                after={"DEPOLARIZE2": 0.01, "X_ERROR": 0.02}
+            will add two qubit depolarization with parameter 0.01 and also add 2%
+            bit flip noise. These noise channels occur after all other operations
+            in the moment and are applied to the same targets as the relevant operation.
         flip_result: The probability that a measurement result should be reported incorrectly.
             Only valid when applied to operations that produce measurement results.
+
+    Examples:
+        >>> import stim
+        >>> import stimflow as sf
+        >>> noise = sf.NoiseModel(gate_rules={
+        ...     'R': sf.NoiseRule(after={"X_ERROR": 5e-3}),
+        ...     'M': sf.NoiseRule(flip_result=1e-3),
+        ...     'CZ': sf.NoiseRule(after={"Z_ERROR": 3e-3, "DEPOLARIZE2": 1e-3}),
+        ...     'H': sf.NoiseRule(before={"PAULI_CHANNEL_1": (1e-3, 1e-2, 1e-3)}),
+        ... })
+        >>> noise.noisy_circuit(stim.Circuit('''
+        ...     R 1
+        ...     TICK
+        ...     H 1
+        ...     TICK
+        ...     CZ 0 1
+        ...     TICK
+        ...     CZ 2 1
+        ...     TICK
+        ...     H 1
+        ...     TICK
+        ...     M 1
+        ... '''))
+        stim.Circuit('''
+            R 1
+            X_ERROR(0.005) 1
+            TICK
+            PAULI_CHANNEL_1(0.001, 0.01, 0.001) 1
+            H 1
+            TICK
+            CZ 0 1
+            DEPOLARIZE2(0.001) 0 1
+            Z_ERROR(0.003) 0 1
+            TICK
+            CZ 2 1
+            DEPOLARIZE2(0.001) 2 1
+            Z_ERROR(0.003) 2 1
+            TICK
+            PAULI_CHANNEL_1(0.001, 0.01, 0.001) 1
+            H 1
+            TICK
+            M(0.001) 1
+        ''')
     """
 ```
 

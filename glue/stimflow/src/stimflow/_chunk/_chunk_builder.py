@@ -12,7 +12,22 @@ from stimflow._core._flow import Flow
 from stimflow._core._pauli_map import PauliMap
 from stimflow._core._tile import Tile
 
-_SWAP_CONJUGATED_MAP = {"XCZ": "CX", "YCZ": "CY", "YCX": "XCY", "SWAPCX": "CXSWAP"}
+_SWAP_CONJUGATED_MAP: dict[str, str] = {"XCZ": "CX", "YCZ": "CY", "YCX": "XCY", "SWAPCX": "CXSWAP"}
+_SELF_COMMUTING_2Q_GATES: frozenset[str] = frozenset([
+    "CZ",
+    "XCX",
+    "YCY",
+    "SQRT_XX",
+    "SQRT_ZZ",
+    "SQRT_YY",
+    "II",
+    "II_ERROR",
+    "DEPOLARIZE2",
+    "PAULI_CHANNEL_2",
+    "MXX",
+    "MZZ",
+    "MYY",
+])
 
 
 class ChunkBuilder:
@@ -43,50 +58,66 @@ class ChunkBuilder:
         >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_obs_name("LZ")
         >>> builder.add_flow(start=obs, end=obs)
         >>> chunk = builder.finish_chunk()
-
         >>> chunk.verify()
-        >>> print(chunk.to_closed_circuit())
-        QUBIT_COORDS(0, 0) 0
-        QUBIT_COORDS(0.5, 0) 1
-        QUBIT_COORDS(1, 0) 2
-        QUBIT_COORDS(1.5, 0) 3
-        QUBIT_COORDS(2, 0) 4
-        QUBIT_COORDS(2.5, 0) 5
-        QUBIT_COORDS(3, 0) 6
-        QUBIT_COORDS(3.5, 0) 7
-        QUBIT_COORDS(4, 0) 8
-        QUBIT_COORDS(4.5, 0) 9
-        QUBIT_COORDS(5, 0) 10
-        OBSERVABLE_INCLUDE(0) Z0
-        TICK
-        MPP Z0*Z2 Z4*Z6 Z8*Z10
-        TICK
-        MPP Z2*Z4 Z6*Z8
-        TICK
-        R 9 7 5 3 1
-        TICK
-        CX 8 9 6 7 4 5 2 3 0 1
-        TICK
-        CX 8 7 6 5 4 3 2 1 10 9
-        TICK
-        M 9 7 5 3 1
-        DETECTOR(4.5, 0, 0) rec[-8] rec[-5]
-        DETECTOR(3.5, 0, 0) rec[-6] rec[-4]
-        DETECTOR(2.5, 0, 0) rec[-9] rec[-3]
-        DETECTOR(1.5, 0, 0) rec[-7] rec[-2]
-        DETECTOR(0.5, 0, 0) rec[-10] rec[-1]
-        SHIFT_COORDS(0, 0, 1)
-        TICK
-        MPP Z0*Z2 Z4*Z6 Z8*Z10
-        TICK
-        MPP Z2*Z4 Z6*Z8
-        DETECTOR(0.5, 0, 0) rec[-6] rec[-5]
-        DETECTOR(2.5, 0, 0) rec[-8] rec[-4]
-        DETECTOR(4.5, 0, 0) rec[-10] rec[-3]
-        DETECTOR(1.5, 0, 0) rec[-7] rec[-2]
-        DETECTOR(3.5, 0, 0) rec[-9] rec[-1]
-        TICK
-        OBSERVABLE_INCLUDE(0) Z0
+        >>> chunk
+        stimflow.Chunk(
+            q2i={4.5: 0, 3.5: 1, 2.5: 2, 1.5: 3, 0.5: 4, 4.0: 5, 3.0: 6, 2.0: 7, 1.0: 8, 0.0: 9, 5.0: 10},
+            circuit=stim.Circuit('''
+                R 0 1 2 3 4
+                TICK
+                CX 5 0 6 1 7 2 8 3 9 4
+                TICK
+                CX 5 1 6 2 7 3 8 4 10 0
+                TICK
+                M 0 1 2 3 4
+            '''),
+            flows=[
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
+                    measurement_indices=(0,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
+                    measurement_indices=(0,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
+                    measurement_indices=(1,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
+                    measurement_indices=(1,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
+                    measurement_indices=(2,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
+                    measurement_indices=(2,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
+                    measurement_indices=(3,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
+                    measurement_indices=(3,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap.from_zs([0j, (1+0j)]),
+                    measurement_indices=(4,),
+                ),
+                stimflow.Flow(
+                    end=stimflow.PauliMap.from_zs([0j, (1+0j)]),
+                    measurement_indices=(4,),
+                ),
+                stimflow.Flow(
+                    start=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
+                    end=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
+                ),
+            ],
+        )
     """
 
     def __init__(
@@ -108,7 +139,7 @@ class ChunkBuilder:
         self.allowed_qubits: set[complex] | None = None if allowed_qubits is None else set(allowed_qubits)
         self._num_measurements: int = 0
         self._recorded_measurements: dict[Any, list[int]] = {}
-        self.circuit: stim.Circuit = stim.Circuit()
+        self._circuit: stim.Circuit = stim.Circuit()
         self.q2i: dict[complex, int] = {}
         self.o2i: dict[Any, int] = {}
         self._flows: list[Flow] = []
@@ -117,6 +148,10 @@ class ChunkBuilder:
         self._flows_with_auto_end: list[Flow] = []
         self._discarded_output_flows: list[PauliMap] = []
         self._discarded_input_flows: list[PauliMap] = []
+        self._buffered_targets_1q: list[int] = []
+        self._buffered_targets_2q: list[tuple[int, int]] = []
+        self._buffered_gate: str | None = None
+        self._buffered_tag: str = ""
 
         # Index allowed qubits.
         if allowed_qubits is not None:
@@ -255,6 +290,46 @@ class ChunkBuilder:
                 f"Given keys: {list(keys)!r}"
             )
         return xor_sorted(result)
+
+    def add_obs_name_index(self, obs_name: str, obs_index: int) -> None:
+        """Associates an explicit stim observable index with a stimflow observable name.
+
+        Note that the name-to-index association typically happens automatically. For example,
+        `builder.append("OBSERVABLE_INCLUDE", some_named_obs)` will automatically pick an unused
+        index to use if `some_named_obs`'s name is not already indexed.
+
+        Args:
+            obs_name: The name of the observable to use when referring it in stimflow.
+            obs_index: The index to use when referring to the observable in a stim circuit.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> builder = sf.ChunkBuilder()
+            >>> obs = sf.PauliMap({0: "Z"}, obs_name="LX")
+            >>> builder.add_obs_name_index(obs.obs_name, 5)
+            >>> builder.append("OBSERVABLE_INCLUDE", obs)
+            >>> builder.finish_chunk()
+            stimflow.Chunk(
+                q2i={0j: 0},
+                o2i={'LX': 5},
+                circuit=stim.Circuit('''
+                    OBSERVABLE_INCLUDE(5) Z0
+                '''),
+            )
+        """
+        if isinstance(obs_name, PauliMap):
+            raise ValueError("Passed a `stimflow.PauliMap`, instead of its `obs_name`, into `stimflow.ChunkBuilder.add_obs_name_index`.\n"
+                             f"    Got {obs_name=!r}")
+        if obs_name is None:
+            raise ValueError(f"Expected an observable name but got {obs_name=!r}.")
+        old_arg = self.o2i.setdefault(obs_name, obs_index)
+        if old_arg != obs_index:
+            raise ValueError(
+                f"Called add_obs_name_index({obs_name=}, {obs_index=}) but {obs_name=} "
+                f"was already mapped to a different index ({old_arg}).\n"
+                f"For example, this can happen if you call `builder.append('OBSERVABLE_INCLUDE', ...)` before "
+                f"calling `builder.add_obs_name_index` due to the append method picking an automatic index."
+            )
 
     def add_discarded_flow_input(self, flow: PauliMap | Tile) -> None:
         """Annotates that an input stabilizer won't be used.
@@ -538,6 +613,8 @@ class ChunkBuilder:
     ) -> Chunk:
         """Finishes producing the circuit."""
 
+        self._flush_buffered_gate()
+
         from stimflow._chunk._flow_util import _solve_auto_flow_starts
         from stimflow._chunk._flow_util import _solve_auto_flow_ends
         from stimflow._chunk._flow_util import _solve_auto_flow_ms
@@ -548,25 +625,25 @@ class ChunkBuilder:
 
         solved_starts = _solve_auto_flow_starts(
             flows=self._flows_with_auto_start,
-            circuit=self.circuit,
+            circuit=self._circuit,
             q2i=self.q2i,
             failure_out=start_fails,
         )
         solved_ends = _solve_auto_flow_ends(
             flows=self._flows_with_auto_end,
-            circuit=self.circuit,
+            circuit=self._circuit,
             q2i=self.q2i,
             failure_out=end_fails,
         )
         solved_ms = _solve_auto_flow_ms(
             flows=self._flows_with_auto_ms,
-            circuit=self.circuit,
+            circuit=self._circuit,
             q2i=self.q2i,
             o2i=self.o2i,
             failure_out=measure_fails,
         )
 
-        out_circuit = self.circuit.copy()
+        out_circuit = self._circuit.copy()
         if start_fails or end_fails or measure_fails:
             lines = []
             if start_fails:
@@ -630,6 +707,31 @@ class ChunkBuilder:
             wants_to_merge_with_prev=wants_to_merge_with_prev,
         )
 
+    def _flush_buffered_gate(self):
+        if self._buffered_gate is None:
+            return
+
+        data = stim.gate_data(self._buffered_gate)
+        if data.is_single_qubit_gate:
+            indices = sorted(self._buffered_targets_1q)
+        elif data.is_two_qubit_gate:
+            indices = []
+            _canonicalize_2q_indices(
+                targets=self._buffered_targets_2q,
+                out_indices=indices,
+                is_symmetric_gate=data.is_symmetric_gate,
+                out_original_order=None,
+            )
+        else:
+            raise NotImplementedError(f'{data=}')
+
+        self._circuit.append(self._buffered_gate, indices, tag=self._buffered_tag)
+        self._buffered_gate = None
+        self._buffered_tag = ""
+        self._buffered_targets_2q.clear()
+        self._buffered_targets_1q.clear()
+
+
     def append(
         self,
         gate: str,
@@ -657,7 +759,7 @@ class ChunkBuilder:
             b = builder.q2i[5]
             c = builder.q2i[0]
             d = builder.q2i[1j]
-            builder.circuit.append('CZ', [a, b, c, d])
+            builder._circuit.append('CZ', [a, b, c, d])
 
         you would say
 
@@ -713,38 +815,172 @@ class ChunkBuilder:
                 - 'skip': When a qubit position outside `allowed_qubits` is encountered,
                     ignore it. Note that, for two-qubit and multi-qubit operations, this
                     will ignore the pair or group of targets containing the skipped position.
+
+        Examples:
+            >>> import stim
+            >>> import stimflow as sf
+
+            >>> # Build a repetition code idling chunk.
+            >>> d = 5
+            >>> data_qubits = range(d)
+            >>> measure_qubits = [q + 0.5 for q in data_qubits[::-1]]
+            >>> builder = sf.ChunkBuilder()
+            >>> builder.append("R", measure_qubits)
+            >>> builder.append("TICK")
+            >>> builder.append("CX", [(m-0.5, m) for m in measure_qubits])
+            >>> builder.append("TICK")
+            >>> builder.append("CX", [(m+0.5, m) for m in measure_qubits])
+            >>> builder.append("TICK")
+            >>> builder.append("M", measure_qubits)
+            >>> for m in measure_qubits:
+            ...     stabilizer = sf.PauliMap.from_zs([m-0.5, m+0.5])
+            ...     builder.add_flow(start=stabilizer, measurements=[m])
+            ...     builder.add_flow(end=stabilizer, measurements=[m])
+            >>> obs = sf.PauliMap({data_qubits[0]: "Z"}).with_obs_name("LZ")
+            >>> builder.add_flow(start=obs, end=obs)
+            >>> chunk = builder.finish_chunk()
+            >>> chunk.verify()
+            >>> chunk
+            stimflow.Chunk(
+                q2i={4.5: 0, 3.5: 1, 2.5: 2, 1.5: 3, 0.5: 4, 4.0: 5, 3.0: 6, 2.0: 7, 1.0: 8, 0.0: 9, 5.0: 10},
+                circuit=stim.Circuit('''
+                    R 0 1 2 3 4
+                    TICK
+                    CX 5 0 6 1 7 2 8 3 9 4
+                    TICK
+                    CX 5 1 6 2 7 3 8 4 10 0
+                    TICK
+                    M 0 1 2 3 4
+                '''),
+                flows=[
+                    stimflow.Flow(
+                        start=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
+                        measurement_indices=(0,),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_zs([(4+0j), (5+0j)]),
+                        measurement_indices=(0,),
+                    ),
+                    stimflow.Flow(
+                        start=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
+                        measurement_indices=(1,),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_zs([(3+0j), (4+0j)]),
+                        measurement_indices=(1,),
+                    ),
+                    stimflow.Flow(
+                        start=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
+                        measurement_indices=(2,),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_zs([(2+0j), (3+0j)]),
+                        measurement_indices=(2,),
+                    ),
+                    stimflow.Flow(
+                        start=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
+                        measurement_indices=(3,),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_zs([(1+0j), (2+0j)]),
+                        measurement_indices=(3,),
+                    ),
+                    stimflow.Flow(
+                        start=stimflow.PauliMap.from_zs([0j, (1+0j)]),
+                        measurement_indices=(4,),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_zs([0j, (1+0j)]),
+                        measurement_indices=(4,),
+                    ),
+                    stimflow.Flow(
+                        start=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
+                        end=stimflow.PauliMap({0j: 'Z'}, obs_name='LZ'),
+                    ),
+                ],
+            )
+
+            >>> # Fancy OBSERVABLE_INCLUDE stuff.
+            >>> builder = sf.ChunkBuilder()
+            >>> obs = sf.PauliMap({"Z": [0, 1, 2]}, obs_name="LZ")
+            >>> builder.append("RX", [0, 1, 2])
+            >>> builder.append("OBSERVABLE_INCLUDE", obs)
+            >>> builder.add_flow(end=sf.PauliMap({"X": [0, 1]}))
+            >>> builder.add_flow(end=sf.PauliMap({"X": [1, 2]}))
+            >>> builder.add_flow(end=obs)
+            >>> chunk = builder.finish_chunk()
+            >>> chunk.verify()
+            >>> chunk
+            stimflow.Chunk(
+                q2i={0: 0, 1: 1, 2: 2},
+                o2i={'LZ': 0},
+                circuit=stim.Circuit('''
+                    RX 0 1 2
+                    OBSERVABLE_INCLUDE(0) Z0 Z1 Z2
+                '''),
+                flows=[
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_xs([0j, (1+0j)]),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_xs([(1+0j), (2+0j)]),
+                    ),
+                    stimflow.Flow(
+                        end=stimflow.PauliMap.from_zs([0j, (1+0j), (2+0j)], obs_name='LZ'),
+                    ),
+                ],
+            )
         """
         __tracebackhide__ = True
         data = stim.gate_data(gate)
 
-        if data.name == "TICK":
+        if self._buffered_gate != _SWAP_CONJUGATED_MAP.get(data.name, data.name) or self._buffered_tag != tag or arg is not None:
+            self._flush_buffered_gate()
+
+        if data.is_two_qubit_gate:
+            self._append_2q(
+                gate=gate,
+                data=data,
+                targets=cast(Any, targets),
+                arg=arg,
+                measure_key_func=cast(Any, measure_key_func),
+                tag=tag,
+                unknown_qubit_append_mode=unknown_qubit_append_mode,
+            )
+        elif data.name == "TICK":
             if arg is not None:
                 raise ValueError(f"TICK takes no arguments but got {arg=}.")
             if targets:
                 raise ValueError(f"TICK takes no targets but got {targets=}.")
-            self.circuit.append("TICK", tag=tag)
+            self._circuit.append("TICK", tag=tag)
 
         elif data.name == "SHIFT_COORDS":
             if arg is None:
                 raise ValueError(f"SHIFT_COORDS expects {arg=} to not be None.")
             if targets:
                 raise ValueError(f"SHIFT_COORDS takes no targets but got {targets=}.")
-            self.circuit.append("SHIFT_COORDS", [], arg, tag=tag)
+            self._circuit.append("SHIFT_COORDS", [], arg, tag=tag)
 
-        elif data.name == "DETECTOR" or data.name == "OBSERVABLE_INCLUDE":
-            if isinstance(targets, PauliMap) and data.name == "OBSERVABLE_INCLUDE":
+        elif data.name == "DETECTOR":
+            t0 = self._num_measurements
+            times = self.lookup_measurement_indices(targets)
+            rec_targets = [stim.target_rec(t - t0) for t in sorted(times)]
+            self._circuit.append(data.name, rec_targets, arg, tag=tag)
+
+        elif data.name == "OBSERVABLE_INCLUDE":
+            if isinstance(targets, PauliMap):
                 if arg is None and targets.obs_name is None:
                     raise ValueError(
-                        "Received a stimflow.PauliMap target for an OBSERVABLE_INCLUDE instruction, but can't figure out its name.\n"
-                        "(The name is used in order to give consistent index to OBSERVABLE_INCLUDE instructions.)\n"
-                        "(The mapping is stored in the field `stimflow.ChunkBuilder.o2i`.)\n"
+                        "Can't figure out the index to use for an OBSERVABLE_INCLUDE instruction.\n"
                         "\n"
                         "You can do either of the following to fix the error:\n"
-                        "   (a) Pass in a PauliMap with a name (see `stimflow.PauliMap.with_obs_name(name)`)\n"
-                        "   (b) Do a manual override by adding `arg=index` to the `stimflow.ChunkBuilder.append` call\n"
+                        "    (a) Automatic indexing (recommended).\n"
+                        "        Name the given observable, e.g. via `stimflow.PauliMap.with_obs_name`.\n"
+                        "        A consistent index will automatically be associated with the name.\n"
+                        "    (b) Manual indexing.\n"
+                        "        Add an `arg=index` to the `stimflow.ChunkBuilder.append` call.\n"
                         "\n"
-                        "Note that, if you do both (a) and (b), the builder will remember the "
-                        "name-to-index association."
+                        "Note that, if you do both (a) and (b), the builder will remember the name-to-index association.\n"
                     )
                 elif arg is not None and targets.obs_name is not None:
                     if not isinstance(arg, (int, float)) or arg != int(arg):
@@ -754,11 +990,16 @@ class ChunkBuilder:
                         self.o2i[targets.obs_name] = int(arg)
                     elif old_arg != arg:
                         raise ValueError(
-                            f"Specified {arg=} and {targets=} but {self.o2i[targets.obs_name]=} is "
-                            f"inconsistent with {arg=}."
+                            f"Got {targets=} and {arg=}, but that arg is inconsistent with the previously "
+                            f"specified index of {self.o2i[targets.obs_name]} for the observable.\n"
+                            f"    To use the existing index, drop the `arg` argument.\n"
+                            f"    To force the index, drop the observable's name (e.g. `obs.with_obs_name(None)`)."
                         )
-                elif arg is None:
+                elif arg is None and targets.obs_name is not None:
                     arg = self._ensure_obs_index_of(targets.obs_name)
+                elif arg is not None and targets.obs_name is None:
+                    # Manual indexing with no associated name.
+                    pass
 
                 self._ensure_indices(
                     targets.keys(),
@@ -768,7 +1009,7 @@ class ChunkBuilder:
                     unknown_qubit_append_mode=unknown_qubit_append_mode,
                 )
                 ps = targets.to_stim_pauli_string(self.q2i)
-                self.circuit.append(
+                self._circuit.append(
                     data.name,
                     [stim.target_pauli(q, ps[q]) for q in ps.pauli_indices()],
                     arg,
@@ -778,7 +1019,7 @@ class ChunkBuilder:
                 t0 = self._num_measurements
                 times = self.lookup_measurement_indices(targets)
                 rec_targets = [stim.target_rec(t - t0) for t in sorted(times)]
-                self.circuit.append(data.name, rec_targets, arg, tag=tag)
+                self._circuit.append(data.name, rec_targets, arg, tag=tag)
 
         elif data.name == "MPP":
             self._append_mpp(
@@ -811,18 +1052,7 @@ class ChunkBuilder:
                     for q in qs:
                         i = self.q2i[q]
                         stim_targets.append(stim.target_pauli(i, targets[0][q]))
-                    self.circuit.append("CORRELATED_ERROR", stim_targets, arg, tag=tag)
-
-        elif data.is_two_qubit_gate:
-            self._append_2q(
-                gate=gate,
-                data=data,
-                targets=cast(Any, targets),
-                arg=arg,
-                measure_key_func=cast(Any, measure_key_func),
-                tag=tag,
-                unknown_qubit_append_mode=unknown_qubit_append_mode,
-            )
+                    self._circuit.append("CORRELATED_ERROR", stim_targets, arg, tag=tag)
 
         elif data.is_single_qubit_gate:
             self._append_1q(
@@ -881,7 +1111,7 @@ class ChunkBuilder:
                     stim_targets.append(stim.target_combiner())
                 stim_targets.pop()
 
-        self.circuit.append(gate, stim_targets, arg, tag=tag)
+        self._circuit.append(gate, stim_targets, arg, tag=tag)
 
         for target in targets:
             if measure_key_func is not None:
@@ -917,7 +1147,13 @@ class ChunkBuilder:
         if not indices:
             return
 
-        self.circuit.append(gate, [e[0] for e in indices], arg, tag=tag)
+        if arg is None and not data.produces_measurements:
+            self._buffered_gate = data.name
+            self._buffered_tag = tag
+            self._buffered_targets_1q.extend([e[0] for e in indices])
+            return
+
+        self._circuit.append(gate, [e[0] for e in indices], arg, tag=tag)
         if data.produces_measurements:
             for _, k in indices:
                 t = targets[k]
@@ -955,30 +1191,44 @@ class ChunkBuilder:
 
         # Canonicalize gate and target pairs.
         targets = [tuple(cast(Any, pair)) for pair in targets]
-        index_pairs: list[tuple[int, int, int]] = []
+        unsorted_index_pairs: list[tuple[int, int]] = []
         index_swapped = data.name in _SWAP_CONJUGATED_MAP
-        index_sorted = data.is_symmetric_gate
-        for k in range(len(targets)):
-            a, b = targets[k]
+        kept_targets = []
+        for a, b in targets:
             ai = self.q2i.get(a)
             bi = self.q2i.get(b)
+            if index_swapped:
+                ai, bi = bi, ai
             if ai is not None and bi is not None:
-                if index_swapped or (index_sorted and ai > bi):
-                    ai, bi = bi, ai
-                index_pairs.append((ai, bi, k))
-        index_pairs = sorted(index_pairs)
-        if not index_pairs:
+                unsorted_index_pairs.append((ai, bi))
+                kept_targets.append((a, b))
+        if not unsorted_index_pairs:
             return
 
         if index_swapped:
             gate = _SWAP_CONJUGATED_MAP[data.name]
+            data = stim.gate_data(gate)
 
-        self.circuit.append(gate, [i for pair in index_pairs for i in pair[:2]], arg, tag=tag)
+        if arg is None and not data.produces_measurements:
+            self._buffered_gate = data.name
+            self._buffered_tag = tag
+            self._buffered_targets_2q.extend(unsorted_index_pairs)
+            return
 
-        # Record both qubit orderings.
+        indices = []
+        original_order = []
+        _canonicalize_2q_indices(
+            targets=unsorted_index_pairs,
+            is_symmetric_gate=data.is_symmetric_gate,
+            out_indices=indices,
+            out_original_order=original_order,
+        )
+        self._circuit.append(gate, indices, arg, tag=tag)
+
+        # Record a measurement key for both qubit orderings.
         if data.produces_measurements:
-            for _, _, k in index_pairs:
-                a, b = targets[k]
+            for k in original_order:
+                a, b = kept_targets[k]
                 if measure_key_func is not None:
                     k1 = measure_key_func((a, b))
                     k2 = measure_key_func((b, a))
@@ -1016,4 +1266,35 @@ class ChunkBuilder:
         rec_targets = [stim.target_rec(t - t0) for t in sorted(times)]
         for rec in rec_targets:
             for i in indices:
-                self.circuit.append(gate, [rec, i])
+                self._circuit.append(gate, [rec, i])
+
+
+def _canonicalize_2q_indices(
+    *,
+    targets: Iterable[tuple[int, int]],
+    is_symmetric_gate: bool,
+    out_indices: list[int],
+    out_original_order: list[int] | None,
+):
+    seen_qubits = set()
+    buffered_targets: list[tuple[int, int, int]] = []
+
+    def _flush_buffer():
+        for a, b, k in sorted(buffered_targets):
+            out_indices.append(a)
+            out_indices.append(b)
+            if out_original_order is not None:
+                out_original_order.append(k)
+        buffered_targets.clear()
+        seen_qubits.clear()
+
+    for k, (a, b) in enumerate(targets):
+        if is_symmetric_gate and a > b:
+            a, b = b, a
+        if a in seen_qubits or b in seen_qubits:
+            _flush_buffer()
+        seen_qubits.add(a)
+        seen_qubits.add(b)
+        buffered_targets.append((a, b, k))
+
+    _flush_buffer()
