@@ -197,7 +197,7 @@ editorState.canvas.addEventListener('mouseup', ev => {
     editorState.mouseDownY = undefined;
     editorState.curMouseX = ev.offsetX + OFFSET_X;
     editorState.curMouseY = ev.offsetY + OFFSET_Y;
-    editorState.changeFocus(highlightedArea, ev.shiftKey, ev.ctrlKey);
+    editorState.changeFocus(highlightedArea, ev.shiftKey, ev.ctrlKey || ev.metaKey);
     if (ev.buttons === 1) {
         isInScrubber = false;
     }
@@ -222,17 +222,8 @@ function makeChordHandlers() {
     res.set('ctrl+shift+z', preview => { if (!preview) editorState.redo() });
     res.set('ctrl+c', async preview => { await copyToClipboard(); });
     res.set('ctrl+v', pasteFromClipboard);
-    res.set('ctrl+x', async preview => {
-        await copyToClipboard();
-        if (editorState.focusedSet.size === 0) {
-            let c = editorState.copyOfCurCircuit();
-            c.layers[editorState.curLayer].id_ops.clear();
-            c.layers[editorState.curLayer].markers.length = 0;
-            editorState.commit_or_preview(c, preview);
-        } else {
-            editorState.deleteAtFocus(preview);
-        }
-    });
+    res.set('ctrl+x', cutToClipboard);
+    
     res.set('l', preview => {
         if (!preview) {
             editorState.timelineSet = new Map(editorState.focusedSet.entries());
@@ -360,6 +351,8 @@ function makeChordHandlers() {
 }
 
 let fallbackEmulatedClipboard = undefined;
+let pendingMetaPaste = false;
+let pendingMetaPasteTimeout = undefined;
 async function copyToClipboard() {
     let c = editorState.copyOfCurCircuit();
     c.layers = [c.layers[editorState.curLayer]]
@@ -397,6 +390,19 @@ async function pasteFromClipboard(preview) {
         return;
     }
 
+    pasteTextAtFocus(text, preview);
+}
+
+/**
+ * Applies already-read clipboard text at the current focus.
+ *
+ * Text can come from navigator.clipboard for Ctrl+V, or from a browser paste
+ * event for Cmd+V. Keeping this shared avoids duplicating paste behavior.
+ *
+ * @param {!string} text
+ * @param {!boolean} preview
+ */
+function pasteTextAtFocus(text, preview) {
     let pastedCircuit = Circuit.fromStimCircuit(text);
     if (pastedCircuit.layers.length !== 1) {
         throw new Error(text);
@@ -442,12 +448,86 @@ async function pasteFromClipboard(preview) {
     editorState.commit_or_preview(newCircuit, preview);
 }
 
+function clearPendingMetaPaste() {
+    pendingMetaPaste = false;
+    if (pendingMetaPasteTimeout !== undefined) {
+        clearTimeout(pendingMetaPasteTimeout);
+        pendingMetaPasteTimeout = undefined;
+    }
+}
+
+async function cutToClipboard(preview) {
+    await copyToClipboard();
+    if (editorState.focusedSet.size === 0) {
+        let c = editorState.copyOfCurCircuit();
+        c.layers[editorState.curLayer].id_ops.clear();
+        c.layers[editorState.curLayer].markers.length = 0;
+        editorState.commit_or_preview(c, preview);
+    } else {
+        editorState.deleteAtFocus(preview);
+    }
+}
+
 const CHORD_HANDLERS = makeChordHandlers();
 /**
  * @param {!KeyboardEvent} ev
  */
-function handleKeyboardEvent(ev) {
+async function handleKeyboardEvent(ev) {
+    if (ev.type === 'keydown' && ev.metaKey) {
+        if (ev.repeat) {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            return;
+        }
+
+        let key = ev.key.toLowerCase();
+
+        if (key === 'z' && !ev.shiftKey) {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            editorState.undo();
+            return;
+        }
+        if ((key === 'z' && ev.shiftKey) || key === 'y') {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            editorState.redo();
+            return;
+        }
+        if (key === 'c') {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            await copyToClipboard();
+            return;
+        }
+        if (key === 'v') {
+            editorState.chorder.handleFocusChanged();
+            pendingMetaPaste = true;
+            pendingMetaPasteTimeout = setTimeout(clearPendingMetaPaste, 1000);
+            return;
+        }
+        if (key === 'x') {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            await cutToClipboard(false);
+            return;
+        }
+        if (key === 'backspace' || key === 'delete') {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            editorState.deleteCurLayer(false);
+            return;
+        }
+        if (key === 'enter') {
+            ev.preventDefault();
+            editorState.chorder.handleFocusChanged();
+            editorState.insertLayer(false);
+            return;
+        }
+    }
+
     editorState.chorder.handleKeyEvent(ev);
+        
     if (ev.type === 'keydown') {
         if (ev.key.toLowerCase() === 'q') {
             let d = ev.shiftKey ? 5 : 1;
@@ -511,6 +591,20 @@ function handleKeyboardEvent(ev) {
     }
 }
 
+document.addEventListener('paste', ev => {
+    if (!pendingMetaPaste) {
+        return;
+    }
+    clearPendingMetaPaste();
+
+    let text = ev.clipboardData.getData('text/plain');
+    if (text === '') {
+        return;
+    }
+
+    ev.preventDefault();
+    pasteTextAtFocus(text, false);
+});
 document.addEventListener('keydown', handleKeyboardEvent);
 document.addEventListener('keyup', handleKeyboardEvent);
 
@@ -532,7 +626,7 @@ window.addEventListener('blur', () => {
 for (let anchor of document.getElementById('examples-div').querySelectorAll('a')) {
     anchor.onclick = ev => {
         // Don't stop the user from e.g. opening the example in a new tab using ctrl+click.
-        if (ev.shiftKey || ev.ctrlKey || ev.altKey || ev.button !== 0) {
+        if (ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey || ev.button !== 0) {
             return undefined;
         }
         let circuitText = anchor.href.split('#circuit=')[1];
