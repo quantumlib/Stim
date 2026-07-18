@@ -341,9 +341,15 @@ class Chunk:
                 lines.append(f"        {flow!r},".replace('\n', '\n        '))
             lines.append("    ],")
         if self.discarded_inputs:
-            lines.append(f"    discarded_inputs={self.discarded_inputs!r},")
+            lines.append(f"    discarded_inputs=[")
+            for discarded_input in self.discarded_inputs:
+                lines.append(f"        {discarded_input!r},")
+            lines.append("    ],")
         if self.discarded_outputs:
-            lines.append(f"    discarded_outputs={self.discarded_outputs!r},")
+            lines.append(f"    discarded_outputs=[")
+            for discarded_output in self.discarded_outputs:
+                lines.append(f"        {discarded_output!r},")
+            lines.append("    ],")
         if self.wants_to_merge_with_prev:
             lines.append(f"    wants_to_merge_with_prev={self.wants_to_merge_with_prev!r},")
         if self.wants_to_merge_with_next:
@@ -909,7 +915,61 @@ class Chunk:
             self.end_interface()
 
     def time_reversed(self) -> Chunk:
-        """Checks that this chunk's circuit actually implements its flows."""
+        """Returns a time-reversed version of the chunk.
+
+        The returned chunk will have exactly identical fault-tolerance structure to this
+        chunk (e.g. same error sensitivity regions for each flow), except of course for
+        everything being time-reversed.
+
+        Note reset operations will time-reverse into measurement operations. Terminal
+        measurement operations will time-reverse into reset operations (assuming there
+        are some flows ending on the measurement but no flows starting on the measurement).
+
+        Returns:
+            The time-reversed chunk.
+
+        Examples:
+            >>> import stim
+            >>> import stimflow as sf
+            >>> d2_surface_code = sf.StabilizerCode(
+            ...     stabilizers=[
+            ...         sf.PauliMap({"Z": [0, 1, 1j, 1 + 1j]}),
+            ...         sf.PauliMap({"X": [0, 1]}),
+            ...         sf.PauliMap({"X": [1j, 1 + 1j]}),
+            ...     ],
+            ...     logicals=[(
+            ...         sf.PauliMap({"X": [0, 1j]}, obs_name='LX'),
+            ...         sf.PauliMap({"Z": [0, 1]}, obs_name='LZ'),
+            ...     )],
+            ... )
+            >>> transversal_init = d2_surface_code.transversal_init_chunk(basis='Z')
+            >>> transversal_measure = transversal_init.time_reversed()
+            >>> transversal_measure
+            stimflow.Chunk(
+                q2i={0j: 0, 1j: 1, (1+0j): 2, (1+1j): 3},
+                o2i={'LZ': 0},
+                circuit=stim.Circuit('''
+                    M 3 2 1 0
+                '''),
+                flows=[
+                    stimflow.Flow(
+                        start=stimflow.PauliMap.from_zs([0j, 1j, (1+0j), (1+1j)]),
+                        measurement_indices=(0, 1, 2, 3),
+                        center=None,
+                    ),
+                    stimflow.Flow(
+                        start=stimflow.PauliMap.from_zs([0j, (1+0j)], obs_name='LZ'),
+                        measurement_indices=(1, 3),
+                    ),
+                ],
+                discarded_inputs=[
+                    stimflow.PauliMap.from_xs([0j, (1+0j)]),
+                    stimflow.PauliMap.from_xs([1j, (1+1j)]),
+                    stimflow.PauliMap.from_xs([0j, 1j], obs_name='LX'),
+                ],
+                wants_to_merge_with_prev=True,
+            )
+        """
 
         stim_flows = []
         for flow in self.flows:
@@ -963,7 +1023,27 @@ class Chunk:
         )
 
     def flattened(self) -> list[Chunk]:
-        """This is here for duck-type compatibility with ChunkLoop."""
+        """Returns a list containing the chunk.
+
+        This method is defined to increase duck-type compatibility between Chunk and
+        ChunkLoop. Note that `stim.ChunkLoop.flattened` returns a list of all chunks
+        within a loop, including those within nested loops within the loop.
+
+        Examples:
+            >>> import stim
+            >>> import stimflow as sf
+            >>> chunk = sf.Chunk(
+            ...     circuit=stim.Circuit(),
+            ...     flows=[],
+            ... )
+            >>> chunk.flattened() == [chunk]
+            True
+
+            >>> loop = sf.ChunkLoop([chunk, chunk], repetitions=4)
+            >>> loop2 = sf.ChunkLoop([loop, chunk], repetitions=5)
+            >>> loop2.flattened() == [chunk, chunk, chunk]
+            True
+        """
         return [self]
 
     def start_interface(self, *, skip_passthroughs: bool = False) -> ChunkInterface:

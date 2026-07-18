@@ -29,6 +29,33 @@ SKIPPED_FIELDS = {
     '__static_attributes__',
     '__match_args__',
 }
+SKIPPED_METHODS_FOR_EXAMPLE_WARNINGS = {
+    '__format__',
+    '__next__',
+    '__delattr__',
+    '__dict__',
+    '__dir__',
+    '__getattribute__',
+    '__getstate__',
+    '__setattr__',
+    '__weakref__',
+    '__reduce__',
+    '__new__',
+    '__reduce_ex__',
+    '__sizeof__',
+    '__iter__',
+    '__init_subclass__',
+    '__module__',
+    '__eq__',
+    '__ne__',
+    '__ge__',
+    '__le__',
+    '__gt__',
+    '__hash__',
+    '__lt__',
+    '__str__',
+    '__repr__',
+}
 
 
 def no_really_i_have_a_doc_why_is_this_needed_argh(v: object, fullname: str) -> object:
@@ -103,8 +130,8 @@ def main():
             if v.__doc__ is None:
                 continue
             v = v.__doc__.lower()
-            if '\n' in v.strip() and 'examples:' not in v and 'example:' not in v and '[deprecated]' not in v:
-                if k.split('.')[-1] not in ['__format__', '__next__', '__iter__', '__init_subclass__', '__module__', '__eq__', '__ne__', '__str__', '__repr__']:
+            if 'examples:' not in v and 'example:' not in v and '[deprecated]' not in v:
+                if k.split('.')[-1] not in SKIPPED_METHODS_FOR_EXAMPLE_WARNINGS:
                     if all(not (e.startswith('_') and not e.startswith('__')) for e in k.split('.')):
                         if all(not k.startswith(prefix) for prefix in suppressed):
                             print(f"    Warning: Missing 'examples:' section in docstring of {k!r}", file=sys.stderr)

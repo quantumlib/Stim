@@ -72,6 +72,12 @@ class ChunkLoop:
         expected_in: ChunkInterface | None = None,
         expected_out: ChunkInterface | None = None,
     ):
+        """Verifies that the loop is consistent with its declared flows.
+
+        A loop is consistent with its declared flows if:
+        - It has repetitions=1 or else its start_interface matches its end_interface.
+        - Sub-chunks have start/end interfaces consistent with their neighbors.
+        """
         expected_ins: list[ChunkInterface | None] = [c.end_interface() for c in self.chunks]
         expected_ins = expected_ins[-1:] + expected_ins[:-1]
 
@@ -115,7 +121,22 @@ class ChunkLoop:
         return self.chunks[-1].end_patch()
 
     def flattened(self) -> list[Chunk | ChunkReflow]:
-        """Unrolls the loop, and any sub-loops, into a series of chunks."""
+        """Unrolls the loop, and any sub-loops, into a series of chunks.
+
+        Examples:
+            >>> import stim
+            >>> import stimflow as sf
+            >>> chunk = sf.Chunk(
+            ...     circuit=stim.Circuit(),
+            ...     flows=[],
+            ... )
+            >>> loop = sf.ChunkLoop([chunk, chunk], repetitions=4)
+            >>> loop.flattened() == [chunk, chunk]
+            True
+            >>> loop2 = sf.ChunkLoop([loop, chunk], repetitions=5)
+            >>> loop2.flattened() == [chunk, chunk, chunk]
+            True
+        """
         return [e for c in self.chunks for e in c.flattened()]
 
     def find_distance(

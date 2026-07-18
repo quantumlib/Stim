@@ -173,7 +173,7 @@ class StabilizerCode:
         )
 
     def with_integer_coordinates(self) -> StabilizerCode:
-        """Returns an equivalent stabilizer code, but with all qubit on Gaussian integers."""
+        """Returns an equivalent stabilizer code, but with all qubits on Gaussian integers."""
 
         r2r = {v: i for i, v in enumerate(sorted({e.real for e in self.used_set}))}
         i2i = {v: i for i, v in enumerate(sorted({e.imag for e in self.used_set}))}
@@ -452,6 +452,25 @@ class StabilizerCode:
     @functools.cached_property
     def data_set(self) -> frozenset[complex]:
         """Returns the set of data qubits used by the stabilizers/logicals of the code.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> # Distance 2 rotated surface code.
+            >>> code = sf.StabilizerCode(
+            ...     stabilizers=[
+            ...         sf.PauliMap({"X": [0, 1, 1j, 1 + 1j]}),
+            ...         sf.PauliMap({"Z": [0, 1]}),
+            ...         sf.PauliMap({"Z": [1j, 1 + 1j]}),
+            ...     ],
+            ...     logicals=[
+            ...         (
+            ...             sf.PauliMap({"X": [0, 1]}, obs_name="LX"),
+            ...             sf.PauliMap({"Z": [0j, 1j]}, obs_name="LZ"),
+            ...         ),
+            ...     ],
+            ... )
+            >>> code.data_set
+            frozenset({0j, (1+0j), 1j, (1+1j)})
         """
         result = set(self.stabilizers.data_set)
         for obs in self.logicals:
@@ -467,8 +486,40 @@ class StabilizerCode:
     def measure_set(self) -> frozenset[complex]:
         """Returns the set of measure qubits used by tiles of the code.
 
-        Note that tiles may not specify measure qubits, in which case this will return
-        the empty set.
+        For this method to return a non-empty result, the code must have been defined with
+        stimfow.Tile stabilizers (rather than stimflow.PauliMap stabilizer). Also, the
+        result may be empty due to tiles not specifying any measure qubits.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> # Distance 2 rotated surface code.
+            >>> code = sf.StabilizerCode(
+            ...     stabilizers=[
+            ...         sf.Tile(
+            ...             data_qubits=[0, 1, 1j, 1 + 1j],
+            ...             bases='X',
+            ...             measure_qubit=0.5 + 0.5j,
+            ...         ),
+            ...         sf.Tile(
+            ...             data_qubits=[0, 1],
+            ...             bases='Z',
+            ...             measure_qubit=0.5 - 0.5j,
+            ...         ),
+            ...         sf.Tile(
+            ...             data_qubits=[1j, 1 + 1j],
+            ...             bases='Z',
+            ...             measure_qubit=0.5 + 1.5j,
+            ...         ),
+            ...     ],
+            ...     logicals=[
+            ...         (
+            ...             sf.PauliMap({"X": [0, 1]}, obs_name="LX"),
+            ...             sf.PauliMap({"Z": [0j, 1j]}, obs_name="LZ"),
+            ...         ),
+            ...     ],
+            ... )
+            >>> code.measure_set
+            frozenset({(0.5-0.5j), (0.5+0.5j), (0.5+1.5j)})
         """
         return self.stabilizers.measure_set
 
@@ -544,7 +595,51 @@ class StabilizerCode:
                             )
 
     def with_xz_flipped(self) -> StabilizerCode:
-        """Returns the same stabilizer code, but with all qubits Hadamard conjugated."""
+        """Returns the same stabilizer code, but with all qubits Hadamard conjugated.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> # Distance 2 rotated surface code.
+            >>> code = sf.StabilizerCode(
+            ...     stabilizers=[
+            ...         sf.PauliMap({"X": [0, 1, 1j, 1 + 1j]}),
+            ...         sf.PauliMap({"Z": [0, 1]}),
+            ...         sf.PauliMap({"Z": [1j, 1 + 1j]}),
+            ...     ],
+            ...     logicals=[
+            ...         (
+            ...             sf.PauliMap({"X": [0, 1]}, obs_name="LX"),
+            ...             sf.PauliMap({"Z": [0j, 1j]}, obs_name="LZ"),
+            ...         ),
+            ...     ],
+            ... )
+            >>> code.with_xz_flipped()
+            stimflow.StabilizerCode(
+                stabilizers=stimflow.Patch(tiles=[
+                    stimflow.Tile(
+                        data_qubits=(0j, (1+0j)),
+                        measure_qubit=None,
+                        bases='X',
+                    ),
+                    stimflow.Tile(
+                        data_qubits=(0j, 1j, (1+0j), (1+1j)),
+                        measure_qubit=None,
+                        bases='Z',
+                    ),
+                    stimflow.Tile(
+                        data_qubits=(1j, (1+1j)),
+                        measure_qubit=None,
+                        bases='X',
+                    ),
+                ]),
+                logicals=[
+                    [
+                        stimflow.PauliMap.from_zs([0j, (1+0j)], obs_name='LX'),
+                        stimflow.PauliMap.from_xs([0j, 1j], obs_name='LZ'),
+                    ],
+                ],
+            )
+        """
         new_observables: list[PauliMap | tuple[PauliMap, PauliMap]] = []
         for entry in self.logicals:
             if isinstance(entry, PauliMap):
@@ -585,7 +680,78 @@ class StabilizerCode:
         stabilizer_style: Literal["polygon", "circles"] | None = "polygon",
         observable_style: Literal["label", "polygon", "circles"] = "label",
     ) -> str_svg:
-        """Returns an SVG diagram of the stabilizer code."""
+        """Returns an SVG diagram of the stabilizer code.
+
+        Args:
+            title: Custom text to place at the top of the SVG.
+            canvas_height: Defaults to None (pick arbitrary height). When set, the height
+                of the SVG is scaled to match this target.
+            show_order: Defaults to False. When set to True, arrows are shown within tiles
+                to show the order in which data qubits are defined. For example, this could
+                be used to indicate the order in which the data qubits are intended to be
+                accessed by a circuit.
+            show_measure_qubits: Defaults to False. When set to True, black circles are
+                included in the diagram indicating the locations of measure qubits.
+            show_data_qubits: Defaults to True. When set to True, black circles are
+                included in the diagram indicating the locations of data qubits.
+            system_qubits: Addition locations to draw black circles / coordinates at.
+            opacity: Controls how transparent elements of the SVG are.
+            show_coords: Defaults to True. When set to True, labels are shown to the
+                left of the diagram and above the diagram indicating the imaginary
+                and real parts of the positions of qubits and other elements.
+            show_obs: Defaults to True. When set to True, qubits are annotated with
+                text labels indicating the support of logical operators (e.g. the
+                 text "X2" would appear next to a qubit, indicating the logical observable
+                 with index 2 had X support at that location).
+            other: Other things to make SVG diagrams of. The various objects are placed
+                into a grid of images.
+            tile_color_func: Controls how stabilizers are drawn. Takes a stimflow.Tile
+                and returns a color (either as an RGB tuple, an RGBA tuple, or a color
+                name defined by the SVG format). If set to None, the default color
+                convention XYZ = RGB is used.
+            rows: Desired number of rows in the diagram, when multiple separate objects
+                are being drawn (due to specifying `other=[...]`). Defaults to None
+                (choose automatically).
+            cols: Desired number of cols in the diagram, when multiple separate objects
+                are being drawn (due to specifying `other=[...]`). Defaults to None
+                (choose automatically).
+            find_logical_err_max_weight: Defaults to None (don't search for a logical
+                error). If set to an integer, a logical error search is performed and
+                the found error (if any) is included in the diagram. The integer controls
+                how truncated the search is. For example, setting this argument to 2
+                is equivalent to performing a search fpr graphlike errors.
+            stabilizer_style: Controls how stabilizers are drawn. Defaults to 'polygon'
+                (draw a filled polygon with the qubits of the observable as its vertices)
+                or 'circle' (draw a circle over each qubit in the support with color chosen
+                by RGB=XYZ).
+            observable_style: Controls how observables are drawn. Defaults to 'label',
+                meaning observables are indicated by text annotations next to qubits in
+                their support. Can also be set to 'polygon' (draw a filled polygon with
+                the qubits of the observable as its vertices) or 'circle' (draw a circle
+                over each qubit in the support with color chosen by RGB=XYZ).
+
+        Examples:
+            >>> import stimflow as sf
+            >>> # Distance 2 rotated surface code.
+            >>> code = sf.StabilizerCode(
+            ...     stabilizers=[
+            ...         sf.PauliMap({"X": [0, 1, 1j, 1 + 1j]}),
+            ...         sf.PauliMap({"Z": [0, 1]}),
+            ...         sf.PauliMap({"Z": [1j, 1 + 1j]}),
+            ...     ],
+            ...     logicals=[
+            ...         (
+            ...             sf.PauliMap({"X": [0, 1]}, obs_name="pair_LX"),
+            ...             sf.PauliMap({"Z": [0j, 1j]}, obs_name="pair_LZ"),
+            ...         ),
+            ...     ],
+            ... )
+            >>> svg = code.to_svg()
+            >>> isinstance(svg, str)
+            True
+            >>> '</text>' in svg
+            True
+        """
         flat: list[StabilizerCode | Patch] = [self] if self is not None else []
         if isinstance(other, (StabilizerCode, Patch)):
             flat.append(other)
@@ -616,8 +782,53 @@ class StabilizerCode:
     def with_transformed_coords(
         self, coord_transform: Callable[[complex], complex]
     ) -> StabilizerCode:
-        """Returns the same stabilizer code, but with coordinates transformed by the given
-        function."""
+        """Returns the same stabilizer code, but with transformed coordinates.
+
+        Args:
+            coord_transform: The function that maps old coordinates to new coordinates.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> code = sf.StabilizerCode(
+            ...     stabilizers=[
+            ...         sf.PauliMap({"X": [0, 1, 1j, 1 + 1j]}),
+            ...         sf.PauliMap({"Z": [0, 1]}),
+            ...         sf.PauliMap({"Z": [1j, 1 + 1j]}),
+            ...     ],
+            ...     logicals=[
+            ...         (
+            ...             sf.PauliMap({"X": [0, 1]}, obs_name="pair_LX"),
+            ...             sf.PauliMap({"Z": [0j, 1j]}, obs_name="pair_LZ"),
+            ...         ),
+            ...     ],
+            ... )
+            >>> code.with_transformed_coords(lambda e: e * 1j + 100)
+            stimflow.StabilizerCode(
+                stabilizers=stimflow.Patch(tiles=[
+                    stimflow.Tile(
+                        data_qubits=((99+0j), (99+1j)),
+                        measure_qubit=None,
+                        bases='Z',
+                    ),
+                    stimflow.Tile(
+                        data_qubits=((100+0j), (99+0j), (100+1j), (99+1j)),
+                        measure_qubit=None,
+                        bases='X',
+                    ),
+                    stimflow.Tile(
+                        data_qubits=((100+0j), (100+1j)),
+                        measure_qubit=None,
+                        bases='Z',
+                    ),
+                ]),
+                logicals=[
+                    [
+                        stimflow.PauliMap.from_xs([(100+0j), (100+1j)], obs_name='pair_LX'),
+                        stimflow.PauliMap.from_zs([(99+0j), (100+0j)], obs_name='pair_LZ'),
+                    ],
+                ],
+            )
+        """
         new_observables: list[PauliMap | tuple[PauliMap, PauliMap]] = []
         for entry in self.logicals:
             if isinstance(entry, PauliMap):
@@ -644,7 +855,64 @@ class StabilizerCode:
         noise: float | NoiseRule,
         metadata_func: Callable[[stimflow.Flow], stimflow.FlowMetadata] = lambda _: FlowMetadata(),
     ) -> stim.Circuit:
-        """Produces a code capacity noisy memory experiment circuit for the stabilizer code."""
+        """Produces a code capacity noisy memory experiment circuit for the stabilizer code.
+
+        Args:
+            noise: Controls the noise added to the circuit. When set to a float, DEPOLARIZE1
+                noise of that strength is applied to every qubit. When set to a NoiseRule,
+                the noise rule's noise is added to every qubit.
+            metadata_func: Determines metadata such as the tags and coordinate data attached
+                to detectors, based on a given flow. Defaults to a function specifying no
+                metadata.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> code = sf.StabilizerCode(
+            ...     stabilizers=[
+            ...         sf.PauliMap({"X": [0, 1, 1j, 1 + 1j]}),
+            ...         sf.PauliMap({"Z": [0, 1]}),
+            ...         sf.PauliMap({"Z": [1j, 1 + 1j]}),
+            ...     ],
+            ...     logicals=[
+            ...         (
+            ...             sf.PauliMap({"X": [0, 1]}, obs_name="LX"),
+            ...             sf.PauliMap({"Z": [0j, 1j]}, obs_name="LZ"),
+            ...         ),
+            ...     ],
+            ... )
+            >>> code.make_code_capacity_circuit(
+            ...     noise=1e-3,
+            ...     metadata_func=lambda flow: sf.FlowMetadata(
+            ...         tag='bang' if 'test' in flow.flags else '',
+            ...     ),
+            ... )
+            stim.Circuit('''
+                QUBIT_COORDS(0, 0) 0
+                QUBIT_COORDS(0, 1) 1
+                QUBIT_COORDS(1, 0) 2
+                QUBIT_COORDS(1, 1) 3
+                OBSERVABLE_INCLUDE(0) X0 X2
+                TICK
+                OBSERVABLE_INCLUDE(1) Z0 Z1
+                TICK
+                MPP X0*X1*X2*X3
+                TICK
+                MPP Z0*Z2 Z1*Z3
+                TICK
+                DEPOLARIZE1(0.001) 0 1 2 3
+                TICK
+                MPP X0*X1*X2*X3
+                TICK
+                MPP Z0*Z2 Z1*Z3
+                DETECTOR(0.5, 0.5, 0) rec[-6] rec[-3]
+                DETECTOR(0.5, 0, 0) rec[-5] rec[-2]
+                DETECTOR(0.5, 1, 0) rec[-4] rec[-1]
+                TICK
+                OBSERVABLE_INCLUDE(0) X0 X2
+                TICK
+                OBSERVABLE_INCLUDE(1) Z0 Z1
+            ''')
+        """
         if isinstance(noise, (int, float)):
             noise = NoiseRule(after={"DEPOLARIZE1": noise})
         if noise.flip_result:
@@ -669,7 +937,87 @@ class StabilizerCode:
         rounds: int,
         metadata_func: Callable[[stimflow.Flow], stimflow.FlowMetadata] = lambda _: FlowMetadata(),
     ) -> stim.Circuit:
-        """Produces a phenomenological noise memory experiment circuit for the stabilizer code."""
+        """Produces a phenomenological noise memory experiment circuit for the code.
+
+        Args:
+            noise: Controls the noise added to the circuit. When set to a float, uniform
+                depolarizing noise of that strength is used. When set to a NoiseRule,
+                the noise rule's noise is added to every qubit (and its measure flip rate
+                applies to every stabilizer measurement).
+            rounds: The number of times to do noisy measurements of the stabilizers.
+            metadata_func: Determines metadata such as the tags and coordinate data attached
+                to detectors, based on a given flow. Defaults to a function specifying no
+                metadata.
+
+        Examples:
+            >>> import stimflow as sf
+            >>> code = sf.StabilizerCode(
+            ...     stabilizers=[
+            ...         sf.PauliMap({"X": [0, 1, 1j, 1 + 1j]}),
+            ...         sf.PauliMap({"Z": [0, 1]}),
+            ...         sf.PauliMap({"Z": [1j, 1 + 1j]}),
+            ...     ],
+            ...     logicals=[
+            ...         (
+            ...             sf.PauliMap({"X": [0, 1]}, obs_name="LX"),
+            ...             sf.PauliMap({"Z": [0j, 1j]}, obs_name="LZ"),
+            ...         ),
+            ...     ],
+            ... )
+            >>> code.make_phenom_circuit(
+            ...     noise=1e-3,
+            ...     rounds=100,
+            ...     metadata_func=lambda flow: sf.FlowMetadata(
+            ...         tag='bang' if 'test' in flow.flags else '',
+            ...     ),
+            ... )
+            stim.Circuit('''
+                QUBIT_COORDS(0, 0) 0
+                QUBIT_COORDS(0, 1) 1
+                QUBIT_COORDS(1, 0) 2
+                QUBIT_COORDS(1, 1) 3
+                OBSERVABLE_INCLUDE(0) X0 X2
+                TICK
+                OBSERVABLE_INCLUDE(1) Z0 Z1
+                TICK
+                MPP X0*X1*X2*X3
+                TICK
+                MPP Z0*Z2 Z1*Z3
+                TICK
+                MPP(0.001) Z0*Z2 Z1*Z3
+                TICK
+                MPP(0.001) X0*X1*X2*X3
+                DETECTOR(0.5, 0, 0) rec[-5] rec[-3]
+                DETECTOR(0.5, 1, 0) rec[-4] rec[-2]
+                DETECTOR(0.5, 0.5, 0) rec[-6] rec[-1]
+                SHIFT_COORDS(0, 0, 1)
+                DEPOLARIZE1(0.001) 0 1 2 3
+                TICK
+                REPEAT 99 {
+                    MPP(0.001) Z0*Z2 Z1*Z3
+                    TICK
+                    MPP(0.001) X0*X1*X2*X3
+                    DETECTOR(-1, 0, 0) rec[-6] rec[-3]
+                    DETECTOR(-1, 0, 1) rec[-5] rec[-2]
+                    DETECTOR(-1, 0, 2) rec[-4] rec[-1]
+                    SHIFT_COORDS(0, 0, 3)
+                    DEPOLARIZE1(0.001) 0 1 2 3
+                    TICK
+                }
+                DEPOLARIZE1(0.001) 0 1 2 3
+                TICK
+                MPP X0*X1*X2*X3
+                TICK
+                MPP Z0*Z2 Z1*Z3
+                DETECTOR(0.5, 0.5, 0) rec[-4] rec[-3]
+                DETECTOR(0.5, 0, 0) rec[-6] rec[-2]
+                DETECTOR(0.5, 1, 0) rec[-5] rec[-1]
+                TICK
+                OBSERVABLE_INCLUDE(0) X0 X2
+                TICK
+                OBSERVABLE_INCLUDE(1) Z0 Z1
+            ''')
+        """
         if isinstance(noise, (int, float)):
             noise = NoiseRule(after={"DEPOLARIZE1": noise}, flip_result=noise)
         from stimflow._chunk._chunk_compiler import ChunkCompiler
@@ -718,26 +1066,38 @@ class StabilizerCode:
         return compiler.finish_circuit()
 
     def __repr__(self) -> str:
+        """Returns a python-parseable representation of the stabilizer code."""
         def indented(x: str) -> str:
             return x.replace("\n", "\n    ")
 
         def indented_repr(x: Any) -> str:
             if isinstance(x, tuple):
-                return indented(indented("[\n" + ",\n".join(indented_repr(e) for e in x)) + ",\n]")
+                sub_lines = []
+                sub_lines.append('[')
+                for e in x:
+                    sub_lines.append('    ' + indented_repr(e) + ',')
+                sub_lines.append(']')
+                return indented('\n'.join(sub_lines))
             return indented(repr(x))
 
-        return f"""stimflow.StabilizerCode(
-    stabilizers={indented_repr(self.stabilizers)},
-    logicals={indented_repr(self.logicals)},
-    scattered_logicals={indented_repr(self.scattered_logicals)},
-)"""
+        lines = []
+        lines.append("stimflow.StabilizerCode(")
+        lines.append(f"    stabilizers={indented_repr(self.stabilizers)},")
+        if self.logicals:
+            lines.append(f"    logicals={indented_repr(self.logicals)},")
+        if self.scattered_logicals:
+            lines.append(f"    scattered_logicals={indented_repr(self.scattered_logicals)},")
+        lines.append(f")")
+        return "\n".join(lines)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: StabilizerCode | Any) -> bool:
+        """Determines if the given object is an equivalent stabilizer code."""
         if not isinstance(other, StabilizerCode):
             return NotImplemented
         return self.stabilizers == other.stabilizers and self.logicals == other.logicals
 
     def __ne__(self, other) -> bool:
+        """Determines if the given object is not an equivalent stabilizer code."""
         return not (self == other)
 
     @functools.lru_cache(maxsize=1)
@@ -758,7 +1118,7 @@ class StabilizerCode:
 
         Stabilizers that anticommute with the resets will be discarded flows.
 
-        The returned chunk isn't guaranteed to be fault tolerant.
+        The returned chunk isn't guaranteed to be fault-tolerant.
         """
         from stimflow._chunk._chunk_builder import ChunkBuilder
 
