@@ -1,6 +1,3 @@
-from typing import cast, Literal
-import re
-
 import stim  # type: ignore[import-untyped]
 
 from stimside.op_handlers.leakage_handlers.leakage_parameters import (
@@ -489,28 +486,4 @@ def parse_leakage_in_circuit(
     circuit: stim.Circuit,
 ) -> dict[stim.CircuitInstruction, LeakageParams]:
     """Parse all present leakage tags in a circuit, including inside repeats."""
-    return _parse_leakage_in_circuit_recurse(circuit=circuit)
-
-
-def _parse_leakage_in_circuit_recurse(
-    circuit: stim.Circuit,
-) -> dict[stim.CircuitInstruction, LeakageParams]:
-    """Helper function to parse all present leakage tags in a circuit, including inside repeats."""
-    parsed_tags = {}
-    for op in circuit:
-        if type(op) == stim.CircuitRepeatBlock:
-            parsed_tags.update(_parse_leakage_in_circuit_recurse(op.body_copy()))
-
-        elif op.tag != "":
-            parsed = parse_leakage_tag(op)
-            if parsed is not None:
-                parsed_tags[op] = parsed
-
-    return parsed_tags
-
-
-def try_as_integer(state: str) -> int | str:
-    """Try to parse a state as an integer, otherwise return the stripped string."""
-    if state.isdigit():
-        return int(state)
-    return state.strip()
+    return _unified_parse_circuit(circuit, simulator="tableau")
