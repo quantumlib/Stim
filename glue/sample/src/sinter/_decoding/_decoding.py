@@ -13,7 +13,7 @@ import stim
 
 from sinter._data import AnonTaskStats
 from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_DECODERS
-from sinter._decoding._decoding_decoder_class import CompiledDecoder, Decoder
+from sinter._decoding._decoding_decoder_class import CompiledDecoder, Decoder, supports_discards_out
 
 if TYPE_CHECKING:
     import sinter
@@ -88,6 +88,7 @@ def _streaming_count_mistakes(
         predictions_in: pathlib.Path,
         count_detection_events: bool,
         count_observable_error_combos: bool,
+        discards_in: Optional[pathlib.Path] = None,
 ) -> Tuple[int, int, collections.Counter]:
 
     num_det_bytes = math.ceil(num_det / 8)
@@ -108,29 +109,36 @@ def _streaming_count_mistakes(
 
     with open(obs_in, 'rb') as obs_in_f:
         with open(predictions_in, 'rb') as predictions_in_f:
-            num_shots_left = num_shots
-            while num_shots_left:
-                batch_size = min(num_shots_left, math.ceil(10**6 / max(num_obs, 1)))
+            with (open(discards_in, 'rb') if discards_in is not None else contextlib.nullcontext()) as discards_in_f:
+                num_shots_left = num_shots
+                while num_shots_left:
+                    batch_size = min(num_shots_left, math.ceil(10**6 / max(num_obs, 1)))
 
-                obs_batch = np.fromfile(obs_in_f, dtype=np.uint8, count=num_obs_bytes * batch_size)
-                pred_batch = np.fromfile(predictions_in_f, dtype=np.uint8, count=num_obs_bytes * batch_size)
-                obs_batch.shape = (batch_size, num_obs_bytes)
-                pred_batch.shape = (batch_size, num_obs_bytes)
+                    obs_batch = np.fromfile(obs_in_f, dtype=np.uint8, count=num_obs_bytes * batch_size)
+                    pred_batch = np.fromfile(predictions_in_f, dtype=np.uint8, count=num_obs_bytes * batch_size)
+                    obs_batch.shape = (batch_size, num_obs_bytes)
+                    pred_batch.shape = (batch_size, num_obs_bytes)
 
-                cmp_table = pred_batch ^ obs_batch
-                err_mask = np.any(cmp_table, axis=1)
-                if postselected_observable_mask is not None:
-                    discard_mask = np.any(cmp_table & postselected_observable_mask, axis=1)
-                    err_mask &= ~discard_mask
-                    num_discards += np.count_nonzero(discard_mask)
+                    cmp_table = pred_batch ^ obs_batch
+                    err_mask = np.any(cmp_table, axis=1)
+                    discard_mask = np.zeros(batch_size, dtype=bool)
+                    if discards_in_f is not None:
+                        disc_batch = np.fromfile(discards_in_f, dtype=np.uint8, count=batch_size)
+                        disc_batch.shape = (batch_size,)
+                        discard_mask |= disc_batch != 0
+                    if postselected_observable_mask is not None:
+                        discard_mask |= np.any(cmp_table & postselected_observable_mask, axis=1)
+                    if np.any(discard_mask):
+                        err_mask &= ~discard_mask
+                        num_discards += np.count_nonzero(discard_mask)
 
-                if count_observable_error_combos:
-                    for misprediction_arr in cmp_table[err_mask]:
-                        err_key = "obs_mistake_mask=" + ''.join('_E'[b] for b in np.unpackbits(misprediction_arr, count=num_obs, bitorder='little'))
-                        custom_counts[err_key] += 1
+                    if count_observable_error_combos:
+                        for misprediction_arr in cmp_table[err_mask]:
+                            err_key = "obs_mistake_mask=" + ''.join('_E'[b] for b in np.unpackbits(misprediction_arr, count=num_obs, bitorder='little'))
+                            custom_counts[err_key] += 1
 
-                num_errors += np.count_nonzero(err_mask)
-                num_shots_left -= batch_size
+                    num_errors += np.count_nonzero(err_mask)
+                    num_shots_left -= batch_size
     return num_discards, num_errors, custom_counts
 
 
@@ -284,14 +292,26 @@ def _sample_decode_helper_using_memory(
         # Have the decoder predict which observables are flipped.
         predict_data = compiled_decoder.decode_shots_bit_packed(bit_packed_detection_event_data=dets_data)
 
+        # A trailing byte of prediction data marks shots the decoder had low
+        # confidence in; these shots are counted as discards.
+        num_obs_bytes = (num_obs + 7) // 8
+        if predict_data.shape[1] == num_obs_bytes + 1:
+            decoder_discarded_flags = predict_data[:, -1] != 0
+            predict_data = predict_data[:, :-1]
+        elif predict_data.shape[1] == num_obs_bytes:
+            decoder_discarded_flags = np.zeros(predict_data.shape[0], dtype=bool)
+        else:
+            raise ValueError(f"Got a numpy array with shape={predict_data.shape} from {type(compiled_decoder).__qualname__}.decode_shots_bit_packed(...). Expected shape={(predict_data.shape[0], num_obs_bytes)} or {(predict_data.shape[0], num_obs_bytes + 1)}.")
+
         # Discard any shots where the decoder predicts a flipped postselected observable.
+        discarded_flags = decoder_discarded_flags
         if postselected_observable_mask is not None:
-            discarded_flags = np.any(postselected_observable_mask & (predict_data ^ obs_data), axis=1)
-            cur_num_discarded_shots = np.count_nonzero(discarded_flags)
-            if cur_num_discarded_shots:
-                out_num_discards += cur_num_discarded_shots
-                obs_data = obs_data[~discarded_flags, :]
-                predict_data = predict_data[~discarded_flags, :]
+            discarded_flags = discarded_flags | np.any(postselected_observable_mask & (predict_data ^ obs_data), axis=1)
+        cur_num_discarded_shots = np.count_nonzero(discarded_flags)
+        if cur_num_discarded_shots:
+            out_num_discards += cur_num_discarded_shots
+            obs_data = obs_data[~discarded_flags, :]
+            predict_data = predict_data[~discarded_flags, :]
 
         # Count how many mistakes the decoder made on non-discarded shots.
         mispredictions = obs_data ^ predict_data
@@ -381,15 +401,28 @@ def _sample_decode_helper_using_disk(
         num_kept_shots = num_shots - num_det_discards
 
         # Perform syndrome decoding to predict observables from detection events.
-        decoder_obj.decode_via_files(
-            num_shots=num_kept_shots,
-            num_dets=num_dets,
-            num_obs=num_obs,
-            dem_path=dem_path,
-            dets_b8_in_path=dets_used_path,
-            obs_predictions_b8_out_path=predictions_path,
-            tmp_dir=tmp_dir,
-        )
+        discards_path = tmp_dir / 'sinter_discards.b8'
+        if supports_discards_out(decoder_obj):
+            decoder_obj.decode_via_files(
+                num_shots=num_kept_shots,
+                num_dets=num_dets,
+                num_obs=num_obs,
+                dem_path=dem_path,
+                dets_b8_in_path=dets_used_path,
+                obs_predictions_b8_out_path=predictions_path,
+                tmp_dir=tmp_dir,
+                discards_b8_out_path=discards_path,
+            )
+        else:
+            decoder_obj.decode_via_files(
+                num_shots=num_kept_shots,
+                num_dets=num_dets,
+                num_obs=num_obs,
+                dem_path=dem_path,
+                dets_b8_in_path=dets_used_path,
+                obs_predictions_b8_out_path=predictions_path,
+                tmp_dir=tmp_dir,
+            )
 
         # Count how many predictions matched the actual observable data.
         num_obs_discards, num_errors, custom_counts = _streaming_count_mistakes(
@@ -402,6 +435,7 @@ def _sample_decode_helper_using_disk(
             postselected_observable_mask=postselected_observable_mask,
             count_detection_events=count_detection_events,
             count_observable_error_combos=count_observable_error_combos,
+            discards_in=discards_path if supports_discards_out(decoder_obj) else None,
         )
 
         return AnonTaskStats(

@@ -480,3 +480,145 @@ def test_infer_decode_via_files_from_decode_from_compile_decoder_for_dem():
         )
         obs = np.fromfile(d / 'obs.b8', dtype=np.uint8, count=10)
         np.testing.assert_array_equal(obs, [0] * 10)
+
+
+class DiscardingFileDecoder(sinter.Decoder):
+    """A file-based decoder that predicts all observables as flipped and reports
+    every other shot as a low-confidence discard."""
+
+    def decode_via_files(self, *, num_shots, num_dets, num_obs, dem_path, dets_b8_in_path, obs_predictions_b8_out_path, tmp_dir, discards_b8_out_path=None):
+        num_det_bytes = -(-num_dets // 8)
+        num_obs_bytes = -(-num_obs // 8)
+        dets = np.fromfile(dets_b8_in_path, dtype=np.uint8, count=num_shots * num_det_bytes).reshape(num_shots, num_det_bytes)
+        np.ones(num_shots * num_obs_bytes, dtype=np.uint8).tofile(obs_predictions_b8_out_path)
+        if discards_b8_out_path is not None:
+            discards = np.zeros(num_shots, dtype=np.uint8)
+            discards[1::2] = 1
+            discards.tofile(discards_b8_out_path)
+
+
+class LegacyFileDecoder(sinter.Decoder):
+    """A file-based decoder with the old signature that doesn't support discards."""
+
+    def decode_via_files(self, *, num_shots, num_dets, num_obs, dem_path, dets_b8_in_path, obs_predictions_b8_out_path, tmp_dir):
+        num_obs_bytes = -(-num_obs // 8)
+        np.zeros(num_shots * num_obs_bytes, dtype=np.uint8).tofile(obs_predictions_b8_out_path)
+
+
+class TrailingByteCompiledDecoder(sinter.CompiledDecoder):
+    def __init__(self, num_obs: int):
+        self.num_obs_bytes = -(-num_obs // 8)
+
+    def decode_shots_bit_packed(
+            self,
+            *,
+            bit_packed_detection_event_data: np.ndarray,
+    ) -> np.ndarray:
+        num_shots = bit_packed_detection_event_data.shape[0]
+        return np.ones((num_shots, self.num_obs_bytes + 1), dtype=np.uint8)
+
+
+class TrailingByteDecoder(sinter.Decoder):
+    def compile_decoder_for_dem(
+        self,
+        *,
+        dem: stim.DetectorErrorModel,
+    ) -> CompiledDecoder:
+        return TrailingByteCompiledDecoder(num_obs=dem.num_observables)
+
+
+def _noiseless_repetition_code() -> stim.Circuit:
+    return stim.Circuit.generated(
+        "repetition_code:memory",
+        rounds=3,
+        distance=3,
+        before_round_data_depolarization=0,
+        before_measure_flip_probability=0,
+        after_clifford_depolarization=0,
+    )
+
+
+def test_file_decoder_discards_supported():
+    # A file-based decoder that supports discards_b8_out_path must have its
+    # low-confidence shots counted as discards and excluded from errors.
+    circuit = _noiseless_repetition_code()
+    result = sample_decode(
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(),
+        dem_path=None,
+        num_shots=10,
+        decoder="discarding_file",
+        custom_decoders={"discarding_file": DiscardingFileDecoder()},
+        __private__unstable__force_decode_on_disk=True,
+    )
+    assert result.shots == 10
+    assert result.discards == 5
+    assert result.errors == 5
+
+
+def test_file_decoder_discards_unsupported():
+    # A file-based decoder with the old signature (no discards_b8_out_path)
+    # must continue to work unchanged, with zero discards.
+    circuit = _noiseless_repetition_code()
+    result = sample_decode(
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(),
+        dem_path=None,
+        num_shots=10,
+        decoder="legacy_file",
+        custom_decoders={"legacy_file": LegacyFileDecoder()},
+        __private__unstable__force_decode_on_disk=True,
+    )
+    assert result.shots == 10
+    assert result.discards == 0
+    assert result.errors == 0
+
+
+def test_compiled_decoder_trailing_discard_byte():
+    # A compiled decoder that returns an extra trailing byte of prediction data
+    # must have its nonzero trailing bytes counted as discards, with those
+    # shots excluded from error counting (memory path).
+    circuit = _noiseless_repetition_code()
+    result = sample_decode(
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(),
+        dem_path=None,
+        num_shots=10,
+        decoder="trailing_byte",
+        custom_decoders={"trailing_byte": TrailingByteDecoder()},
+    )
+    assert result.shots == 10
+    assert result.discards == 10
+    assert result.errors == 0
+
+
+def test_base_class_decode_via_files_writes_discards():
+    # The base-class default implementation of decode_via_files must forward a
+    # trailing discard byte from the compiled decoder into discards_b8_out_path.
+    circuit = _noiseless_repetition_code()
+    dem = circuit.detector_error_model()
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        dem.to_file(d / 'dem.dem')
+        num_det_bytes = -(-dem.num_detectors // 8)
+        num_obs_bytes = -(-dem.num_observables // 8)
+        np.zeros((10, num_det_bytes), dtype=np.uint8).tofile(d / 'dets.b8')
+        TrailingByteDecoder().decode_via_files(
+            num_shots=10,
+            num_dets=dem.num_detectors,
+            num_obs=dem.num_observables,
+            dem_path=d / 'dem.dem',
+            dets_b8_in_path=d / 'dets.b8',
+            obs_predictions_b8_out_path=d / 'obs.b8',
+            tmp_dir=d,
+            discards_b8_out_path=d / 'discards.b8',
+        )
+        obs = np.fromfile(d / 'obs.b8', dtype=np.uint8)
+        discards = np.fromfile(d / 'discards.b8', dtype=np.uint8)
+        assert obs.shape == (10 * num_obs_bytes,)
+        assert np.all(obs == 1)
+        assert discards.shape == (10,)
+        assert np.all(discards == 1)

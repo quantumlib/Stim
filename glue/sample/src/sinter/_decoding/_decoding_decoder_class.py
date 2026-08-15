@@ -1,5 +1,7 @@
 import abc
+import inspect
 import pathlib
+from typing import Optional
 
 import numpy as np
 import stim
@@ -51,6 +53,14 @@ class CompiledDecoder(metaclass=abc.ABCMeta):
             where `num_shots` is bit_packed_detection_event_data.shape[0] and
             `dem` is the detector error model this instance was compiled to
             decode.
+
+            The returned array may optionally contain one extra column of data
+            (shape `(num_shots, ceil(dem.num_observables / 8) + 1)`). When the
+            extra column is present, a nonzero value in the final column of a
+            row marks that shot as a "discard", meaning the decoder had low
+            confidence in its prediction for that shot. Sinter counts discarded
+            shots as conservative failures (`errors + discards`) when computing
+            logical error rates.
         """
         pass
 
@@ -108,6 +118,7 @@ class Decoder:
                          dets_b8_in_path: pathlib.Path,
                          obs_predictions_b8_out_path: pathlib.Path,
                          tmp_dir: pathlib.Path,
+                         discards_b8_out_path: Optional[pathlib.Path] = None,
                        ) -> None:
         """Performs decoding by reading/writing problems and answers from disk.
 
@@ -143,6 +154,16 @@ class Decoder:
                 process without warning, without giving it time to clean up any
                 temporary objects. All cleanup should be done via sinter
                 deleting this directory after killing the decoder.
+            discards_b8_out_path: If specified, the decoder must additionally
+                write one byte per shot to this file, in b8 format, where a
+                nonzero byte marks the corresponding shot as a discard (e.g.
+                because the decoder had low confidence in its prediction for
+                that shot). Sinter counts discarded shots as conservative
+                failures when computing logical error rates. If not specified,
+                the decoder should not write any discard data and all shots are
+                treated as not discarded. Decoders that do not support
+                reporting discards may ignore this parameter (sinter will only
+                pass it to decoders whose signature accepts it).
         """
         dem = stim.DetectorErrorModel.from_file(dem_path)
 
@@ -156,6 +177,25 @@ class Decoder:
         dets = np.fromfile(dets_b8_in_path, dtype=np.uint8, count=num_shots * num_det_bytes)
         dets = dets.reshape(num_shots, num_det_bytes)
         obs = compiled.decode_shots_bit_packed(bit_packed_detection_event_data=dets)
-        if obs.dtype != np.uint8 or obs.shape != (num_shots, num_obs_bytes):
-            raise ValueError(f"Got a numpy array with dtype={obs.dtype},shape={obs.shape} instead of dtype={np.uint8},shape={(num_shots, num_obs_bytes)} from {type(self).__qualname__}(...).compile_decoder_for_dem(...).decode_shots_bit_packed(...).")
+        if obs.dtype != np.uint8 or obs.shape not in ((num_shots, num_obs_bytes), (num_shots, num_obs_bytes + 1)):
+            raise ValueError(f"Got a numpy array with dtype={obs.dtype},shape={obs.shape} instead of dtype={np.uint8},shape={(num_shots, num_obs_bytes)} or {(num_shots, num_obs_bytes + 1)} from {type(self).__qualname__}(...).compile_decoder_for_dem(...).decode_shots_bit_packed(...).")
+        if obs.shape[1] > num_obs_bytes:
+            # The extra trailing byte marks shots as discards, as documented in
+            # `CompiledDecoder.decode_shots_bit_packed`.
+            if discards_b8_out_path is not None:
+                obs[:, -1:].tofile(discards_b8_out_path)
+            obs = obs[:, :num_obs_bytes]
         obs.tofile(obs_predictions_b8_out_path)
+
+
+def supports_discards_out(decoder: Decoder) -> bool:
+    """Determines whether a decoder's `decode_via_files` can report discards.
+
+    Returns True if `decoder.decode_via_files` accepts a
+    `discards_b8_out_path` keyword argument, meaning the decoder can report
+    low-confidence shots as discards by writing one byte per shot to that file
+    (nonzero = discard). Sinter only passes `discards_b8_out_path` to decoders
+    for which this function returns True, so decoders that don't support
+    reporting discards continue to work unchanged.
+    """
+    return 'discards_b8_out_path' in inspect.signature(decoder.decode_via_files).parameters

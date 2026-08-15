@@ -9,7 +9,7 @@ import numpy as np
 
 from sinter._data import Task, AnonTaskStats
 from sinter._decoding._sampler import Sampler, CompiledSampler
-from sinter._decoding._decoding_decoder_class import Decoder, CompiledDecoder
+from sinter._decoding._decoding_decoder_class import Decoder, CompiledDecoder, supports_discards_out
 
 
 class StimThenDecodeSampler(Sampler):
@@ -115,22 +115,42 @@ class DiskDecoder(CompiledDecoder):
         num_shots = bit_packed_detection_event_data.shape[0]
         with open(self.dets_b8_in_path, 'wb') as f:
             bit_packed_detection_event_data.tofile(f)
-        self.decoder.decode_via_files(
-            num_shots=num_shots,
-            num_obs=self.num_obs,
-            num_dets=self.num_dets,
-            dem_path=self.dem_path,
-            dets_b8_in_path=self.dets_b8_in_path,
-            obs_predictions_b8_out_path=self.obs_predictions_b8_out_path,
-            tmp_dir=self.decoder_tmp_dir,
-        )
+        discards_b8_out_path = self.top_tmp_dir / 'discards.b8' if supports_discards_out(self.decoder) else None
+        if discards_b8_out_path is not None:
+            self.decoder.decode_via_files(
+                num_shots=num_shots,
+                num_obs=self.num_obs,
+                num_dets=self.num_dets,
+                dem_path=self.dem_path,
+                dets_b8_in_path=self.dets_b8_in_path,
+                obs_predictions_b8_out_path=self.obs_predictions_b8_out_path,
+                tmp_dir=self.decoder_tmp_dir,
+                discards_b8_out_path=discards_b8_out_path,
+            )
+        else:
+            self.decoder.decode_via_files(
+                num_shots=num_shots,
+                num_obs=self.num_obs,
+                num_dets=self.num_dets,
+                dem_path=self.dem_path,
+                dets_b8_in_path=self.dets_b8_in_path,
+                obs_predictions_b8_out_path=self.obs_predictions_b8_out_path,
+                tmp_dir=self.decoder_tmp_dir,
+            )
         num_obs_bytes = (self.num_obs + 7) // 8
         with open(self.obs_predictions_b8_out_path, 'rb') as f:
             prediction = np.fromfile(f, dtype=np.uint8, count=num_obs_bytes * num_shots)
             assert prediction.shape == (num_obs_bytes * num_shots,)
         self.obs_predictions_b8_out_path.unlink()
         self.dets_b8_in_path.unlink()
-        return prediction.reshape((num_shots, num_obs_bytes))
+        prediction = prediction.reshape((num_shots, num_obs_bytes))
+        if discards_b8_out_path is not None:
+            with open(discards_b8_out_path, 'rb') as f:
+                discards = np.fromfile(f, dtype=np.uint8, count=num_shots)
+                assert discards.shape == (num_shots,)
+            discards_b8_out_path.unlink()
+            prediction = np.concatenate([prediction, discards.reshape((num_shots, 1))], axis=1)
+        return prediction
 
 
 def _compile_decoder_with_disk_fallback(
