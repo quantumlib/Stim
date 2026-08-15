@@ -13,7 +13,7 @@ import stim
 
 from sinter._data import AnonTaskStats
 from sinter._decoding._decoding_all_built_in_decoders import BUILT_IN_DECODERS
-from sinter._decoding._decoding_decoder_class import CompiledDecoder, Decoder, supports_discards_out
+from sinter._decoding._decoding_decoder_class import CompiledDecoder, Decoder
 
 if TYPE_CHECKING:
     import sinter
@@ -402,7 +402,8 @@ def _sample_decode_helper_using_disk(
 
         # Perform syndrome decoding to predict observables from detection events.
         discards_path = tmp_dir / 'sinter_discards.b8'
-        if supports_discards_out(decoder_obj):
+        discards_available = True
+        try:
             decoder_obj.decode_via_files(
                 num_shots=num_kept_shots,
                 num_dets=num_dets,
@@ -413,7 +414,12 @@ def _sample_decode_helper_using_disk(
                 tmp_dir=tmp_dir,
                 discards_b8_out_path=discards_path,
             )
-        else:
+        except TypeError:
+            # Decoders whose decode_via_files doesn't accept the new argument
+            # (e.g. older decoders, or C++-bound methods whose signatures are
+            # not introspectable) reject it during argument parsing, before any
+            # side effects, so it is safe to retry without it.
+            discards_available = False
             decoder_obj.decode_via_files(
                 num_shots=num_kept_shots,
                 num_dets=num_dets,
@@ -435,7 +441,7 @@ def _sample_decode_helper_using_disk(
             postselected_observable_mask=postselected_observable_mask,
             count_detection_events=count_detection_events,
             count_observable_error_combos=count_observable_error_combos,
-            discards_in=discards_path if supports_discards_out(decoder_obj) else None,
+            discards_in=discards_path if discards_available else None,
         )
 
         return AnonTaskStats(

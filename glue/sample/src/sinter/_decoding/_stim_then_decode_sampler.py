@@ -9,7 +9,7 @@ import numpy as np
 
 from sinter._data import Task, AnonTaskStats
 from sinter._decoding._sampler import Sampler, CompiledSampler
-from sinter._decoding._decoding_decoder_class import Decoder, CompiledDecoder, supports_discards_out
+from sinter._decoding._decoding_decoder_class import Decoder, CompiledDecoder
 
 
 class StimThenDecodeSampler(Sampler):
@@ -115,8 +115,8 @@ class DiskDecoder(CompiledDecoder):
         num_shots = bit_packed_detection_event_data.shape[0]
         with open(self.dets_b8_in_path, 'wb') as f:
             bit_packed_detection_event_data.tofile(f)
-        discards_b8_out_path = self.top_tmp_dir / 'discards.b8' if supports_discards_out(self.decoder) else None
-        if discards_b8_out_path is not None:
+        discards_b8_out_path = self.top_tmp_dir / 'discards.b8'
+        try:
             self.decoder.decode_via_files(
                 num_shots=num_shots,
                 num_obs=self.num_obs,
@@ -127,7 +127,12 @@ class DiskDecoder(CompiledDecoder):
                 tmp_dir=self.decoder_tmp_dir,
                 discards_b8_out_path=discards_b8_out_path,
             )
-        else:
+        except TypeError:
+            # Decoders whose decode_via_files doesn't accept the new argument
+            # (e.g. older decoders, or C++-bound methods whose signatures are
+            # not introspectable) reject it during argument parsing, before any
+            # side effects, so it is safe to retry without it.
+            discards_b8_out_path = None
             self.decoder.decode_via_files(
                 num_shots=num_shots,
                 num_obs=self.num_obs,

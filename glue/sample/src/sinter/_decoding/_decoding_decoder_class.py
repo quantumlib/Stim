@@ -1,5 +1,4 @@
 import abc
-import inspect
 import pathlib
 from typing import Optional
 
@@ -187,15 +186,3 @@ class Decoder:
             obs = obs[:, :num_obs_bytes]
         obs.tofile(obs_predictions_b8_out_path)
 
-
-def supports_discards_out(decoder: Decoder) -> bool:
-    """Determines whether a decoder's `decode_via_files` can report discards.
-
-    Returns True if `decoder.decode_via_files` accepts a
-    `discards_b8_out_path` keyword argument, meaning the decoder can report
-    low-confidence shots as discards by writing one byte per shot to that file
-    (nonzero = discard). Sinter only passes `discards_b8_out_path` to decoders
-    for which this function returns True, so decoders that don't support
-    reporting discards continue to work unchanged.
-    """
-    return 'discards_b8_out_path' in inspect.signature(decoder.decode_via_files).parameters
