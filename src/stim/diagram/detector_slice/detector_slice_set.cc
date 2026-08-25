@@ -1,5 +1,8 @@
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 
+#include <optional>
+#include <utility>
+
 #include "stim/dem/detector_error_model.h"
 #include "stim/diagram/coord.h"
 #include "stim/diagram/diagram_util.h"
@@ -720,7 +723,8 @@ void _start_many_body_svg_path(
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t tick,
     SpanRef<const GateTarget> terms,
-    std::vector<Coord<2>> &pts_workspace) {
+    std::vector<Coord<2>> &pts_workspace,
+    DetectorSliceSvgPath *path) {
     pts_workspace.clear();
     for (const auto &term : terms) {
         pts_workspace.push_back(coords(tick, term.qubit_value()));
@@ -730,6 +734,9 @@ void _start_many_body_svg_path(
         return offset_angle_from_to(center, a) < offset_angle_from_to(center, b);
     });
 
+    if (path != nullptr) {
+        *path = {DetectorSliceSvgPathKind::PATH, pts_workspace[0], 0, {}};
+    }
     out << "<path d=\"";
     out << "M" << pts_workspace[0].xyz[0] << "," << pts_workspace[0].xyz[1];
     size_t n = pts_workspace.size();
@@ -747,8 +754,14 @@ void _start_many_body_svg_path(
             out << d.xyz[0] << " " << d.xyz[1] << ",";
             out << d.xyz[0] << " " << d.xyz[1] << ",";
             out << b.xyz[0] << " " << b.xyz[1];
+            if (path != nullptr) {
+                path->segments.push_back({false, d, d, b});
+            }
         } else {
             out << " L" << b.xyz[0] << "," << b.xyz[1];
+            if (path != nullptr) {
+                path->segments.push_back({true, {}, {}, b});
+            }
         }
     }
     out << '"';
@@ -758,7 +771,8 @@ void _start_two_body_svg_path(
     std::ostream &out,
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t tick,
-    SpanRef<const GateTarget> terms) {
+    SpanRef<const GateTarget> terms,
+    DetectorSliceSvgPath *path) {
     auto a = coords(tick, terms[0].qubit_value());
     auto b = coords(tick, terms[1].qubit_value());
     auto dif = b - a;
@@ -772,6 +786,17 @@ void _start_two_body_svg_path(
     auto bc1 = average + perp * -0.2f + dif * 0.2f;
     auto bc2 = average + perp * -0.2f - dif * 0.2f;
 
+    if (path != nullptr) {
+        *path = {
+            DetectorSliceSvgPathKind::PATH,
+            a,
+            0,
+            {
+                {false, ac1, ac2, b},
+                {false, bc1, bc2, a},
+            },
+        };
+    }
     out << "<path d=\"";
     out << "M" << a.xyz[0] << "," << a.xyz[1] << " ";
     out << "C";
@@ -790,8 +815,12 @@ void _start_one_body_svg_path(
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t tick,
     SpanRef<const GateTarget> terms,
-    size_t scale) {
+    size_t scale,
+    DetectorSliceSvgPath *path) {
     auto c = coords(tick, terms[0].qubit_value());
+    if (path != nullptr) {
+        *path = {DetectorSliceSvgPathKind::CIRCLE, c, (float)scale, {}};
+    }
     out << "<circle";
     write_key_val(out, "cx", c.xyz[0]);
     write_key_val(out, "cy", c.xyz[1]);
@@ -804,13 +833,14 @@ void _start_slice_shape_command(
     uint64_t tick,
     SpanRef<const GateTarget> terms,
     std::vector<Coord<2>> &pts_workspace,
-    size_t scale) {
+    size_t scale,
+    DetectorSliceSvgPath *path) {
     if (terms.size() > 2) {
-        _start_many_body_svg_path(out, coords, tick, terms, pts_workspace);
+        _start_many_body_svg_path(out, coords, tick, terms, pts_workspace, path);
     } else if (terms.size() == 2) {
-        _start_two_body_svg_path(out, coords, tick, terms);
+        _start_two_body_svg_path(out, coords, tick, terms, path);
     } else if (terms.size() == 1) {
-        _start_one_body_svg_path(out, coords, tick, terms, scale);
+        _start_one_body_svg_path(out, coords, tick, terms, scale, path);
     }
 }
 
@@ -913,8 +943,12 @@ void DetectorSliceSet::write_svg_contents_to(
     const std::function<Coord<2>(uint32_t qubit)> &unscaled_coords,
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t end_tick,
-    size_t scale) const {
+    size_t scale,
+    DetectorSliceSvgMetadata *metadata) const {
     size_t clip_id = 0;
+    if (metadata != nullptr) {
+        *metadata = {};
+    }
 
     std::vector<Coord<2>> pts_workspace;
 
@@ -967,6 +1001,11 @@ void DetectorSliceSet::write_svg_contents_to(
             drawCorners = true;
             color = BG_GREY;
         }
+        float fill_opacity = terms.size() > 2 ? 0.75f : 1.0f;
+        std::optional<DetectorSliceSvgRegion> region;
+        if (metadata != nullptr && target.is_relative_detector_id()) {
+            region = DetectorSliceSvgRegion{{}, {color, fill_opacity, {}}, target.val()};
+        }
 
         // Open the group element for this slice
         out << "<g id=\"slice:" << target.val();
@@ -975,10 +1014,11 @@ void DetectorSliceSet::write_svg_contents_to(
         }
         out << ":" << tick << "\">\n";
 
-        _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale);
+        _start_slice_shape_command(
+            out, coords, tick, terms, pts_workspace, scale, region.has_value() ? &region->path : nullptr);
         write_key_val(out, "stroke", "none");
         if (terms.size() > 2) {
-            write_key_val(out, "fill-opacity", 0.75);
+            write_key_val(out, "fill-opacity", fill_opacity);
         }
         write_key_val(out, "fill", color);
         out << "/>\n";
@@ -988,7 +1028,7 @@ void DetectorSliceSet::write_svg_contents_to(
             out << R"SVG(<clipPath id="clip)SVG";
             out << clip_id;
             out << "\">";
-            _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale);
+            _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale, nullptr);
             out << "/></clipPath>\n";
 
             size_t blur_radius = scale == 6 ? 20 : scale * 1.8f;
@@ -1001,12 +1041,17 @@ void DetectorSliceSet::write_svg_contents_to(
                 write_key_val(out, "cy", c.xyz[1]);
                 write_key_val(out, "r", blur_radius);
                 write_key_val(out, "stroke", "none");
+                const char *gradient_fill;
                 if (t.is_x_target()) {
-                    write_key_val(out, "fill", "url('#xgrad')");
+                    gradient_fill = "url('#xgrad')";
                 } else if (t.is_y_target()) {
-                    write_key_val(out, "fill", "url('#ygrad')");
+                    gradient_fill = "url('#ygrad')";
                 } else {
-                    write_key_val(out, "fill", "url('#zgrad')");
+                    gradient_fill = "url('#zgrad')";
+                }
+                write_key_val(out, "fill", gradient_fill);
+                if (region.has_value()) {
+                    region->style.gradients.push_back({c, blur_radius, gradient_fill});
                 }
                 out << "/>\n";
             }
@@ -1015,13 +1060,17 @@ void DetectorSliceSet::write_svg_contents_to(
         }
 
         // Draw outline
-        _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale);
+        _start_slice_shape_command(out, coords, tick, terms, pts_workspace, scale, nullptr);
         write_key_val(out, "stroke", "black");
         write_key_val(out, "fill", "none");
         out << "/>\n";
 
         // Close the group element for this slice
         out << "</g>\n";
+
+        if (region.has_value()) {
+            metadata->regions.push_back(std::move(*region));
+        }
     }
     if (haveDrawnCorners) {
         // write out the universal radialGradients that all corners reference
