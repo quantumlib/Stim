@@ -350,3 +350,60 @@ TEST_EACH_WORD_SIZE_W(circuit_inverse_qec, obs_include_pauli, {
     )CIRCUIT"));
     ASSERT_EQ(actual.second, (std::vector<Flow<W>>{}));
 })
+
+TEST_EACH_WORD_SIZE_W(circuit_inverse_qec, noisy_measurement_to_reset_x, {
+    auto actual = circuit_inverse_qec<W>(
+        Circuit(R"CIRCUIT(
+            R 0
+            H 0
+            MX(0.125) 0
+            DETECTOR rec[-1]
+        )CIRCUIT"),
+        {std::vector<Flow<W>>{}});
+    ASSERT_EQ(actual.first, Circuit(R"CIRCUIT(
+        RX 0
+        Z_ERROR(0.125) 0
+        H 0
+        M 0
+        DETECTOR rec[-1]
+    )CIRCUIT"));
+    ASSERT_EQ(actual.second, (std::vector<Flow<W>>{}));
+})
+
+TEST_EACH_WORD_SIZE_W(circuit_inverse_qec, noisy_measurement_to_reset_y, {
+    auto actual = circuit_inverse_qec<W>(
+        Circuit(R"CIRCUIT(
+            RY 0
+            H 0
+            MY(0.125) 0
+            DETECTOR rec[-1]
+        )CIRCUIT"),
+        {std::vector<Flow<W>>{}});
+    ASSERT_EQ(actual.first, Circuit(R"CIRCUIT(
+        RY 0
+        X_ERROR(0.125) 0
+        H 0
+        MY 0
+        DETECTOR rec[-1]
+    )CIRCUIT"));
+    ASSERT_EQ(actual.second, (std::vector<Flow<W>>{}));
+})
+
+TEST_EACH_WORD_SIZE_W(circuit_inverse_qec, noisy_measurement_to_reset_z, {
+    auto actual = circuit_inverse_qec<W>(
+        Circuit(R"CIRCUIT(
+            RX 0
+            H 0
+            M(0.125) 0
+            DETECTOR rec[-1]
+        )CIRCUIT"),
+        {std::vector<Flow<W>>{}});
+    ASSERT_EQ(actual.first, Circuit(R"CIRCUIT(
+        R 0
+        X_ERROR(0.125) 0
+        H 0
+        MX 0
+        DETECTOR rec[-1]
+    )CIRCUIT"));
+    ASSERT_EQ(actual.second, (std::vector<Flow<W>>{}));
+})
