@@ -895,7 +895,7 @@ TEST(detector_error_model, parse_windows_newlines) {
         DetectorErrorModel("error(0.125) D0\r\ndetector(5) D10\r\n"));
 }
 
-TEST(circuit, parse_tag_eof) {
+TEST(detector_error_model, parse_tag_eof) {
     ASSERT_THROW({
         DetectorErrorModel("error[");
     }, std::invalid_argument);
