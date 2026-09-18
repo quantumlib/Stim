@@ -14,7 +14,7 @@ let DEF_ROW = [1,    2,   2,   2,  2,     0,   2,   2,    2,    -1, -1, -1];
  * @returns {undefined|!{row: !int, strength: !number}}
  */
 function getFocusedRow(ev) {
-    if (ev.ctrlKey) {
+    if (ev.ctrlKey || ev.metaKey) {
         return undefined;
     }
     let hasX = +ev.chord.has('x');
@@ -36,7 +36,7 @@ function getFocusedRow(ev) {
  * @returns {undefined|!{col: !int, strength: !number}}
  */
 function getFocusedCol(ev) {
-    if (ev.ctrlKey) {
+    if (ev.ctrlKey || ev.metaKey) {
         return undefined;
     }
     let best = undefined;
