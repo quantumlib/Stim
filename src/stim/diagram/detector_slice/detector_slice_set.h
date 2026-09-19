@@ -35,6 +35,51 @@ struct CoordFilter {
     static CoordFilter parse_from(std::string_view data);
 };
 
+enum class DetectorSliceSvgPathKind {
+    CIRCLE,
+    PATH,
+};
+
+struct DetectorSliceSvgPathSegment {
+    bool is_line;
+    Coord<2> control1;
+    Coord<2> control2;
+    Coord<2> end;
+};
+
+struct DetectorSliceSvgPath {
+    DetectorSliceSvgPathKind kind;
+    Coord<2> start;
+    float radius;
+    std::vector<DetectorSliceSvgPathSegment> segments;
+};
+
+struct DetectorSliceSvgGradient {
+    Coord<2> center;
+    size_t radius;
+    std::string fill;
+
+    bool operator==(const DetectorSliceSvgGradient &other) const = default;
+};
+
+struct DetectorSliceSvgStyle {
+    std::string fill;
+    float fill_opacity;
+    std::vector<DetectorSliceSvgGradient> gradients;
+
+    bool operator==(const DetectorSliceSvgStyle &other) const = default;
+};
+
+struct DetectorSliceSvgRegion {
+    DetectorSliceSvgPath path;
+    DetectorSliceSvgStyle style;
+    uint64_t detector_id;
+};
+
+struct DetectorSliceSvgMetadata {
+    std::vector<DetectorSliceSvgRegion> regions;
+};
+
 struct DetectorSliceSet {
     uint64_t num_qubits;
     uint64_t min_tick;
@@ -71,7 +116,8 @@ struct DetectorSliceSet {
         const std::function<Coord<2>(uint32_t qubit)> &unscaled_coords,
         const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
         uint64_t end_tick,
-        size_t scale) const;
+        size_t scale,
+        DetectorSliceSvgMetadata *metadata = nullptr) const;
 };
 
 double inv_space_fill_transform(Coord<2> a);

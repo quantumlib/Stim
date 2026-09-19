@@ -986,6 +986,11 @@ OPTIONS
 
             INPUT MUST BE A CIRCUIT.
 
+        "animated-detslice-with-ops": A self-contained HTML animation of
+            detslice-with-ops-svg diagrams.
+
+            INPUT MUST BE A CIRCUIT.
+
 
 EXAMPLES
     Example #1
@@ -2067,4 +2072,3 @@ EXAMPLES
         1
         1
 ```
-
