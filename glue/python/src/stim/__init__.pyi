@@ -11970,6 +11970,73 @@ class TableauIterator:
     ) -> stim.Tableau:
         """Returns the next iterated tableau.
         """
+class TableauSampler:
+    """A tool for pseudo-random tableau sampling.
+
+    Seeds the random number generator once at initialization, then
+    produces a reproducible sequence of random tableaus via repeated
+    calls to `next_tableau()`.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.TableauSampler(5, seed=42)
+        >>> t1 = s.next_tableau()
+        >>> t2 = s.next_tableau()
+    """
+    def __init__(
+        self,
+        num_qubits: int,
+        *,
+        seed: int | None = None,
+    ) -> None:
+        """Creates a tableau sampler.
+
+        Args:
+            num_qubits: The number of qubits each sampled tableau acts on.
+            seed: PARTIALLY determines the sequence of sampled tableaus by
+                deterministically seeding the random number generator.
+
+                Must be None or an integer in range(2**64).
+
+                Defaults to None. When None, the prng is seeded from system
+                entropy.
+
+                When set to an integer, making the exact same series of calls
+                on the exact same machine with the exact same version of Stim
+                will produce the exact same sequence of tableaus.
+
+                CAUTION: the sequence produced by a specific seed *WILL NOT*
+                be consistent between versions of Stim. This restriction is
+                present to make it possible to have future optimizations to
+                the random sampling, and is enforced by introducing
+                intentional differences in the seeding strategy from version
+                to version.
+
+                CAUTION: the sequence produced by a specific seed *MAY NOT*
+                be consistent across machines that differ in the width of
+                supported SIMD instructions. For example, using the same seed
+                on a machine that supports AVX instructions and one that only
+                supports SSE instructions may produce different sequences.
+
+        Examples:
+            >>> import stim
+            >>> sampler = stim.TableauSampler(4, seed=12345)
+            >>> t = sampler.next_tableau()
+        """
+    def next_tableau(
+        self,
+    ) -> stim.Tableau:
+        """Samples a uniformly random tableau.
+
+        Returns:
+            A uniformly random `stim.Tableau` over the sampler's `num_qubits`.
+
+        Examples:
+            >>> import stim
+            >>> sampler = stim.TableauSampler(2, seed=42)
+            >>> t1 = sampler.next_tableau()
+            >>> t2 = sampler.next_tableau()
+        """
 class TableauSimulator:
     """A stabilizer circuit simulator that tracks an inverse stabilizer tableau.
 
