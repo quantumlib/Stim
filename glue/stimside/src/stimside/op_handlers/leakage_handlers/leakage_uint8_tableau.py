@@ -318,11 +318,9 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
                 return
 
         params = self.ops_to_params[op]
-        is_transition = isinstance(
+        if sss.record_unleaked_to_leaked and isinstance(
             params, (LeakageTransition1Params, LeakageTransition2Params)
-        )
-        rec_ev = is_transition and getattr(sss, "record_leakage_events", False)
-        if (sss.record_unleaked_to_leaked or rec_ev) and is_transition:
+        ):
             target_indices = np.unique(
                 [
                     t.qubit_value if t.qubit_value is not None else t.value
@@ -331,11 +329,9 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
                 ]
             )
             was_unleaked = (self.state[target_indices] < 2).copy()
-            old_states = self.state[target_indices].copy() if rec_ev else None
         else:
             target_indices = None
             was_unleaked = None
-            old_states = None
 
         match params:
             case LeakageConditioningParams():
@@ -349,20 +345,10 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
             case _:
                 raise ValueError(f"Unrecognised LEAKAGE params: {params}")
 
-        if (
-            sss.record_unleaked_to_leaked
-            and was_unleaked is not None
-            and target_indices is not None
-        ):
+        if was_unleaked is not None and target_indices is not None:
             k = int(np.count_nonzero(was_unleaked & (self.state[target_indices] >= 2)))
             if k > 0:
                 sss._record_unleaked_to_leaked_count(k, sss._circuit_time)
-        if old_states is not None and target_indices is not None:
-            for q, old_st, new_st in zip(
-                target_indices, old_states, self.state[target_indices]
-            ):
-                if old_st != new_st:
-                    sss._record_leakage_event(sss._circuit_time, q, old_st, new_st)
 
     def leakage_conditioning(
         self,

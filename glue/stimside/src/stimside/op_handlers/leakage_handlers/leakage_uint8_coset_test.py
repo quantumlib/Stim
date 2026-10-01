@@ -13,7 +13,6 @@ from stimside.op_handlers.leakage_handlers.leakage_uint8_coset import (
 from stimside.op_handlers.leakage_handlers.leakage_uint8_tableau import (
     LeakageUint8 as LeakageUint8Tableau,
 )
-from stimside.dem_generators.leakage_decoder import BaseDecoder
 from stimside.sampler_coset import CosetsideSampler
 from stimside.simulator_coset import CosetsideSimulator
 from stimside.simulator_tableau import TablesideSimulator
@@ -511,7 +510,6 @@ class TestCompiledLeakageUint8Coset:
         )
         sampler = CosetsideSampler(
             op_handler=LeakageUint8Coset(unconditional_condition_on_U=False),
-            dem_decoder=BaseDecoder(),
             batch_size=64,
         )
         compiled_sampler = sampler.compiled_sampler_for_task(task)
