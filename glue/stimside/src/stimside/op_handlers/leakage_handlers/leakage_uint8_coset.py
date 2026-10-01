@@ -333,9 +333,11 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
             return
 
         params = self.ops_to_params[op]
-        if sss.record_unleaked_to_leaked and isinstance(
+        is_transition = isinstance(
             params, (LeakageTransition1Params, LeakageTransition2Params)
-        ):
+        )
+        rec_ev = is_transition and getattr(sss, "record_leakage_events", False)
+        if (sss.record_unleaked_to_leaked or rec_ev) and is_transition:
             self._ensure_batch_size(sss.batch_size)
             target_indices = np.unique(
                 [
@@ -345,9 +347,11 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
                 ]
             )
             was_unleaked = (self._state[target_indices, :] < 2).copy()
+            old_states = self._state[target_indices, :].copy() if rec_ev else None
         else:
             target_indices = None
             was_unleaked = None
+            old_states = None
 
         match params:
             case LeakageConditioningParams():
@@ -361,10 +365,24 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
             case _:
                 raise ValueError(f"Unrecognised LEAKAGE params: {params}")
 
-        if was_unleaked is not None and target_indices is not None:
+        if (
+            sss.record_unleaked_to_leaked
+            and was_unleaked is not None
+            and target_indices is not None
+        ):
             now_leaked = self._state[target_indices, :] >= 2
             counts = np.count_nonzero(was_unleaked & now_leaked, axis=0)
             sss._record_unleaked_to_leaked_counts(counts, sss._circuit_time)
+        if old_states is not None and target_indices is not None:
+            new_states = self._state[target_indices, :]
+            for i_q, b in zip(*np.nonzero(old_states != new_states)):
+                sss._record_leakage_event(
+                    sss._circuit_time,
+                    target_indices[i_q],
+                    old_states[i_q, b],
+                    new_states[i_q, b],
+                    shot_idx=int(b),
+                )
 
     def leakage_conditioning(
         self,
