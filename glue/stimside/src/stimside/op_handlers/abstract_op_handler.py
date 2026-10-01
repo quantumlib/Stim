@@ -80,7 +80,10 @@ class _TrivialCompiledOpHandler(
         sss: Union["FlipsideSimulator", "TablesideSimulator"],
     ) -> None:
         """Given an operation, manipulate the given simulator to perform that operation."""
-        return
+        if hasattr(sss, "_do_bare_instruction"):
+            sss._do_bare_instruction(op)
+        elif hasattr(sss, "do_on_flip_simulator"):
+            sss.do_on_flip_simulator(op)
 
     def clear(self) -> None:
         """clear any stored state, ready for a new simulation."""

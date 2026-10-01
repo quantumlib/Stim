@@ -1,14 +1,19 @@
 # pyproject.toml
 
+[build-system]
+requires = []
+build-backend = "setup"
+backend-path = ["."]
+
 # -------------------
 # Project Metadata
 # -------------------
 [project]
 name = "stimside"
 version = "0.1.0"
-description = "Stimside simulator to simulate loss using stim."
+description = "Stimside simulator to simulate loss and leakage using Stim."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 authors = [
     { name = "Matt McEwen", email = "mmcewen@google.com" },
     { name = "Ming Li", email = "mliq@google.com" }
@@ -20,3 +25,20 @@ dependencies = [
     "stim",
     "sinter",
 ]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"stimside.util" = ["*.cpp", "*.h", "*.so"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["src"]
+norecursedirs = ["build", "dist", "python_build_stimside", "*.egg-info", ".benchmarks", ".git"]
+
+[tool.uv.extra-build-dependencies]
+stimside = ["setuptools"]

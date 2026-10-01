@@ -276,3 +276,38 @@ class TestFlipsideSimulator:
         # qubit 3 is randomly measured into +Z or -Z, so it is not in a known state
         assert not np.any(plus_mask[3, :])
         assert not np.any(minus_mask[3, :])
+
+    def test_circuit_time_zero_and_shift_coords_sync(self):
+        """Regression tests for Bugs 8, 9, 10 and Optimization 4."""
+        circuit = stim.Circuit(
+            """
+            R 0 1
+            SHIFT_COORDS(0, 0, 1)
+            X 0
+            REPEAT 2 {
+                SHIFT_COORDS(0, 0, 1)
+                I 0 1
+            }
+            M 0 1
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+            OBSERVABLE_INCLUDE(0) rec[-1]
+        """
+        )
+        fss = self.make_simulator(circuit)
+        fss.run()
+        # Bug 9: circuit_time=0 must return initial known state (+Z on both qubits), not final state (-Z on q0)
+        pZ_0, mZ_0 = fss._get_clean_known_states("Z", circuit_time=0)
+        assert pZ_0.tolist() == [True, True]
+        assert mZ_0.tolist() == [False, False]
+        pZ_end, mZ_end = fss._get_clean_known_states("Z")
+        assert pZ_end.tolist() == [False, True]
+        assert mZ_end.tolist() == [True, False]
+
+        # Optimization 4: bit_packed=True matches packbits(det_flips.T, bitorder="little", axis=1)
+        det_bool = fss.get_detector_flips(bit_packed=False)
+        det_packed = fss.get_detector_flips(bit_packed=True)
+        assert np.array_equal(
+            det_packed, np.packbits(det_bool.T, axis=1, bitorder="little")
+        )
+

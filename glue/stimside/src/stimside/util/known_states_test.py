@@ -186,3 +186,30 @@ def test_convert_paulis_to_arrays():
     assert in_mY.tolist() == [False, False, False, True, False, False, False]
     assert in_pZ.tolist() == [False, False, False, False, True, False, False]
     assert in_mZ.tolist() == [False, False, False, False, False, True, False]
+
+
+def test_known_states_annotations_mr_and_inverted():
+    """Regression test for Bug 7: QUBIT_COORDS, DETECTOR, MR, inverted !q, and noisy multi-targets."""
+    circuit = stim.Circuit(
+        """
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 0) 1
+        II_ERROR(0.0) 0 1 0 1
+        MR !0
+        X 1
+        M !1
+        DETECTOR rec[-2] rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """
+    )
+    ks = ksu.compute_known_states(circuit)
+    # After QUBIT_COORDS, both qubits must still be in +Z
+    assert ks[1] == [stim.PauliString("+Z"), stim.PauliString("+Z")]
+    assert ks[2] == [stim.PauliString("+Z"), stim.PauliString("+Z")]
+    # After MR !0, q0 is reset to +Z and q1 is +Z
+    assert ks[4] == [stim.PauliString("+Z"), stim.PauliString("+Z")]
+    # After X 1 and M !1, q1 is in -Z (not +Z despite inverted measurement record)
+    assert ks[6] == [stim.PauliString("+Z"), stim.PauliString("-Z")]
+    # After DETECTOR and OBSERVABLE_INCLUDE, states are preserved
+    assert ks[8] == [stim.PauliString("+Z"), stim.PauliString("-Z")]
+

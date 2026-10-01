@@ -12,20 +12,23 @@ from stimside.sampler_tableau import (
     _CompiledSeedMixin,
     DemGenLike,
 )
-from stimside.simulator_flip import FlipsideSimulator
+from stimside.simulator_coset import CosetsideSimulator
+from stimside.util.reference_chp import CompiledReferenceCircuit
 
 
-class FlipsideSampler(_CompiledSeedMixin, sinter.Sampler):
+class CosetsideSampler(_CompiledSeedMixin, sinter.Sampler):
+    """Sinter sampler for CosetsideSimulator with multi-shot CPU batching."""
 
     def __init__(
         self,
-        op_handler: OpHandler,
-        batch_size: int = 2**10,
+        op_handler: OpHandler[CosetsideSimulator],
+        batch_size: int = 256,
         dem_gen: DemGenLike | None = None,
         decoder: sinter.Decoder | None = sinter.BUILT_IN_DECODERS["pymatching"],
         seed: int | None = None,
         decompose_errors: bool = False,
-    ):
+        reweight_only: bool = False,
+    ) -> None:
         self.op_handler = op_handler
         self.batch_size = batch_size
         self.dem_gen = dem_gen
@@ -38,12 +41,12 @@ class FlipsideSampler(_CompiledSeedMixin, sinter.Sampler):
     def compiled_sampler_for_task(self, task: sinter.Task) -> sinter.CompiledSampler:
         if task.circuit is None:
             raise ValueError(
-                "FlipsideSampler requires a circuit in the task to compile a sampler."
+                "CosetsideSampler requires a circuit in the task to compile a sampler."
             )
 
         decoder = task.decoder or self.decoder
         if decoder is None:
-            raise ValueError("FlipsideSampler requires a decoder to be specified.")
+            raise ValueError("CosetsideSampler requires a decoder to be specified.")
         if isinstance(decoder, str):
             decoder = sinter.BUILT_IN_DECODERS[decoder]
 
@@ -54,39 +57,45 @@ class FlipsideSampler(_CompiledSeedMixin, sinter.Sampler):
         else:
             dem_gen = self.dem_gen
 
-        return CompiledFlipsideSampler(
+        compiled_ref = CompiledReferenceCircuit(task.circuit)
+        return CompiledCosetsideSampler(
             circuit=task.circuit,
             batch_size=self.batch_size,
             decoder=decoder,
             dem_gen=dem_gen,
             compiled_op_handler=self.op_handler.compile_op_handler(
-                circuit=task.circuit, 
-                batch_size=self.batch_size
+                circuit=task.circuit,
+                batch_size=self.batch_size,
             ),
+            compiled_ref=compiled_ref,
             seed=self._next_compiled_seed(),
         )
 
 
-class CompiledFlipsideSampler(sinter.CompiledSampler):
+class CompiledCosetsideSampler(sinter.CompiledSampler):
+    """Compiled sinter sampler executing B independent trajectories per batch in CosetsideSimulator."""
+
     def __init__(
         self,
         circuit: stim.Circuit,
         decoder: sinter.Decoder,
         dem_gen: DemGenLike,
-        compiled_op_handler: CompiledOpHandler,
-        batch_size: int = 2**10,
+        compiled_op_handler: CompiledOpHandler[CosetsideSimulator],
+        batch_size: int,
+        compiled_ref: CompiledReferenceCircuit | None = None,
         seed: int | None = None,
-    ):
-
+    ) -> None:
         self.circuit = circuit
         self.batch_size = batch_size
-        self.decoder = decoder
         self.dem_gen = dem_gen
+        self.decoder = decoder
         self.compiled_op_handler = compiled_op_handler
-        self.flip_simulator = FlipsideSimulator(
+
+        self.coset_simulator = CosetsideSimulator(
             circuit=circuit,
-            batch_size=batch_size,
             compiled_op_handler=compiled_op_handler,
+            batch_size=batch_size,
+            compiled_ref=compiled_ref,
             seed=seed,
         )
 
@@ -96,21 +105,31 @@ class CompiledFlipsideSampler(sinter.CompiledSampler):
             self.compiled_decoder = None
 
     def sample(self, suggested_shots: int) -> sinter.AnonTaskStats:
-        start_time = time.process_time()
+        stats = sinter.AnonTaskStats()
 
-        shots_taken = 0
-        num_errors = 0
-        while shots_taken < suggested_shots:
-            self.flip_simulator.clear()
-            self.flip_simulator.run()
+        while stats.shots < suggested_shots:
+            start_time = time.process_time()
 
-            det_events_bit_packed = self.flip_simulator.get_detector_flips(bit_packed=True)
-            actual_obs_flips = self.flip_simulator.get_observable_flips(bit_packed=True)
-            
+            self.coset_simulator.clear()
+            self.coset_simulator.run()
+
+            det_and_obs_events = self.coset_simulator.get_detector_flips(
+                append_observables=True
+            )
+            det_events = det_and_obs_events[:, : self.coset_simulator.num_detectors]
+            det_events_bit_packed = np.packbits(
+                det_events, axis=len(det_events.shape) - 1, bitorder="little"
+            )
+
+            obs_flips = det_and_obs_events[:, self.coset_simulator.num_detectors :]
+            actual_obs_flips = np.packbits(
+                obs_flips, axis=len(obs_flips.shape) - 1, bitorder="little"
+            )
+
             decoded_obs_flips = np.array([])
             if callable(self.dem_gen):
-                records = self.flip_simulator.get_final_measurement_records()
-                assert records is not None
+                records = self.coset_simulator.get_final_measurement_records()
+                assert records is not None       
                 for n in range(len(records)):
                     dem = self.dem_gen(
                         self.circuit,
@@ -124,28 +143,29 @@ class CompiledFlipsideSampler(sinter.CompiledSampler):
                         ),
                         axis = 0,
                     )
-
             elif self.compiled_decoder is None:
                 raise ValueError(
                     "No compiled decoder available. "
-                    "dem_gen must be provided when initializing FlipsideSampler."
+                    "dem_gen must be provided when initializing CosetsideSampler."
                 )
             else:
                 decoded_obs_flips = self.compiled_decoder.decode_shots_bit_packed(
                     bit_packed_detection_event_data=det_events_bit_packed
                 )
 
-            # count a shot as an error if any of the observables was predicted wrong
-            num_errors += int(
+            num_errors = int(
                 np.count_nonzero(
                     np.any(decoded_obs_flips != actual_obs_flips, axis=-1)
                 )
             )
-            shots_taken += self.flip_simulator.batch_size
 
-        end_time = time.process_time()
-        seconds = end_time - start_time
+            end_time = time.process_time()
+            cpu_seconds = end_time - start_time
 
-        return sinter.AnonTaskStats(
-            shots=shots_taken, errors=num_errors, discards=0, seconds=seconds
-        )
+            stats += sinter.AnonTaskStats(
+                shots=self.batch_size,
+                errors=num_errors,
+                discards=0,
+                seconds=cpu_seconds,
+            )
+        return stats

@@ -202,3 +202,27 @@ def test_try_as_integer():
     """Tests the try_as_integer helper function."""
     assert try_as_integer("2") == 2
     assert try_as_integer("U") == "U"
+
+
+def test_leakage_conditioning_params_validation_and_pair_eq():
+    p1 = LeakageConditioningParams(
+        args=((2, 3), (3, 2)), targets=None, from_tag="CONDITIONED_ON_PAIR: (2,3) (3,2)"
+    )
+    p2 = LeakageConditioningParams(
+        args=((3, 2), (2, 3)), targets=None, from_tag="CONDITIONED_ON_PAIR: (2,3) (3,2)"
+    )
+    p_diff = LeakageConditioningParams(
+        args=((2, 3), (2, 3)), targets=None, from_tag="CONDITIONED_ON_PAIR: (2,3) (3,2)"
+    )
+    assert p1 == p2
+    assert p1 != p_diff
+
+    with pytest.raises(ValueError):
+        LeakageConditioningParams(
+            args=((15,),), targets=None, from_tag="CONDITIONED_ON_SELF: 15"
+        )
+
+    c_bad = stim.Circuit("X[CONDITIONED_ON_SELF: INVALID_TOKEN] 0")
+    with pytest.raises(ValueError):
+        ltp.parse_leakage_tag(c_bad[0])
+

@@ -136,3 +136,7 @@ insert these appropriately to ensure your simulation is valid.
 
 Arguments are empty.
 
+#### Important Behavioral Notes
+
+* **State Collapse When Conditioning on `0` or `1`**: Conditioning on computational basis states `0` or `1` (in `CONDITIONED_ON` / `CONDITIONED_ON_SELF` / `CONDITIONED_ON_OTHERS`, `LEAKAGE_TRANSITION_1`, `LEAKAGE_TRANSITION_2`, `LEAKAGE_PROJECTION_Z`, or `LEAKAGE_MEASUREMENT`) in `TablesideSimulator` and `CosetsideSimulator` projectively collapses any $Z$-basis superposition on the inspected unleaked qubit(s) into `|0>` or `|1>` before evaluating the condition or transition. Use `U` to condition on the unleaked subspace without collapsing superpositions.
+* **Repeated Qubit Targets**: Any instruction referencing the same qubit multiple times (such as `CX 0 1 1 0` or `I 0 0 [LEAKAGE_TRANSITION_1<...>]`) is processed sequentially in left-to-right target order, matching Stim.

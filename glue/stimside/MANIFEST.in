@@ -1,0 +1,4 @@
+include README.md
+include pyproject.toml
+include setup.py
+recursive-include src *.py *.cpp *.h *.so

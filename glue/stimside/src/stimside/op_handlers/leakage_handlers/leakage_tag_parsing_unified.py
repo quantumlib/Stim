@@ -32,9 +32,12 @@ def _combine_conditioned_states(states: list[int | str]) -> list[int | str]:
     else:
         new_states, qubit_states = [], []
         for st in states:
-            if 1 < st < 10: new_states.append(st)
-            elif st in [0, 1]: qubit_states.append(st)
-            else: raise ValueError(f"State {st} out of range 0-9.")
+            if isinstance(st, int) and not isinstance(st, bool) and st in [0, 1]:
+                qubit_states.append(st)
+            elif not isinstance(st, int) or isinstance(st, bool) or not (1 < st < 10):
+                raise ValueError(f"State {st} out of range 0-9.")
+            else:
+                new_states.append(st)
         if 0 in qubit_states and 1 in qubit_states: new_states.append("U")
         else: new_states += qubit_states
         return new_states

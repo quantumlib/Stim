@@ -90,7 +90,7 @@ TAG_REGISTRY: dict[str, TagDef] = {
     "LEAKAGE_PROJECTION_Z": TagDef(
         name="LEAKAGE_PROJECTION_Z",
         allowed_arity=1,
-        allowed_gates=("M",),
+        allowed_gates=("M", "MZ", "MR", "MRZ", "MX", "MY", "MRX", "MRY"),
         parser_func=ltp._parse_projection_z
     ),
     "LEAKAGE_MEASUREMENT": TagDef(

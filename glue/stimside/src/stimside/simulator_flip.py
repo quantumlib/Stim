@@ -6,11 +6,48 @@ import numpy as np
 import stim  # type: ignore[import-untyped]
 
 from stimside.op_handlers.abstract_op_handler import CompiledOpHandler
-from stimside.util.known_states import compute_known_states, convert_paulis_to_arrays
+from stimside.util.known_states import (
+    _unroll_circuit,
+    compute_known_states_uint8,
+    convert_paulis_to_arrays,
+)
 from stimside.util.numpy_types import Bool1DArray, Bool2DArray
+from stimside.util.unleaked_to_leaked import UnleakedToLeakedRecordsMixin
 
 
-class FlipsideSimulator:
+def _bit_transpose_swar(df_pack: np.ndarray, batch_size: int) -> np.ndarray:
+    """Fast 64-bit SWAR 8x8 bit-transpose from (num_items, ceil(batch_size/8))
+    to (batch_size, ceil(num_items/8)) little-endian bit-packed uint8.
+    """
+    num_items, b_bytes = df_pack.shape
+    d_bytes = (num_items + 7) // 8
+    if num_items == 0 or batch_size == 0:
+        return np.zeros((batch_size, d_bytes), dtype=np.uint8)
+    if num_items % 8 != 0:
+        padded = np.zeros((d_bytes * 8, b_bytes), dtype=np.uint8)
+        padded[:num_items, :] = df_pack
+    else:
+        padded = df_pack
+    blocks = np.ascontiguousarray(
+        padded.reshape(d_bytes, 8, b_bytes).transpose(2, 0, 1)
+    )
+    x = blocks.view(np.uint64)
+    t = (x ^ (x >> np.uint64(7))) & np.uint64(0x00AA00AA00AA00AA)
+    x = x ^ t ^ (t << np.uint64(7))
+    t = (x ^ (x >> np.uint64(14))) & np.uint64(0x0000CCCC0000CCCC)
+    x = x ^ t ^ (t << np.uint64(14))
+    t = (x ^ (x >> np.uint64(28))) & np.uint64(0x00000000F0F0F0F0)
+    x = x ^ t ^ (t << np.uint64(28))
+    out = (
+        x.view(np.uint8)
+        .reshape(b_bytes, d_bytes, 8)
+        .transpose(0, 2, 1)
+        .reshape(b_bytes * 8, d_bytes)
+    )
+    return out[:batch_size, :]
+
+
+class FlipsideSimulator(UnleakedToLeakedRecordsMixin):
     """A fast and convenient correlated error simulator based on stim.FlipSimulator.
 
     Inherits the advantages and disadvantages of a flip simulator:
@@ -57,12 +94,35 @@ class FlipsideSimulator:
         compute_known_states: bool = True,
         disable_stabilizer_randomization: bool = False,
         seed: int | None = None,
+        record_unleaked_to_leaked: bool = False,
     ) -> None:
+        """Initialize FlipsideSimulator.
+
+        Args:
+            circuit: The Stim circuit to simulate.
+            compiled_op_handler: Compiled handler for custom/noisy operations.
+            batch_size: Number of shots to simulate in parallel.
+            compute_known_states: Whether to precompute noiseless known Pauli states.
+            disable_stabilizer_randomization: Disable random stabilizer initialization in FlipSimulator.
+            seed: Optional RNG seed.
+            record_unleaked_to_leaked: If True, record only transitions from an unleaked
+                state (state < 2, i.e., U, 0, 1) to a leaked state (state >= 2) for each shot.
+                Each transition is labeled by its 0-based unrolled circuit instruction index
+                (`op_idx` into `_unroll_circuit(circuit)`, with REPEAT blocks unrolled).
+        """
 
         self.circuit = circuit
+        self._unrolled_ops: list[stim.CircuitInstruction] = _unroll_circuit(circuit)
         self.num_qubits = circuit.num_qubits
 
         self.seed = seed
+        self.record_unleaked_to_leaked = bool(record_unleaked_to_leaked)
+        self._unleaked_to_leaked_events: list[list[int]] = (
+            [[] for _ in range(batch_size)]
+            if self.record_unleaked_to_leaked
+            else []
+        )
+        self._batches_completed = 0
 
         self._flip_simulator = stim.FlipSimulator(
             batch_size=batch_size,
@@ -72,41 +132,213 @@ class FlipsideSimulator:
         )
 
         self.np_rng = np.random.default_rng(seed=seed)
-        # this exists so that op_handlers can access random numbers other than
-        # via the Bernoulli functions that stim provides
-        # there's a decent argument that they should make the rng themselves if they want one
-        # TODO: reflect upon this
+        self._reference_sample: np.ndarray | None = None
 
         self.qubit_coords: dict[int, list[float]] = {}
-        # qubit_coords is a mapping of stim index --> stim args to the QUBIT_COORD instruction
-
         self.qubit_tags: dict[int, str] = {}
-        # qubit_tags is a mapping of  stim index --> tag string for the QUBIT_COORD instruction
-
         self.coords_shifts: list[float] = []
-        # list of ints to track total shifts from SHIFT_COORD instructions
 
         self.compiled_op_handler = compiled_op_handler
 
-        self._known_states: list | None = (
-            self._compute_known_states() if compute_known_states else None
-        )
+        if compute_known_states:
+            self._known_states_uint8: np.ndarray | None = compute_known_states_uint8(
+                self.circuit, unrolled_ops=self._unrolled_ops
+            )
+        else:
+            self._known_states_uint8 = None
 
         self._circuit_time = 0
         self._used_interactively = False
+
+    def _precompute_sync_reference(self) -> None:
+        if self._reference_sample is not None:
+            return
+        ref_ts = stim.TableauSimulator(seed=0)
+        ref_ts.set_num_qubits(self.num_qubits)
+        ref_chunks: list[np.ndarray] = []
+        for op in self._unrolled_ops:
+            name = op.name
+            if name == "MPAD":
+                crs = np.array(
+                    [
+                        bool(gt.value) ^ bool(gt.is_inverted_result_target)
+                        for gt in op.targets_copy()
+                    ],
+                    dtype=np.bool_,
+                )
+                ref_chunks.append(crs)
+            elif name in ("HERALDED_ERASE", "HERALDED_PAULI_CHANNEL_1"):
+                crs = np.zeros(len(op.targets_copy()), dtype=np.bool_)
+                ref_chunks.append(crs)
+            elif name in (
+                "M",
+                "MZ",
+                "MR",
+                "MRZ",
+                "MX",
+                "MRX",
+                "MY",
+                "MRY",
+                "R",
+                "RZ",
+                "RX",
+                "RY",
+            ):
+                is_x = name in ("MX", "MRX", "RX")
+                is_y = name in ("MY", "MRY", "RY")
+                is_r = name in (
+                    "MR",
+                    "MRZ",
+                    "MRX",
+                    "MRY",
+                    "R",
+                    "RZ",
+                    "RX",
+                    "RY",
+                )
+                produces_m = name in (
+                    "M",
+                    "MZ",
+                    "MR",
+                    "MRZ",
+                    "MX",
+                    "MRX",
+                    "MY",
+                    "MRY",
+                )
+                crs_list: list[bool] = []
+                for gt in op.targets_copy():
+                    q = gt.qubit_value if gt.qubit_value is not None else gt.value
+                    if is_x:
+                        ref_ts.h(q)
+                    elif is_y:
+                        ref_ts.h_yz(q)
+                    m_val = ref_ts.measure(q)
+                    if is_r:
+                        ref_ts.reset_z(q)
+                    if is_x:
+                        ref_ts.h(q)
+                    elif is_y:
+                        ref_ts.h_yz(q)
+                    crs_list.append(
+                        bool(m_val) ^ bool(gt.is_inverted_result_target)
+                    )
+                if produces_m:
+                    ref_chunks.append(np.array(crs_list, dtype=np.bool_))
+            elif name in ("MXX", "MYY", "MZZ", "MPP"):
+                raw_targets = op.targets_copy()
+                terms: list[list[stim.GateTarget]] = []
+                if name == "MPP":
+                    t_i = 0
+                    while t_i < len(raw_targets):
+                        term = [raw_targets[t_i]]
+                        t_i += 1
+                        while (
+                            t_i < len(raw_targets)
+                            and raw_targets[t_i].is_combiner
+                        ):
+                            term.append(raw_targets[t_i + 1])
+                            t_i += 2
+                        terms.append(term)
+                else:
+                    for t_i in range(0, len(raw_targets), 2):
+                        terms.append([raw_targets[t_i], raw_targets[t_i + 1]])
+
+                crs_list = []
+                for term in terms:
+                    inv_res = False
+                    pre_ops: list[stim.CircuitInstruction] = []
+                    post_ops: list[stim.CircuitInstruction] = []
+                    term_paulis: list[tuple[int, str]] = []
+                    if name == "MPP":
+                        for gt in term:
+                            q_r = gt.qubit_value
+                            if gt.is_inverted_result_target:
+                                inv_res = not inv_res
+                            if gt.is_x_target:
+                                p_str = "X"
+                                h_op = stim.CircuitInstruction("H", [q_r])
+                                pre_ops.append(h_op)
+                                post_ops.insert(0, h_op)
+                            elif gt.is_y_target:
+                                p_str = "Y"
+                                hyz_op = stim.CircuitInstruction("H_YZ", [q_r])
+                                pre_ops.append(hyz_op)
+                                post_ops.insert(0, hyz_op)
+                            else:
+                                p_str = "Z"
+                            term_paulis.append((q_r, p_str))
+                    else:
+                        p_str = name[-1]
+                        q0, q1 = term[0].qubit_value, term[1].qubit_value
+                        inv_res = bool(
+                            term[0].is_inverted_result_target
+                            ^ term[1].is_inverted_result_target
+                        )
+                        term_paulis = [(q0, p_str), (q1, p_str)]
+                        if p_str == "X":
+                            h_op = stim.CircuitInstruction("H", [q0, q1])
+                            pre_ops.append(h_op)
+                            post_ops.append(h_op)
+                        elif p_str == "Y":
+                            hyz_op = stim.CircuitInstruction("H_YZ", [q0, q1])
+                            pre_ops.append(hyz_op)
+                            post_ops.append(hyz_op)
+
+                    q0 = term_paulis[0][0]
+                    cx_ops: list[stim.CircuitInstruction] = []
+                    for q_r, _ in term_paulis[1:]:
+                        cx_ops.append(stim.CircuitInstruction("CX", [q_r, q0]))
+                    pre_ops.extend(cx_ops)
+                    post_ops = list(reversed(cx_ops)) + post_ops
+
+                    for p_op in pre_ops:
+                        ref_ts.do(p_op)
+                    m_val = ref_ts.measure(q0)
+                    for p_op in post_ops:
+                        ref_ts.do(p_op)
+                    crs_list.append(bool(m_val) ^ inv_res)
+
+                ref_chunks.append(np.array(crs_list, dtype=np.bool_))
+            else:
+                gd = stim.gate_data(name)
+                if gd.is_unitary or gd.is_reset:
+                    if name not in ("I", "II", "I_ERROR", "II_ERROR"):
+                        ref_ts.do(op)
+        if ref_chunks:
+            self._reference_sample = np.concatenate(ref_chunks)
+        else:
+            self._reference_sample = np.empty(0, dtype=np.bool_)
+
+    @property
+    def ref_measurements(self) -> np.ndarray:
+        self._precompute_sync_reference()
+        assert self._reference_sample is not None
+        return self._reference_sample
 
     ############################################################################
     # Public methods without running interactively
     ############################################################################
 
-    def run(self):
-        """run the simulator and populate with data."""
+    def run(self) -> list[np.ndarray] | None:
+        """Run the simulator and populate with data.
+
+        When `record_unleaked_to_leaked=True`, returns a list of length `batch_size`
+        where element `b` is a 1D `np.ndarray` (`dtype=np.int64`) of the unrolled
+        circuit operation indices (`op_idx` into `_unroll_circuit(circuit)`) where an
+        unleaked-to-leaked transition occurred in shot `b`.
+        """
         if self._used_interactively or self._circuit_time != 0:
             raise ValueError(
                 "FlipsideSimulator is not in a clean state as it has been used interactively."
                 "Use .clear() to prepare the simulator for a new run. "
             )
-        self._do(self.circuit)
+        for op in self._unrolled_ops:
+            self._do_instruction(op)
+        self._batches_completed += 1
+        if self.record_unleaked_to_leaked:
+            return self.get_unleaked_to_leaked_records()
+        return None
 
     def clear(self):
         """clear the simulator so it can be reused.
@@ -123,6 +355,11 @@ class FlipsideSimulator:
 
         self.compiled_op_handler.clear()
 
+        if self.record_unleaked_to_leaked:
+            self._unleaked_to_leaked_events = [
+                [] for _ in range(self.batch_size)
+            ]
+
         self._circuit_time = 0
         self._used_interactively = False
 
@@ -136,14 +373,35 @@ class FlipsideSimulator:
     def batch_size(self):
         return self._flip_simulator.batch_size
 
-    def get_detector_flips(self, *args, **kwargs):
-        return self._flip_simulator.get_detector_flips(*args, **kwargs)
+    def get_detector_flips(self, *args, bit_packed: bool = False, **kwargs):
+        if bit_packed:
+            raw_packed = self._flip_simulator.get_detector_flips(
+                *args, bit_packed=True, **kwargs
+            )
+            return _bit_transpose_swar(raw_packed, self.batch_size)
+        return self._flip_simulator.get_detector_flips(
+            *args, bit_packed=False, **kwargs
+        )
 
     def get_measurement_flips(self, *args, **kwargs):
         return self._flip_simulator.get_measurement_flips(*args, **kwargs)
 
-    def get_observable_flips(self, *args, **kwargs):
-        return self._flip_simulator.get_observable_flips(*args, **kwargs)
+    def get_final_measurement_records(self) -> np.ndarray:
+        """Return measurement records of shape (batch_size, num_measurements)."""
+        self._precompute_sync_reference()
+        assert self._reference_sample is not None
+        flips = self.get_measurement_flips()
+        return np.logical_xor(self._reference_sample[:, None], flips).T
+
+    def get_observable_flips(self, *args, bit_packed: bool = False, **kwargs):
+        if bit_packed:
+            raw_packed = self._flip_simulator.get_observable_flips(
+                *args, bit_packed=True, **kwargs
+            )
+            return _bit_transpose_swar(raw_packed, self.batch_size)
+        return self._flip_simulator.get_observable_flips(
+            *args, bit_packed=False, **kwargs
+        )
 
     def broadcast_pauli_errors(
         self, error_mask: Bool2DArray, p: float, pauli: Literal["X", "Y", "Z"] = "X"
@@ -160,12 +418,11 @@ class FlipsideSimulator:
             pauli: which Pauli error to broadcast over the flip states
                 'Z' applied Pauli Z flips, 'X' applies Pauli X flips
                 'Y' applies both Pauli Z and X flips
-
-        returns a mask indicating which errors were applied
-            if p=1, the input error_mask array is returned
-            else, a new array is returned with the same shape and dtype as error_mask
         """
+        if p <= 0.0 or not np.any(error_mask):
+            return error_mask
         self._flip_simulator.broadcast_pauli_errors(pauli=pauli, mask=error_mask, p=p)
+        return error_mask
 
     def do_on_flip_simulator(
         self, obj: stim.Circuit | stim.CircuitInstruction | stim.CircuitRepeatBlock
@@ -198,10 +455,10 @@ class FlipsideSimulator:
         allowed if the array you're handing in is contiguous and can be reshaped to 1D
         without making a copy.
         """
-        view = array.reshape(-1)  # this could make a copy, in which case we're boned
+        view = array.reshape(-1)
         if view.base is not array:
             raise ValueError(
-                f"received an array that numpy cannot reshape without making a copy. "
+                "received an array that numpy cannot reshape without making a copy. "
             )
         self._flip_simulator.generate_bernoulli_samples(
             p=p, num_samples=np.prod(view.shape), bit_packed=False, out=view
@@ -211,78 +468,35 @@ class FlipsideSimulator:
     # known states methods:
     ############################################################################
 
-    def _compute_known_states(
-        self,
-    ) -> list[
-        tuple[
-            Bool1DArray, Bool1DArray, Bool1DArray, Bool1DArray, Bool1DArray, Bool1DArray
-        ]
-    ]:
-        """init method for actually building the known states structure,
-
-        known_states is a record of every circuit location with a known single qubit state.
-        """
-        known_pauli_strings = compute_known_states(self.circuit)
-        return [convert_paulis_to_arrays(ps) for ps in known_pauli_strings]
-
     def _get_all_clean_known_state(
         self, circuit_time: int | None = None
     ) -> tuple[
         Bool1DArray, Bool1DArray, Bool1DArray, Bool1DArray, Bool1DArray, Bool1DArray
     ]:
-        """given circuit locations, return the state of the target under noiseless execution.
-
-        Args:
-            circuit_time: a unique gap between instructions as the circuit
-            is executed. Basically, the moment in time right before the instruction
-            circuit.flattened()[circuit_time]
-
-        Returns:
-            Returns a set of bool arrays of shape (num_qubits, )
-            In order these are:
-                in_pX: True if qubit is in +X
-                in_mX: True if qubit is in -X
-                in_pY: True if qubit is in +Y
-                in_mY: True if qubit is in -Y
-                in_pZ: True if qubit is in +Z
-                in_mZ: True if qubit is in -Z
-        """
-        if self._known_states is None:
+        """given circuit locations, return the state of the target under noiseless execution."""
+        if self._known_states_uint8 is None:
             raise ValueError(
                 "Can't access known_states when initialized with compute_known_states=False."
             )
-        circuit_time = circuit_time or self.get_current_circuit_time()
-        return self._known_states[circuit_time]
+        if circuit_time is None:
+            circuit_time = self.get_current_circuit_time()
+        return convert_paulis_to_arrays(self._known_states_uint8[circuit_time])
 
-    _PAULI_TO_KNOWN_STATES_INDEX = {"X": 0, "Y": 2, "Z": 4}
+    _PAULI_TO_UINT8_CODE = {"X": 1, "Y": 3, "Z": 5}
 
     def _get_clean_known_states(
         self, pauli: Literal["X", "Y", "Z"], *, circuit_time: int | None = None
     ) -> tuple[Bool1DArray, Bool1DArray]:
-        """given circuit locations, return the state of the target under noiseless execution.
-
-        Args:
-            circuit_time: a unique gap between instructions as the circuit
-            is executed. Basically, the moment in time right before the instruction
-            circuit.flattened()[circuit_time]
-            pauli: decides which pauli P out of X, Y, Z we return the arrays for
-
-        Returns:
-            Returns a set of bool arrays of shape (num_qubits, )
-            In order these are:
-                in_pP: True if qubit is in +P
-                in_mP: True if qubit is in -P
-        """
-        if self._known_states is None:
+        """given circuit locations, return the state of the target under noiseless execution."""
+        if self._known_states_uint8 is None:
             raise ValueError(
                 "Can't access known_states when initialized with compute_known_states=False."
             )
-        circuit_time = circuit_time or self.get_current_circuit_time()
-        idx = self._PAULI_TO_KNOWN_STATES_INDEX[pauli]
-        return (
-            self._known_states[circuit_time][idx],
-            self._known_states[circuit_time][idx + 1],
-        )
+        if circuit_time is None:
+            circuit_time = self.get_current_circuit_time()
+        row = self._known_states_uint8[circuit_time]
+        code = self._PAULI_TO_UINT8_CODE[pauli]
+        return (row == code, row == (code + 1))
 
     def _all_targets_in_known_state(
         self,
@@ -290,15 +504,19 @@ class FlipsideSimulator:
         pauli: Literal["X", "Y", "Z"],
         circuit_time: int | None = None,
     ) -> bool:
-        """returns true of all targets are in a known state of the given pauli."""
-        in_plus, in_minus = self._get_clean_known_states(
-            pauli=pauli, circuit_time=circuit_time
-        )
-        in_known = np.logical_or(in_plus, in_minus)
-        return all(in_known[t] for t in targets)
+        """returns true if all targets are in a known state of the given pauli."""
+        if self._known_states_uint8 is None:
+            raise ValueError(
+                "Can't access known_states when initialized with compute_known_states=False."
+            )
+        if circuit_time is None:
+            circuit_time = self.get_current_circuit_time()
+        row = self._known_states_uint8[circuit_time]
+        code = self._PAULI_TO_UINT8_CODE[pauli]
+        return all(row[int(t)] == code or row[int(t)] == (code + 1) for t in targets)
 
     def _get_current_known_state_masks(
-        self, pauli: Literal["X", "Y", "Z"]
+        self, pauli: Literal["X", "Y", "Z"], *, circuit_time: int | None = None
     ) -> tuple[Bool2DArray, Bool2DArray]:
         """given circuit locations, return masks indicating the qubits known states.
 
@@ -312,15 +530,18 @@ class FlipsideSimulator:
                 in_pP: in_pP[q, k] is True if the qubit q in instance k is in +P
                 in_mP: in_pP[q, k] is True if the qubit q in instance k is in -P
         """
-
+        if circuit_time is None:
+            circuit_time = self.get_current_circuit_time()
         clean_plus, clean_minus = self._get_clean_known_states(
-            pauli=pauli, circuit_time=self.get_current_circuit_time()
+            pauli=pauli, circuit_time=circuit_time
         )
-        # reshape from (num_qubits,) to (num_qubits,1) to make the broadcasting easier
         clean_plus = clean_plus.reshape(-1, 1)
         clean_minus = clean_minus.reshape(-1, 1)
 
-        xs, zs, _, _, _ = self._flip_simulator.to_numpy(output_xs=True, output_zs=True)
+        xs, zs, _, _, _ = self._flip_simulator.to_numpy(
+            output_xs=(pauli in ("Y", "Z")),
+            output_zs=(pauli in ("X", "Y")),
+        )
         match pauli:
             case "X":
                 is_flipped = zs
@@ -356,11 +577,9 @@ class FlipsideSimulator:
         self, this: stim.Circuit | stim.CircuitInstruction | stim.CircuitRepeatBlock, /
     ):
         if isinstance(this, stim.Circuit):
-            # TODO: improve this, looping in python is slow
             for op in this:
                 self._do(op)
         elif isinstance(this, stim.CircuitRepeatBlock):
-            # TODO: improve this, looping in python is slow
             loop_body = this.body_copy()
             for _ in range(this.repeat_count):
                 self._do(loop_body)
@@ -371,10 +590,8 @@ class FlipsideSimulator:
 
     def _do_instruction(self, op: stim.CircuitInstruction):
         """for each instruction, update the state of the simulator."""
-
-        # first handle simulator specific stuff
         if op.name == "QUBIT_COORDS":
-            [gt] = op.targets_copy()  # unpack the single target
+            [gt] = op.targets_copy()
             qubit_idx = gt.qubit_value
 
             self.qubit_coords[qubit_idx] = [
@@ -396,3 +613,4 @@ class FlipsideSimulator:
 
         self.compiled_op_handler.handle_op(op=op, sss=self)
         self._circuit_time += 1
+
