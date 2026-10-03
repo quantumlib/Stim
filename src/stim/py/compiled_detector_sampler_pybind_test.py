@@ -312,3 +312,113 @@ def test_manual_output_buffer():
     assert ret is buf
     assert np.array_equal(buf, [[0, 0, 1, 1, 1, 0, 0, 1, 1, 1]] * 17)
     assert np.array_equal(buf2, [[1]] * 17)
+
+
+def test_transposed():
+    circuit = stim.Circuit('''
+        X_ERROR(1) 0
+        M 0
+        DETECTOR
+        DETECTOR
+        DETECTOR rec[-1]
+        DETECTOR rec[-1]
+
+        DETECTOR rec[-1]
+        DETECTOR
+        DETECTOR
+        DETECTOR rec[-1]
+
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    ''')
+    sampler = circuit.compile_detector_sampler()
+
+    with pytest.raises(ValueError, match="shape"):
+        sampler.sample(shots=17, transposed=True, dets_out=np.zeros(shape=(17, 9), dtype=np.bool_))
+    with pytest.raises(ValueError, match="shape"):
+        sampler.sample(shots=17, transposed=True, dets_out=np.zeros(shape=(8, 17), dtype=np.bool_))
+    with pytest.raises(ValueError, match="shape"):
+        sampler.sample(shots=17, transposed=True, dets_out=np.zeros(shape=(10, 17), dtype=np.bool_))
+    with pytest.raises(ValueError, match="shape"):
+        sampler.sample(shots=17, transposed=True, dets_out=np.zeros(shape=(9, 18), dtype=np.bool_))
+    with pytest.raises(ValueError, match="shape"):
+        sampler.sample(shots=17, transposed=True, dets_out=np.zeros(shape=(9, 16), dtype=np.bool_))
+    with pytest.raises(ValueError, match="bool"):
+        sampler.sample(shots=17, transposed=True, dets_out=np.zeros(shape=(9, 17), dtype=np.uint8))
+
+    buf = np.zeros(shape=(9, 17), dtype=np.bool_)
+    ret = sampler.sample(shots=17, dets_out=buf, transposed=True)
+    assert ret is buf
+    assert np.array_equal(buf, [[e] * 17 for e in [0, 0, 1, 1, 1, 0, 0, 1, 1]])
+
+    buf = np.zeros(shape=(9, 3), dtype=np.uint8)
+    ret = sampler.sample(
+        shots=17,
+        dets_out=buf,
+        bit_packed=True,
+        transposed=True,
+    )
+    assert ret is buf
+    assert np.array_equal(buf, [([255, 255, 1] if e else [0, 0, 0]) for e in [0, 0, 1, 1, 1, 0, 0, 1, 1]])
+
+    buf = np.zeros(shape=(3, 9), dtype=np.uint8).transpose()
+    ret = sampler.sample(
+        shots=17,
+        dets_out=buf,
+        bit_packed=True,
+        transposed=True,
+    )
+    assert ret is buf
+    assert np.array_equal(buf, [([255, 255, 1] if e else [0, 0, 0]) for e in [0, 0, 1, 1, 1, 0, 0, 1, 1]])
+
+    buf = np.zeros(shape=(9, 17), dtype=np.bool_)
+    buf2 = np.zeros(shape=(1, 17), dtype=np.bool_)
+    ret = sampler.sample(
+        shots=17,
+        dets_out=buf,
+        obs_out=buf2,
+        transposed=True,
+    )
+    assert ret is buf
+    assert np.array_equal(buf, [[e] * 17 for e in [0, 0, 1, 1, 1, 0, 0, 1, 1]])
+    assert np.array_equal(buf2, [[True] * 17])
+
+    buf = np.zeros(shape=(9, 17), dtype=np.bool_)
+    buf2 = np.zeros(shape=(1, 17), dtype=np.bool_)
+    ret, ret2 = sampler.sample(
+        shots=17,
+        dets_out=buf,
+        obs_out=buf2,
+        separate_observables=True,
+        transposed=True,
+    )
+    assert ret is buf
+    assert ret2 is buf2
+    assert np.array_equal(buf, [[e] * 17 for e in [0, 0, 1, 1, 1, 0, 0, 1, 1]])
+    assert np.array_equal(buf2, [[True] * 17])
+
+    buf = np.zeros(shape=(10, 17), dtype=np.bool_)
+    buf2 = np.zeros(shape=(1, 17), dtype=np.bool_)
+    ret = sampler.sample(
+        shots=17,
+        dets_out=buf,
+        obs_out=buf2,
+        append_observables=True,
+        transposed=True,
+    )
+    assert ret is buf
+    assert np.array_equal(buf, [[e] * 17 for e in [0, 0, 1, 1, 1, 0, 0, 1, 1, 1]])
+    assert np.array_equal(buf2, [[1] * 17])
+
+    buf = np.zeros(shape=(17, 10), dtype=np.bool_).transpose()
+    buf2 = np.zeros(shape=(1, 17), dtype=np.bool_)
+    ret = sampler.sample(
+        shots=17,
+        dets_out=buf,
+        obs_out=buf2,
+        append_observables=True,
+        transposed=True,
+    )
+    assert ret is buf
+    assert np.array_equal(buf, [[e] * 17 for e in [0, 0, 1, 1, 1, 0, 0, 1, 1, 1]])
+    assert np.array_equal(buf2, [[1] * 17])
