@@ -422,3 +422,24 @@ def test_transposed():
     assert ret is buf
     assert np.array_equal(buf, [[e] * 17 for e in [0, 0, 1, 1, 1, 0, 0, 1, 1, 1]])
     assert np.array_equal(buf2, [[1] * 17])
+
+
+def test_consistent_data_across_options():
+    circuit = stim.Circuit('''
+        REPEAT 500 {
+            M(0.5) 0
+            DETECTOR rec[-1]
+        }
+    ''')
+    sampler = circuit.compile_detector_sampler(seed=42)
+    a = sampler.sample(shots=311, bit_packed=True, transposed=True)
+    sampler = circuit.compile_detector_sampler(seed=42)
+    b = sampler.sample(shots=311, bit_packed=True, transposed=False)
+    sampler = circuit.compile_detector_sampler(seed=42)
+    c = sampler.sample(shots=311, bit_packed=False, transposed=True)
+    sampler = circuit.compile_detector_sampler(seed=42)
+    d = sampler.sample(shots=311, bit_packed=False, transposed=False)
+
+    np.testing.assert_array_equal(c, np.transpose(d))
+    np.testing.assert_array_equal(b, np.packbits(d, bitorder='little', axis=1))
+    np.testing.assert_array_equal(a, np.packbits(c, bitorder='little', axis=1))

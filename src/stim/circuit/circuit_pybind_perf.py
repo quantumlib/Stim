@@ -186,7 +186,7 @@ def benchmark(
         return wrap(original_method)
 
 
-@benchmark(goal_micros=610, units={"shots": 1024, "detectors": 1024*336, "ops": 1024*5858})
+@benchmark(goal_micros=79, units={"shots": 1024, "detectors": 1024*336, "ops": 1024*5858})
 def benchmark_sample_detectors():
     c = stim.Circuit.generated("surface_code:rotated_memory_x", distance=7, rounds=7, after_clifford_depolarization=1e-3)
     sampler = c.compile_detector_sampler()

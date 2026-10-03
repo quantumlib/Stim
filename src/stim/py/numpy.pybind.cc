@@ -19,14 +19,14 @@ using namespace stim_pybind;
 
 static pybind11::object transposed_simd_bit_table_to_numpy_uint8(
     const simd_bit_table<MAX_BITWORD_WIDTH> &table,
-    size_t num_major_in,
-    size_t num_minor_in,
+    size_t table_shape0,
+    size_t table_shape1,
     pybind11::object out_buffer) {
-    size_t num_major_bytes_in = (num_major_in + 7) / 8;
+    size_t num_major_bytes_in = (table_shape0 + 7) / 8;
 
     if (out_buffer.is_none()) {
         auto numpy = pybind11::module::import("numpy");
-        out_buffer = numpy.attr("empty")(pybind11::make_tuple(num_minor_in, num_major_bytes_in), numpy.attr("uint8"));
+        out_buffer = numpy.attr("empty")(pybind11::make_tuple(table_shape1, num_major_bytes_in), numpy.attr("uint8"));
     }
 
     if (!pybind11::isinstance<pybind11::array_t<uint8_t>>(out_buffer)) {
@@ -36,25 +36,41 @@ static pybind11::object transposed_simd_bit_table_to_numpy_uint8(
     if (buf.ndim() != 2) {
         throw std::invalid_argument("Output buffer wasn't two dimensional.");
     }
-    if ((size_t)buf.shape(0) != num_minor_in || (size_t)buf.shape(1) != num_major_bytes_in) {
+    if ((size_t)buf.shape(0) != table_shape1 || (size_t)buf.shape(1) != num_major_bytes_in) {
         std::stringstream ss;
-        ss << "Expected output buffer to have shape=(" << num_minor_in << ", " << num_major_bytes_in << ")";
+        ss << "Expected output buffer to have shape=(" << table_shape1 << ", " << num_major_bytes_in << ")";
         ss << " but its shape is (" << buf.shape(0) << ", " << buf.shape(1) << ").";
         throw std::invalid_argument(ss.str());
     }
 
-    if (num_major_in && num_minor_in) {
-        auto stride = buf.strides(1);
-        for (size_t minor_in = 0; minor_in < num_minor_in; minor_in++) {
-            auto ptr = buf.mutable_data(minor_in, 0);
-            for (size_t major_in = 0; major_in < num_major_in; major_in += 8) {
-                uint8_t v = 0;
-                for (size_t b = 0; b < 8 && major_in + b < num_major_in; b++) {
-                    bool bit = table[major_in + b][minor_in];
-                    v |= bit << b;
+    if (table_shape0 && table_shape1) {
+        std::array<uint64_t, 64> transpose_buffer;
+
+        uint8_t *base = buf.mutable_data(0, 0);
+        auto stride0 = buf.strides(0);
+        auto stride1 = buf.strides(1);
+        for (size_t b0 = 0; b0 < table_shape0; b0 += 64) {
+            for (size_t b1 = 0; b1 < table_shape1; b1 += 64) {
+                // Read a 64x64 block of bits out of the table.
+                for (size_t d0 = 0; d0 < 64; d0++) {
+                    transpose_buffer[d0] = table[b0 + d0].u64[b1 / 64];
                 }
-                *ptr = v;
-                ptr += stride;
+
+                // Transpose the block of bits.
+                inplace_transpose_64x64(transpose_buffer.data(), 1);
+
+                // Write the transposed 64x64 block of bits into the numpy array.
+                size_t n0 = std::min(size_t{64}, table_shape0 - b0);
+                size_t n1 = std::min(size_t{64}, table_shape1 - b1);
+                uint8_t *row_out = base + stride0 * b1 + stride1 * (b0 / 8);
+                for (size_t d1 = 0; d1 < n1; d1++) {
+                    uint8_t *cell_out = row_out;
+                    for (size_t d0 = 0; d0 < n0; d0 += 8) {
+                        *cell_out = (transpose_buffer[d1] >> d0) & 0xFF;
+                        cell_out += stride1;
+                    }
+                    row_out += stride0;
+                }
             }
         }
     }
