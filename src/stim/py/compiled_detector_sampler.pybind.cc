@@ -223,10 +223,14 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
            bool append,
            bool separate_observables,
            bool bit_packed,
-           bool reversed_transposed,
+           bool python_api_transposed,
            pybind11::object dets_out,
            pybind11::object obs_out) {
-            return self.sample_to_numpy(shots, prepend, append, separate_observables, bit_packed, !reversed_transposed, !reversed_transposed, dets_out, obs_out);
+            // Caution: the python API has an inverted meaning for transposed!
+            // Users expect (shot, detector) indexing meaning transposed is (detector, shot) indexing.
+            // But the internal implementation bit stripes over shots for performance so uses (detector, shot indexing)
+            // with (shot, detector) being the transpose. Thus we invert the transposed value here.
+            return self.sample_to_numpy(shots, prepend, append, separate_observables, bit_packed, !python_api_transposed, !python_api_transposed, dets_out, obs_out);
         },
         pybind11::arg("shots"),
         pybind11::kw_only(),
@@ -273,13 +277,13 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
                 prepend_observables: Prefer `separate_observables`. Defaults to false.
                     When set, observables are included with the detectors and are placed at
                     the start of the results. Using this argument is generally a bad idea,
-                    compared to using `separate_observable=True`, because you will
+                    compared to using `separate_observables=True`, because you will
                     inevitably just end up immediately separating the observable data
                     from the detector data anyways.
                 append_observables: Prefer `separate_observables`. Defaults to false.
                     When set, observables are included with the detectors and are placed at
                     the end of the results. Using this argument is generally a bad idea,
-                    compared to using `separate_observable=True`, because you will
+                    compared to using `separate_observables=True`, because you will
                     inevitably just end up immediately separating the observable data
                     from the detector data anyways.
 

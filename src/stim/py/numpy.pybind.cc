@@ -51,17 +51,21 @@ static pybind11::object transposed_simd_bit_table_to_numpy_uint8(
         auto stride1 = buf.strides(1);
         for (size_t b0 = 0; b0 < table_shape0; b0 += 64) {
             for (size_t b1 = 0; b1 < table_shape1; b1 += 64) {
+                size_t n0 = std::min(size_t{64}, table_shape0 - b0);
+                size_t n1 = std::min(size_t{64}, table_shape1 - b1);
+
                 // Read a 64x64 block of bits out of the table.
-                for (size_t d0 = 0; d0 < 64; d0++) {
+                for (size_t d0 = 0; d0 < n0; d0++) {
                     transpose_buffer[d0] = table[b0 + d0].u64[b1 / 64];
+                }
+                for (size_t d0 = n0; d0 < 64; d0++) {
+                    transpose_buffer[d0] = 0;
                 }
 
                 // Transpose the block of bits.
                 inplace_transpose_64x64(transpose_buffer.data(), 1);
 
                 // Write the transposed 64x64 block of bits into the numpy array.
-                size_t n0 = std::min(size_t{64}, table_shape0 - b0);
-                size_t n1 = std::min(size_t{64}, table_shape1 - b1);
                 uint8_t *row_out = base + stride0 * b1 + stride1 * (b0 / 8);
                 for (size_t d1 = 0; d1 < n1; d1++) {
                     uint8_t *cell_out = row_out;

@@ -424,9 +424,9 @@ def test_transposed():
     assert np.array_equal(buf2, [[1] * 17])
 
 
-def test_consistent_data_across_options():
+def test_consistent_data_across_detector_sampling_options():
     circuit = stim.Circuit('''
-        REPEAT 500 {
+        REPEAT 501 {
             M(0.5) 0
             DETECTOR rec[-1]
         }
@@ -443,3 +443,17 @@ def test_consistent_data_across_options():
     np.testing.assert_array_equal(c, np.transpose(d))
     np.testing.assert_array_equal(b, np.packbits(d, bitorder='little', axis=1))
     np.testing.assert_array_equal(a, np.packbits(c, bitorder='little', axis=1))
+
+
+def test_consistent_data_across_measurement_sampling_options():
+    circuit = stim.Circuit('''
+        REPEAT 501 {
+            M(0.5) 0
+        }
+    ''')
+    sampler = circuit.compile_sampler(seed=42)
+    a = sampler.sample(shots=311, bit_packed=True)
+    sampler = circuit.compile_sampler(seed=42)
+    b = sampler.sample(shots=311, bit_packed=False)
+
+    np.testing.assert_array_equal(a, np.packbits(b, bitorder='little', axis=1))
