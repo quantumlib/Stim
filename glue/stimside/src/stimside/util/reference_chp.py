@@ -1027,6 +1027,11 @@ class CompiledReferenceCircuit:
             return step
 
         if gd.is_unitary:
+            if name in ("SPP", "SPP_DAG"):
+                raise NotImplementedError(
+                    f"CosetsideSimulator does not support {name} (Pauli product rotations). Rewrite them "
+                    "with single- and two-qubit Clifford gates, or use TablesideSimulator or FlipsideSimulator."
+                )
             raw_t = op.targets_copy()
             if gd.is_two_qubit_gate and any(
                 t.qubit_value is None for t in raw_t

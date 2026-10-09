@@ -3,11 +3,13 @@ import dataclasses
 import stim
 import sinter
 
+from stimside.dem_generators.leakage_decoder import BaseDecoder
 from stimside.sampler_tableau import TablesideSampler
 from stimside.op_handlers.leakage_handlers.leakage_uint8_tableau import LeakageUint8
 
 DECODER_NAME = "pymatching"
-SAMPLER_NAME = "stimside:tableside:" + DECODER_NAME
+DEM_DECODER = BaseDecoder(decoder=DECODER_NAME)
+SAMPLER_NAME = DEM_DECODER.name
 
 @dataclasses.dataclass
 class TaskMetadata:
@@ -131,5 +133,5 @@ if __name__ == '__main__':
         max_shots=max_shots,
         max_errors=max_errors,
         decoders=[DECODER_NAME], 
-        custom_decoders={SAMPLER_NAME: TablesideSampler(op_handler)}
+        custom_decoders={SAMPLER_NAME: TablesideSampler(op_handler, DEM_DECODER)}
         )

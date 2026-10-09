@@ -678,3 +678,342 @@ class TestCompiledLeakageUint8:
         # In every shot, pair (0, 1) either sets q0=2 or q1=2; if q1==0, pair (0, 1) MUST have set q0=2!
         assert np.all((st[0, :] == 2) | (st[1, :] == 2))
 
+    def test_mpad_01_keys_collapse_and_read_true_z_value(self):
+        """0/1-keyed MPAD[LEAKAGE_MEASUREMENT] Z-collapses targets and reads each shot's true Z value."""
+
+        def records(text, seed=7, batch_size=4096):
+            c = stim.Circuit(text)
+            cti = LeakageUint8().compile_op_handler(circuit=c, batch_size=batch_size)
+            fss = FlipsideSimulator(c, batch_size=batch_size, compiled_op_handler=cti, seed=seed)
+            fss.run()
+            return fss, np.asarray(fss.get_final_measurement_records(), dtype=bool)
+
+        # (a) collapse: MPAD on one half of a Bell pair destroys the XX correlation.
+        _, r = records("H 0\nCX 0 1\nMPAD[LEAKAGE_MEASUREMENT: (0, 0), (1, 1) : 0] 0\nMX 0 1")
+        assert 0.45 < np.mean(r[:, 1] ^ r[:, 2]) < 0.55
+        # Without 0/1 keys there is no collapse.
+        _, r = records("H 0\nCX 0 1\nMPAD[LEAKAGE_MEASUREMENT: (0.9, 2) : 0] 0\nMX 0 1")
+        assert not np.any(r[:, 1] ^ r[:, 2])
+
+        # (b) readout agrees with a later M.
+        _, r = records("H 0 1\nMPAD[LEAKAGE_MEASUREMENT: (0, 0), (1, 1), (0.9, 2) : 1 0] 0 1\nM 0 1")
+        assert not np.any(r[:, 0] ^ r[:, 3])
+        # Reference Z value 1 at the MPAD: the reference walk picks 1 for the earlier M of q1.
+        fss, r = records("H 0 1\nM 0 1\nMPAD[LEAKAGE_MEASUREMENT: (0, 0), (1, 1) : 0 1] 0 0\nM 0 1")
+        assert fss.ref_measurements[1]
+        assert not np.any(r[:, 2] ^ r[:, 4]) and not np.any(r[:, 3] ^ r[:, 5])
+        # Asymmetric readout: P(r=1 | Z) = p(Z), on that reference-1 qubit.
+        _, r = records("H 0 1\nM 0 1\nMPAD[LEAKAGE_MEASUREMENT: (0.1, 0), (0.7, 1) : 0 1] 0 0\nM 0 1")
+        assert abs(np.mean(r[r[:, 5] == 0, 3]) - 0.1) < 0.04
+        assert abs(np.mean(r[r[:, 5] == 1, 3]) - 0.7) < 0.04
+
+        # (c) mixed: q0 known |1>, q1 superposed.
+        _, r = records("X 0\nH 1\nMPAD[LEAKAGE_MEASUREMENT: (0, 0), (1, 1) : 0 1] 0 0\nM 0 1")
+        assert np.all(r[:, 0]) and not np.any(r[:, 1] ^ r[:, 3])
+
+        # (d) a detector over MPAD + M records never fires without noise.
+        for text in (
+            "H 0\nMPAD[LEAKAGE_MEASUREMENT: (0, 0), (1, 1) : 0] 0\nM 0\nDETECTOR rec[-1] rec[-2]",
+            "H 0\nCX 0 1\nMPAD[LEAKAGE_MEASUREMENT: (0, 0), (1, 1) : 0] 0\nM 1\nDETECTOR rec[-1] rec[-2]",
+        ):
+            fss, _ = records(text)
+            assert not np.any(fss.get_detector_flips())
+
+        # (e) detectors/observables are relative to stim's reference sample, as in Tableside/Cosetside:
+        # R1D never fires (MPAD reads q1's earlier M value); D4 always fires (MPAD reads z0, M 1 reads
+        # NOT z0, while stim's reference sample has both at 0).
+        from stimside.op_handlers.leakage_handlers.leakage_uint8_coset import LeakageUint8Coset
+        from stimside.op_handlers.leakage_handlers.leakage_uint8_tableau import LeakageUint8 as LT
+        from stimside.simulator_coset import CosetsideSimulator
+        from stimside.simulator_tableau import TablesideSimulator
+
+        r1d = "H 0 1\nM 0 1\nMPAD[LEAKAGE_MEASUREMENT: (0, 0), (1, 1) : 0 1] 0 0\nM 0 1\n"
+        r1d += "DETECTOR rec[-1] rec[-3]\nOBSERVABLE_INCLUDE(0) rec[-1] rec[-3]"
+        d4 = "H 0\nCX 0 1\nX 1\nMPAD[LEAKAGE_MEASUREMENT: (0, 0), (1, 1) : 0] 0\nM 1\n"
+        d4 += "DETECTOR rec[-1] rec[-2]\nOBSERVABLE_INCLUDE(0) rec[-1] rec[-2]"
+        for text, expected in ((r1d, False), (d4, True)):
+            fss, r = records(text, batch_size=100)
+            c = stim.Circuit(text)
+            det, obs = fss.get_detector_flips(), fss.get_observable_flips()
+            assert np.all(det == expected) and np.all(obs == expected)
+            # Per shot: equal to stim's detection events of Flipside's own measurement records.
+            d_exp, o_exp = c.compile_m2d_converter().convert(measurements=r, separate_observables=True)
+            assert np.array_equal(det.T, d_exp) and np.array_equal(obs.T, o_exp)
+            packed = np.packbits(d_exp, axis=1, bitorder="little")
+            assert np.array_equal(fss.get_detector_flips(bit_packed=True), packed)
+            for sim_cls, handler in ((TablesideSimulator, LT), (CosetsideSimulator, LeakageUint8Coset)):
+                sim = sim_cls(
+                    c, compiled_op_handler=handler().compile_op_handler(circuit=c, batch_size=16),
+                    batch_size=16, seed=3,
+                )
+                sim.run()
+                assert np.all(np.asarray(sim.get_detector_flips()) == expected)
+                assert np.all(np.asarray(sim.get_observable_flips()) == expected)
+
+        # (f) the reference sample resolves rec-controlled gates from the stim record (after resets,
+        # inverted results and MPAD bits), so these deterministic detectors never fire.
+        for text in (
+            "H 0\nM 0\nRX 2\nCX rec[-1] 1\nM 1\nDETECTOR rec[-1] rec[-2]",
+            "H 0\nM !0\nCX rec[-1] 1\nM 1\nDETECTOR rec[-1] rec[-2]",
+            "H 0\nM 0\nMPAD 1\nCX rec[-2] 1\nM 1\nDETECTOR rec[-1] rec[-3]",
+        ):
+            fss, _ = records(text, batch_size=64)
+            assert not np.any(fss.get_detector_flips())
+
+
+# 0/1 input and output states of LEAKAGE_TRANSITION_1/2 (Tableside/Cosetside semantics).
+_LEAK2 = "MPAD[LEAKAGE_MEASUREMENT: (1.0, 2) : 0] 0"
+_LT1 = "I[LEAKAGE_TRANSITION_1: {}] {}"
+_LT2 = "II[LEAKAGE_TRANSITION_2: {}] {}"
+
+
+def _flip_run(text, batch_size=256, seed=3, **kwargs):
+    circuit = stim.Circuit(text)
+    cti = LeakageUint8().compile_op_handler(circuit=circuit, batch_size=batch_size)
+    fss = FlipsideSimulator(
+        circuit, compiled_op_handler=cti, batch_size=batch_size, seed=seed, **kwargs
+    )
+    fss.run()
+    return fss, np.asarray(fss.get_final_measurement_records(), dtype=bool)
+
+
+@pytest.mark.parametrize(
+    "prep, tag, expected",
+    [
+        ("X 0", "(1.0, 1-->2)", True),  # 1 used to never match
+        ("", "(1.0, 1-->2)", False),
+        ("X 0", "(1.0, 0-->2)", False),  # 0 used to match every unleaked qubit
+        ("", "(1.0, 0-->2)", True),
+    ],
+)
+def test_lt1_01_inputs_match_z_value(prep, tag, expected):
+    _, r = _flip_run(f"{prep}\n{_LT1.format(tag, 0)}\n{_LEAK2}")
+    assert np.all(r[:, 0] == expected)
+
+
+def test_lt1_01_input_follows_x_frame():
+    _, r = _flip_run(f"X_ERROR(0.5) 0\nM 0\n{_LT1.format('(1.0, 1-->2)', 0)}\n{_LEAK2}")
+    assert 0 < r[:, 0].sum() < len(r)
+    np.testing.assert_array_equal(r[:, 1], r[:, 0])
+
+
+def test_lt2_01_input_legs():
+    _, r = _flip_run(
+        f"X 0\n{_LT2.format('(1.0, 1_0-->2_3)', '0 1')}\n{_LEAK2}\n"
+        "MPAD[LEAKAGE_MEASUREMENT: (1.0, 3) : 1] 0"
+    )
+    assert np.all(r)
+
+
+def test_lt1_01_input_collapses_superposed_target():
+    # The Bell partner collapses with the target.
+    _, r = _flip_run(f"H 0\nCX 0 1\n{_LT1.format('(1.0, 1-->2)', 0)}\n{_LEAK2}\nM 1", batch_size=2000)
+    assert 0.4 < r[:, 0].mean() < 0.6
+    np.testing.assert_array_equal(r[:, 1], r[:, 0])
+    # Even a p=0 0/1-keyed op dephases |+> (H M after it is random, not always 0).
+    _, r = _flip_run(f"H 0\n{_LT1.format('(0.0, 1-->2)', 0)}\nH 0\nM 0", batch_size=2000)
+    assert 0.4 < r[:, 0].mean() < 0.6
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        (f"{_LT1.format('(1.0, 0-->1)', 0)}\nM 0", True),
+        (f"X 0\n{_LT1.format('(1.0, 1-->0)', 0)}\nM 0", False),
+        (f"X 0\n{_LT1.format('(1.0, U-->0)', 0)}\nM 0", False),
+        (f"{_LT1.format('(1.0, U-->1)', 0)}\nM 0", True),
+        # leaked --> 0/1 resets without depolarizing (also after an R while leaked)
+        (f"{_LT1.format('(1.0, U-->2)', 0)}\n{_LT1.format('(1.0, 2-->0)', 0)}\nM 0", False),
+        (f"{_LT1.format('(1.0, U-->2)', 0)}\n{_LT1.format('(1.0, 2-->1)', 0)}\nM 0", True),
+        (f"{_LT1.format('(1.0, U-->2)', 0)}\nR 0\n{_LT1.format('(1.0, 2-->0)', 0)}\nM 0", False),
+        (f"{_LT1.format('(1.0, U-->2)', 0)}\n{_LT2.format('(1.0, 2_U-->0_U)', '0 1')}\nM 0", False),
+        (f"{_LT2.format('(1.0, U_U-->1_U)', '0 1')}\nM 0", True),
+        # leaked --> X/Y/Z resets to |0> before the Pauli
+        (f"{_LT1.format('(1.0, U-->2)', 0)}\n{_LT2.format('(1.0, 2_U-->X_U)', '0 1')}\nM 0", True),
+        (f"{_LT1.format('(1.0, U-->2)', 0)}\n{_LT2.format('(1.0, 2_U-->Y_U)', '0 1')}\nM 0", True),
+        (f"{_LT1.format('(1.0, U-->2)', 0)}\n{_LT2.format('(1.0, 2_U-->Z_U)', '0 1')}\nM 0", False),
+    ],
+)
+def test_01_outputs_reset_to_z_eigenstate(text, expected):
+    for depolarize_on_leak in (True, False):
+        circuit = stim.Circuit(text)
+        cti = LeakageUint8().compile_op_handler(circuit=circuit, batch_size=256)
+        cti._depolarize_on_leak = depolarize_on_leak
+        fss = FlipsideSimulator(circuit, compiled_op_handler=cti, batch_size=256, seed=5)
+        fss.run()
+        r = np.asarray(fss.get_final_measurement_records(), dtype=bool)
+        assert np.all(r[:, -1] == expected)
+        assert np.all(cti.state == 0)
+
+
+def test_01_output_reset_randomizes_phase_and_follows_frames():
+    # A reset to |1> is a Z eigenstate with a random phase: H M is random, H H M is 1.
+    _, r = _flip_run(f"{_LT1.format('(1.0, U-->1)', 0)}\nH 0\nM 0", batch_size=2000)
+    assert 0.4 < r[:, 0].mean() < 0.6
+    _, r = _flip_run(f"{_LT1.format('(1.0, U-->1)', 0)}\nH 0\nH 0\nM 0")
+    assert np.all(r[:, 0])
+    # Reset of a Bell half after a 0/1-keyed input collapse: q0 is 0, q1 is random and uncorrelated.
+    _, r = _flip_run(f"H 0\nCX 0 1\n{_LT1.format('(1.0, 1-->0)', 0)}\nM 0 1", batch_size=2000)
+    assert not np.any(r[:, 0]) and 0.4 < r[:, 1].mean() < 0.6
+    # p < 1: only the shots that fire are reset.
+    _, r = _flip_run(f"{_LT1.format('(0.3, U-->1)', '0 1')}\nM 0 1", batch_size=4000)
+    assert np.all(np.abs(r.mean(axis=0) - 0.3) < 0.04)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        f"H 0\n{_LT1.format('(1.0, U-->0)', 0)}\nM 0",
+        f"H 0\n{_LT1.format('(0.5, U-->2)', 0)}\n{_LT1.format('(1.0, 2-->0)', 0)}\nM 0",
+        f"H 1\n{_LT2.format('(1.0, U_U-->U_1)', '0 1')}\nM 1",
+    ],
+)
+def test_01_output_on_superposed_reference_raises(text):
+    # Resetting only the shots that fire isn't representable in a Pauli frame over a superposed
+    # reference (Tableside/Cosetside can), so FlipsideSimulator raises instead of being wrong.
+    with pytest.raises(ValueError, match="Z value is definite in the noiseless circuit"):
+        _flip_run(text)
+
+
+def test_01_states_with_disable_stabilizer_randomization():
+    # As for 0/1-keyed MPAD and plain M: a superposed target's collapse takes the reference branch.
+    kw = {"disable_stabilizer_randomization": True}
+    _, r_lt = _flip_run(f"H 0\n{_LT1.format('(1.0, 1-->2)', 0)}\n{_LEAK2}\nM 0", **kw)
+    _, r_mpad = _flip_run("H 0\nMPAD[LEAKAGE_MEASUREMENT: (0, 0), (1, 1) : 0] 0\nM 0", **kw)
+    _, r_m = _flip_run("H 0\nM 0\nM 0", **kw)
+    assert not np.any(r_lt) and not np.any(r_mpad) and not np.any(r_m)
+    _, r = _flip_run(f"H 0\n{_LT1.format('(1.0, 0-->2)', 0)}\n{_LEAK2}", **kw)
+    assert np.all(r[:, 0])
+    _, r = _flip_run(f"{_LT1.format('(1.0, U-->2)', 0)}\n{_LT1.format('(1.0, 2-->1)', 0)}\nM 0", **kw)
+    assert np.all(r[:, 0])
+
+
+def test_01_states_without_known_states():
+    kw = {"compute_known_states": False}
+    # A plain (1.0, 2) MPAD readout itself needs known states (pre-existing); the 0/1-keyed one doesn't.
+    leak_01 = "MPAD[LEAKAGE_MEASUREMENT: (0, 0), (0, 1), (1.0, 2) : 0] 0"
+    _, r = _flip_run(f"X 0\n{_LT1.format('(1.0, 1-->2)', 0)}\n{leak_01}", **kw)
+    assert np.all(r[:, 0])
+    _, r = _flip_run(f"{_LT1.format('(1.0, U-->2)', 0)}\n{_LT1.format('(1.0, 2-->1)', 0)}\nM 0", **kw)
+    assert np.all(r[:, 0])
+
+
+def test_01_states_fused_duplicate_targets_and_repeat():
+    # stim fuses identical lines into one op with duplicate targets; each copy re-reads the Z value.
+    text = f"X 0\n{_LT1.format('(0.5, 1-->2)', 0)}\n{_LT1.format('(0.5, 1-->2)', 0)}\n{_LEAK2}"
+    assert len(stim.Circuit(text)) == 3
+    _, r = _flip_run(text, batch_size=4000)
+    assert abs(r[:, 0].mean() - 0.75) < 0.03
+    _, r = _flip_run(f"{_LT1.format('(1.0, 0-->1)', '0 0')}\nM 0")  # 2nd copy sees |1>
+    assert np.all(r[:, 0])
+    rounds = "REPEAT 3 {\nX 0\n" + _LT1.format("(1.0, 1-->2)", 0) + f"\n{_LEAK2}\n"
+    rounds += _LT1.format("(1.0, 2-->0)", 0) + "\n}\nM 0"
+    _, r = _flip_run("R 0\n" + rounds)
+    assert np.all(r[:, :3]) and not np.any(r[:, 3])
+
+
+def test_lt2_same_qubit_in_both_legs_rejected_by_stim():
+    with pytest.raises(ValueError, match="same target"):
+        stim.Circuit(_LT2.format("(1.0, 1_U-->2_U)", "0 0"))
+
+
+def test_01_states_interactive_do():
+    text = f"X 0\n{_LT1.format('(1.0, 1-->2)', 0)}\n{_LEAK2}\n{_LT1.format('(1.0, 2-->0)', 0)}\nM 0"
+    circuit = stim.Circuit(text)
+    cti = LeakageUint8().compile_op_handler(circuit=circuit, batch_size=8)
+    fss = FlipsideSimulator(circuit, compiled_op_handler=cti, batch_size=8, seed=1)
+    fss.interactive_do(circuit)  # same op sequence as the circuit: works
+    r = np.asarray(fss.get_final_measurement_records(), dtype=bool)
+    assert np.all(r[:, 0]) and not np.any(r[:, 1])
+    fss.clear()
+    with pytest.raises(ValueError, match="doesn't match"):
+        fss.interactive_do(stim.Circuit(text.splitlines()[1]))  # op at the wrong circuit time
+    fss.clear()
+    with pytest.raises(ValueError, match="doesn't match"):
+        # Same ops at the same indices except the first: the 1-->2 op's reference Z value would
+        # be the construction circuit's (1, after X 0), so q0 would leak although it is |0>.
+        fss.interactive_do(stim.Circuit(text.replace("X 0", "I 0", 1)))
+
+
+def test_01_states_flipside_sampler_end_to_end():
+    import sinter
+
+    from stimside.dem_generators.leakage_decoder import BaseDecoder
+    from stimside.sampler_flip import FlipsideSampler
+
+    # Every shot leaks q0 (|1> input) and resets it to |0> (output); the trailing X then gives 1 where
+    # the noiseless reference gives 0, so the observable always flips and the DEM can't correct it.
+    circuit = stim.Circuit(
+        f"R 0 1\nX_ERROR(0.1) 1\nX 0\n{_LT1.format('(1.0, 1-->2)', 0)}\n"
+        f"{_LT1.format('(1.0, 2-->0)', 0)}\nX 0\nM 0 1\nDETECTOR rec[-1]\nOBSERVABLE_INCLUDE(0) rec[-2]"
+    )
+    sampler = FlipsideSampler(op_handler=LeakageUint8(), batch_size=64, seed=2, dem_decoder=BaseDecoder())
+    stats = sampler.compiled_sampler_for_task(
+        sinter.Task(circuit=circuit, decoder="pymatching")
+    ).sample(suggested_shots=128)
+    assert stats.shots >= 128
+    assert stats.errors == stats.shots
+
+
+def test_lt2_overlapping_pairs_read_after_reset():
+    # Pairs (0,1) then (1,2) run in order: the first resets q1 to |0>, so the second (1_U) doesn't fire.
+    _, r = _flip_run(
+        f"X 0 1\n{_LT2.format('(1.0, 1_U-->2_0)', '0 1 1 2')}\n{_LEAK2}\n"
+        "MPAD[LEAKAGE_MEASUREMENT: (1.0, 2) : 1] 0\nM 1 2"
+    )
+    assert np.all(r[:, 0]) and not np.any(r[:, 1:])
+
+
+@pytest.mark.parametrize("p", [0.0, 1.0])
+def test_01_detectors_and_observables_after_collapse_and_reset(p):
+    # The reference walk collapses the Bell pair; detectors/observables must stay relative to stim's
+    # reference sample. p=0: collapse only, M0 == M1. p=1: q0 is reset to |0>, M1 stays random.
+    circuit = stim.Circuit(
+        f"R 0 1\nH 0\nCX 0 1\n{_LT1.format(f'({p}, 1-->0)', 0)}\nM 0 1\n"
+        "DETECTOR rec[-1] rec[-2]\nOBSERVABLE_INCLUDE(0) rec[-1]"
+    )
+    cti = LeakageUint8().compile_op_handler(circuit=circuit, batch_size=2048)
+    fss = FlipsideSimulator(circuit, compiled_op_handler=cti, batch_size=2048, seed=4)
+    fss.run()
+    det = np.asarray(fss.get_detector_flips(), dtype=bool)[0]
+    obs = np.asarray(fss.get_observable_flips(), dtype=bool)[0]
+    assert 0.4 < obs.mean() < 0.6
+    if p == 0.0:
+        assert not np.any(det)
+    else:
+        np.testing.assert_array_equal(det, obs)
+
+
+@pytest.mark.parametrize("meas", ["MZZ 1 3", "MPP Z1*Z3", "MXX 1 3", "CX 1 2 3 2\nMR 2"])
+def test_product_measurements_do_not_rescramble_leaked_qubits(meas):
+    # Unlike M, a product or pair measurement doesn't re-scramble the leaked q1, so repeating it gives the same
+    # outcome, just as with its decomposition into CXs and an ancilla measurement (last case).
+    _, r = _flip_run(f"H 1\n{_LT1.format('(1.0, U-->2)', 1)}\n{meas}\nTICK\n{meas}")
+    assert 0 < r[:, -1].sum() < len(r)
+    np.testing.assert_array_equal(r[:, -2], r[:, -1])
+
+
+def test_leakage_projection_z_depolarizes_leaked_targets_with_depolarize_on_leak_off():
+    # The noiseless reference walk collapses q0 at the M, so a leaked q0 that isn't depolarized there would repeat
+    # the reference's MX value in every shot.
+    circuit = stim.Circuit(f"H 0\n{_LT1.format('(1.0, U-->2)', 0)}\nM[LEAKAGE_PROJECTION_Z: (1.0, 2)] 0\nMX 0")
+    cti = LeakageUint8().compile_op_handler(circuit=circuit, batch_size=2000)
+    cti._depolarize_on_leak = False
+    fss = FlipsideSimulator(circuit, compiled_op_handler=cti, batch_size=2000, seed=3)
+    fss.run()
+    r = np.asarray(fss.get_final_measurement_records(), dtype=bool)
+    assert np.all(r[:, 0]) and 0.4 < r[:, 1].mean() < 0.6
+
+
+@pytest.mark.parametrize("op", ["M", "MX", "MY", "MR", "MRX", "MRY"])
+def test_leaked_repeated_target_is_rescrambled_after_each_occurrence(op):
+    # stim fuses identical lines (`OP 0` twice is `OP 0 0`). As with a TICK in between or a REPEAT, the
+    # leaked q0 must be re-scrambled after its first occurrence (repeated targets run in order).
+    prep = f"H 0\n{_LT1.format('(1.0, U-->2)', 0)}\n"
+    forms = [f"{op} 0\n{op} 0", f"{op} 0 0", f"{op} 0\nTICK\n{op} 0", f"REPEAT 2 {{\n{op} 0\n}}"]
+    assert stim.Circuit(prep + forms[0]) == stim.Circuit(prep + forms[1])
+    for form in forms:
+        _, r = _flip_run(prep + form, batch_size=4000)
+        # M family: the two readouts differ half the time; MR family: the 2nd reads the scrambled qubit.
+        stat = r[:, -1] if op.startswith("MR") else r[:, -2] != r[:, -1]
+        assert abs(stat.mean() - 0.5) < 0.04, form

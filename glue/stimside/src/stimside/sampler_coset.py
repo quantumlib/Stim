@@ -7,11 +7,13 @@ import numpy as np
 import sinter  # type: ignore[import-untyped]
 import stim  # type: ignore[import-untyped]
 
-from stimside.op_handlers.abstract_op_handler import CompiledOpHandler, OpHandler
-from stimside.sampler_tableau import (
-    _CompiledSeedMixin,
-    DemGenLike,
+from stimside.dem_generators.leakage_decoder import (
+    CompiledLeakageDecoder,
+    LeakageDecoderLike,
+    as_leakage_decoder,
 )
+from stimside.op_handlers.abstract_op_handler import CompiledOpHandler, OpHandler
+from stimside.sampler_tableau import _CompiledSeedMixin
 from stimside.simulator_coset import CosetsideSimulator
 from stimside.util.reference_chp import CompiledReferenceCircuit
 
@@ -22,19 +24,15 @@ class CosetsideSampler(_CompiledSeedMixin, sinter.Sampler):
     def __init__(
         self,
         op_handler: OpHandler[CosetsideSimulator],
+        dem_decoder: LeakageDecoderLike,
         batch_size: int = 256,
-        dem_gen: DemGenLike | None = None,
-        decoder: sinter.Decoder | None = sinter.BUILT_IN_DECODERS["pymatching"],
         seed: int | None = None,
-        decompose_errors: bool = False,
-        reweight_only: bool = False,
     ) -> None:
+        dem_decoder = as_leakage_decoder(dem_decoder, "CosetsideSampler")
         self.op_handler = op_handler
+        self.dem_decoder = dem_decoder
         self.batch_size = batch_size
-        self.dem_gen = dem_gen
-        self.decoder: sinter.Decoder | None = decoder
         self.seed = seed
-        self.decompose_errors = decompose_errors
         self._init_pid = os.getpid()
         self._compile_count = 0
 
@@ -43,32 +41,21 @@ class CosetsideSampler(_CompiledSeedMixin, sinter.Sampler):
             raise ValueError(
                 "CosetsideSampler requires a circuit in the task to compile a sampler."
             )
-
-        decoder = task.decoder or self.decoder
-        if decoder is None:
-            raise ValueError("CosetsideSampler requires a decoder to be specified.")
-        if isinstance(decoder, str):
-            decoder = sinter.BUILT_IN_DECODERS[decoder]
-
-        if self.dem_gen is None:
-            dem_gen = task.detector_error_model or task.circuit.detector_error_model(
-                decompose_errors=self.decompose_errors
-            )
-        else:
-            dem_gen = self.dem_gen
-
         compiled_ref = CompiledReferenceCircuit(task.circuit)
-        return CompiledCosetsideSampler(
+        compiled_op_handler = self.op_handler.compile_op_handler(
             circuit=task.circuit,
             batch_size=self.batch_size,
-            decoder=decoder,
-            dem_gen=dem_gen,
-            compiled_op_handler=self.op_handler.compile_op_handler(
-                circuit=task.circuit,
-                batch_size=self.batch_size,
-            ),
+        )
+        seed = self._next_compiled_seed()
+        return CompiledCosetsideSampler(
+            circuit=task.circuit,
+            compiled_op_handler=compiled_op_handler,
+            batch_size=self.batch_size,
+            compiled_dem_decoder=self.dem_decoder.compile_for_task(task),
+            needs_records=self.dem_decoder.needs_records,
+            needs_leakage_events=self.dem_decoder.needs_leakage_events,
             compiled_ref=compiled_ref,
-            seed=self._next_compiled_seed(),
+            seed=seed,
         )
 
 
@@ -78,31 +65,30 @@ class CompiledCosetsideSampler(sinter.CompiledSampler):
     def __init__(
         self,
         circuit: stim.Circuit,
-        decoder: sinter.Decoder,
-        dem_gen: DemGenLike,
         compiled_op_handler: CompiledOpHandler[CosetsideSimulator],
         batch_size: int,
+        compiled_dem_decoder: CompiledLeakageDecoder,
+        *,
+        needs_records: bool,
+        needs_leakage_events: bool,
         compiled_ref: CompiledReferenceCircuit | None = None,
         seed: int | None = None,
     ) -> None:
         self.circuit = circuit
         self.batch_size = batch_size
-        self.dem_gen = dem_gen
-        self.decoder = decoder
+        self.compiled_dem_decoder = compiled_dem_decoder
         self.compiled_op_handler = compiled_op_handler
+        self.needs_records = needs_records
+        self.needs_leakage_events = needs_leakage_events
 
-        self.coset_simulator = CosetsideSimulator(
+        self.simulator = CosetsideSimulator(
             circuit=circuit,
             compiled_op_handler=compiled_op_handler,
             batch_size=batch_size,
             compiled_ref=compiled_ref,
             seed=seed,
+            record_leakage_events=needs_leakage_events,
         )
-
-        if isinstance(dem_gen, stim.DetectorErrorModel):
-            self.compiled_decoder = decoder.compile_decoder_for_dem(dem=dem_gen)
-        else:
-            self.compiled_decoder = None
 
     def sample(self, suggested_shots: int) -> sinter.AnonTaskStats:
         stats = sinter.AnonTaskStats()
@@ -110,48 +96,35 @@ class CompiledCosetsideSampler(sinter.CompiledSampler):
         while stats.shots < suggested_shots:
             start_time = time.process_time()
 
-            self.coset_simulator.clear()
-            self.coset_simulator.run()
+            self.simulator.clear()
+            self.simulator.run()
 
-            det_and_obs_events = self.coset_simulator.get_detector_flips(
+            det_and_obs_events = self.simulator.get_detector_flips(
                 append_observables=True
             )
-            det_events = det_and_obs_events[:, : self.coset_simulator.num_detectors]
+            det_events = det_and_obs_events[:, : self.simulator.num_detectors]
             det_events_bit_packed = np.packbits(
                 det_events, axis=len(det_events.shape) - 1, bitorder="little"
             )
 
-            obs_flips = det_and_obs_events[:, self.coset_simulator.num_detectors :]
+            obs_flips = det_and_obs_events[:, self.simulator.num_detectors :]
             actual_obs_flips = np.packbits(
                 obs_flips, axis=len(obs_flips.shape) - 1, bitorder="little"
             )
 
-            decoded_obs_flips = np.array([])
-            if callable(self.dem_gen):
-                records = self.coset_simulator.get_final_measurement_records()
-                assert records is not None       
-                for n in range(len(records)):
-                    dem = self.dem_gen(
-                        self.circuit,
-                        records[n],
-                    )
-                    compiled_decoder = self.decoder.compile_decoder_for_dem(dem=dem)
-                    decoded_obs_flips = np.append(
-                        decoded_obs_flips,
-                        self.compiled_decoder.decode_shots_bit_packed(
-                            bit_packed_detection_event_data=np.array([det_events_bit_packed[n]])
-                        ),
-                        axis = 0,
-                    )
-            elif self.compiled_decoder is None:
-                raise ValueError(
-                    "No compiled decoder available. "
-                    "dem_gen must be provided when initializing CosetsideSampler."
-                )
-            else:
-                decoded_obs_flips = self.compiled_decoder.decode_shots_bit_packed(
-                    bit_packed_detection_event_data=det_events_bit_packed
-                )
+            decoded_obs_flips = self.compiled_dem_decoder.decode_shots_bit_packed(
+                bit_packed_detection_event_data=det_events_bit_packed,
+                records=(
+                    self.simulator.get_final_measurement_records()
+                    if self.needs_records
+                    else None
+                ),
+                leakage_events=(
+                    self.simulator.get_leakage_events()
+                    if self.needs_leakage_events
+                    else None
+                ),
+            )
 
             num_errors = int(
                 np.count_nonzero(

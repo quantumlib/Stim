@@ -6,6 +6,9 @@ from typing import Literal
 # Matches "LEAKAGE_NAME: (arg1) (arg2)"
 LEAKAGE_TAG_MATCH = re.compile(r"(?P<name>LEAKAGE_\w+):(?P<args>.+)")
 
+# Matches "LEAKAGE_SWAP" (the only leakage tag without arguments)
+LEAKAGE_SWAP_TAG_MATCH = re.compile(r"(?P<name>LEAKAGE_SWAP)")
+
 # Matches "CONDITIONED_ON_NAME: args : targets"
 CONDITION_TAG_MATCH = re.compile(
     r"(?P<name>CONDITIONED_ON_[A-Z]+)\s*:(?P<args>[^:]+):*(?P<targets>.+)*"

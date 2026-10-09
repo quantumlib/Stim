@@ -430,4 +430,171 @@ def test_exotic_circuit_end_to_end_tableside_vs_cosetside_cross_validation():
         )
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "H 0\nREPEAT 3 {\nMPAD[LEAKAGE_MEASUREMENT: (0, 0), (1, 1) : 0] 0\n}\nM 0",
+        "REPEAT 3 {\nX_ERROR(0.1) 0\n}\nM 0",
+        "REPEAT 3 {\nI[LEAKAGE_TRANSITION_1: (0.1, U-->2)] 0\n}\nM 0",
+        "REPEAT 3 {\nM[LEAKAGE_PROJECTION_Z: (0.0, 0) (1.0, 1) (1.0, 2)] 0\n}",
+        "H 0\nREPEAT 2 {\nH 0\nSHIFT_COORDS(1)\nH 0\n}\nM 0",
+    ],
+)
+def test_repeat_body_with_identical_consecutive_ops(text):
+    """Unrolled REPEAT bodies that stim's flattened() would fuse (previously IndexError at precompile)."""
+    from stimside.op_handlers.leakage_handlers.leakage_uint8_coset import (
+        LeakageUint8Coset,
+    )
+    from stimside.op_handlers.leakage_handlers.leakage_uint8_tableau import (
+        LeakageUint8 as LeakageUint8Tableau,
+    )
+    from stimside.simulator_coset import CosetsideSimulator
+
+    circ = stim.Circuit(text)
+    for kw in (
+        dict(use_cpp_kernels=True, batch_size=1),
+        dict(use_cpp_kernels=False, batch_size=1),
+        dict(use_cpp_kernels=True, batch_size=4),
+        dict(use_cpp_kernels=False, batch_size=4),
+    ):
+        coh = LeakageUint8Tableau().compile_op_handler(circuit=circ, batch_size=kw["batch_size"])
+        tss = TablesideSimulator(circuit=circ, compiled_op_handler=coh, seed=5, **kw)
+        tss.run()
+        recs = tss.get_final_measurement_records()
+        assert recs.shape == (kw["batch_size"], circ.num_measurements)
+        if text.startswith("H 0\nREPEAT 3 {\nMPAD"):
+            # MPAD with (0, 0), (1, 1) reads out the qubit's Z value, so it matches the final M.
+            assert np.all(recs[:, :3] == recs[:, 3:4])
+
+    # Exact RNG lockstep with Cosetside.
+    for seed in (1, 2, 3):
+        coh_t = LeakageUint8Tableau().compile_op_handler(circuit=circ, batch_size=1)
+        tss = TablesideSimulator(
+            circuit=circ, compiled_op_handler=coh_t, batch_size=1, seed=seed, sync_tableside_rng=True
+        )
+        tss.run()
+        coh_c = LeakageUint8Coset().compile_op_handler(circuit=circ, batch_size=1)
+        css = CosetsideSimulator(
+            circuit=circ, compiled_op_handler=coh_c, batch_size=1, seed=seed, sync_tableside_rng=True
+        )
+        css.run()
+        np.testing.assert_array_equal(
+            tss.get_final_measurement_records(), css.get_final_measurement_records()
+        )
+        np.testing.assert_array_equal(coh_t.state.reshape(-1), coh_c.state.reshape(-1))
+        assert tss.coords_shifts == css.coords_shifts
+
+
+def test_repeat_body_fusion_leak_event_op_indices():
+    """Deterministic leaks after a fusable REPEAT body: unrolled op indices must match Cosetside."""
+    from stimside.op_handlers.leakage_handlers.leakage_uint8_coset import (
+        LeakageUint8Coset,
+    )
+    from stimside.op_handlers.leakage_handlers.leakage_uint8_tableau import (
+        LeakageUint8 as LeakageUint8Tableau,
+    )
+    from stimside.simulator_coset import CosetsideSimulator
+
+    up = "I[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 0"
+    dn = "I[LEAKAGE_TRANSITION_1: (1.0, 2-->U)] 0"
+    circ = stim.Circuit(
+        f"REPEAT 3 {{\nX_ERROR(0.1) 2\n}}\nREPEAT 2 {{\n{up}\nTICK\n{dn}\nTICK\n}}\n"
+        f"REPEAT 2 {{\n{up}\n}}\nM[LEAKAGE_PROJECTION_Z: (1.0, 2)] 0"
+    )
+    coh_c = LeakageUint8Coset().compile_op_handler(circuit=circ, batch_size=1)
+    css = CosetsideSimulator(circuit=circ, compiled_op_handler=coh_c, batch_size=1, seed=1,
+                             record_unleaked_to_leaked=True, record_leakage_events=True)
+    expected_u2l = [list(x) for x in css.run()]
+    assert expected_u2l == [[3, 7, 11]]
+    for use_cpp in (True, False):
+        coh = LeakageUint8Tableau().compile_op_handler(circuit=circ, batch_size=1)
+        tss = TablesideSimulator(circuit=circ, compiled_op_handler=coh, batch_size=1, seed=1,
+                                 use_cpp_kernels=use_cpp, record_unleaked_to_leaked=True,
+                                 record_leakage_events=True)
+        assert [list(x) for x in tss.run()] == expected_u2l
+        assert tss._leakage_events == css._leakage_events
+
+
+def _leakage_tss(circuit: stim.Circuit, batch_size: int) -> TablesideSimulator:
+    from stimside.op_handlers.leakage_handlers.leakage_uint8_tableau import LeakageUint8
+
+    coh = LeakageUint8().compile_op_handler(circuit=circuit, batch_size=1)
+    return TablesideSimulator(circuit=circuit, compiled_op_handler=coh, batch_size=batch_size, seed=5)
+
+
+def _outputs(tss: TablesideSimulator) -> list[np.ndarray]:
+    return [tss.get_final_measurement_records(), tss.get_detector_flips(), tss.get_observable_flips()]
+
+
+@pytest.mark.parametrize("batch_size", [1, 8])
+def test_interactive_do_exact_replay_and_noise_strength_match_truth(batch_size):
+    # Deterministic circuits: run() may take the kernel path, which draws randomness differently.
+    def circuit(p):
+        return stim.Circuit(
+            f"X 0\nX_ERROR({p}) 1\nM 0\nCX 0 1 rec[-1] 2\nM({p}) 1 2\nDETECTOR rec[-1] rec[-2]\n"
+            "OBSERVABLE_INCLUDE(0) rec[-3]\nI[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 0\nX 0 1\nM 0 1"
+        )
+
+    truth = _leakage_tss(circuit(1), batch_size)
+    truth.run()
+    for construct in (circuit(1), circuit(0)):  # exact replay; an untagged noisy gate's strength
+        tss = _leakage_tss(construct, batch_size)
+        tss.interactive_do(circuit(1))
+        tss.finish_interactive_run()
+        for x, y in zip(_outputs(truth), _outputs(tss)):
+            np.testing.assert_array_equal(x, y)
+
+
+@pytest.mark.parametrize("batch_size", [1, 8])
+def test_interactive_do_checks_tags_and_arguments(batch_size):
+    leak = "I[LEAKAGE_TRANSITION_1: ({}, U-->2)] 0"
+    for a, b in [
+        ("X 0\nCX 0 1\nM 1", "X 0\nCX[foo] 0 1\nM 1"),  # only a tag added
+        ("R 0\nI 0\nX 0\nM 0", f"R 0\n{leak.format(1.0)}\nX 0\nM 0"),
+        (f"R 0\n{leak.format(0.0)}\nX 0\nM 0", f"R 0\n{leak.format(1.0)}\nX 0\nM 0"),
+        ("X 0\nM 0\nDETECTOR rec[-1]", "X 0\nM !0\nDETECTOR rec[-1]"),
+        ("I 0\nM 0\nDETECTOR rec[-1]", "X 0\nM 0\nDETECTOR rec[-1]"),
+        ("MPAD 0\nDETECTOR rec[-1]", "MPAD 1\nDETECTOR rec[-1]"),
+        (
+            "M 0 1\nOBSERVABLE_INCLUDE(0) rec[-1]\nOBSERVABLE_INCLUDE(1) rec[-2]",
+            "M 0 1\nOBSERVABLE_INCLUDE(1) rec[-1]\nOBSERVABLE_INCLUDE(0) rec[-2]",
+        ),
+    ]:
+        # The op handler's tag map and the detector/observable converter are the construction
+        # circuit's, so these used to be accepted with the old tag / reference / definition.
+        with pytest.raises(ValueError, match="doesn't match the circuit"):
+            _leakage_tss(stim.Circuit(a), batch_size).interactive_do(stim.Circuit(b))
+    # flattened() drops the SHIFT_COORDS (operation 2 here), so it doesn't replay the circuit.
+    rounds = stim.Circuit("REPEAT 2 {\n    M 0\n    DETECTOR(0) rec[-1]\n    SHIFT_COORDS(1)\n}")
+    with pytest.raises(ValueError, match=r"not `circuit\.flattened\(\)` or `circuit \+ more`"):
+        _leakage_tss(rounds, batch_size).interactive_do(rounds.flattened())
+
+
+@pytest.mark.parametrize("batch_size", [1, 8])
+def test_interactive_do_past_the_end(batch_size):
+    circuit = stim.Circuit("X 0\nM 0\nDETECTOR rec[-1]")
+    extension = stim.Circuit("X 1\nCX 1 0\nTICK\nM 0 1")
+    truth = _leakage_tss(circuit + extension, batch_size)
+    truth.run()
+    tss = _leakage_tss(circuit, batch_size)
+    tss.interactive_do(circuit)
+    tss.interactive_do(extension)
+    tss.finish_interactive_run()
+    np.testing.assert_array_equal(
+        tss.get_final_measurement_records(), truth.get_final_measurement_records()
+    )
+    with pytest.raises(ValueError):  # the construction circuit's converter: 1 measurement
+        tss.get_detector_flips()
+    for op in [
+        "DETECTOR rec[-1]",
+        "OBSERVABLE_INCLUDE(0) rec[-1]",
+        "I[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 0",
+        "X[foo] 0",
+    ]:
+        tss = _leakage_tss(circuit, batch_size)
+        tss.interactive_do(circuit)
+        with pytest.raises(ValueError, match="past the end of the circuit"):
+            tss.interactive_do(stim.Circuit(op))
+
+
 

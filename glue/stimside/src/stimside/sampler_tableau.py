@@ -1,30 +1,20 @@
 from __future__ import annotations
 
-import math
 import os
 import time
-from typing import Any, Callable, Sequence, TypeAlias
-import warnings
 
 import numpy as np
-from numpy.typing import NDArray
 import sinter  # type: ignore[import-untyped]
 import stim  # type: ignore[import-untyped]
 
+from stimside.dem_generators.leakage_decoder import (
+    CompiledLeakageDecoder,
+    LeakageDecoderLike,
+    as_leakage_decoder,
+)
 from stimside.op_handlers.abstract_op_handler import CompiledOpHandler, OpHandler
 from stimside.simulator_tableau import TablesideSimulator
 
-# `dem_gen` accepted by the Tableside/Flipside/Cosetside samplers.
-DemGenLike: TypeAlias = (
-    Callable[
-        [stim.Circuit, NDArray[np.bool_]],
-        stim.DetectorErrorModel
-        | Sequence[stim.DetectorErrorModel]
-        | NDArray[np.float64]
-        | Sequence[NDArray[np.float64]],
-    ]
-    | stim.DetectorErrorModel
-)
 
 class _CompiledSeedMixin:
     """`seed` for the first compile in the creating process; a derived per-compile/per-process seed after."""
@@ -50,18 +40,15 @@ class TablesideSampler(_CompiledSeedMixin, sinter.Sampler):
     def __init__(
         self,
         op_handler: OpHandler,
+        dem_decoder: LeakageDecoderLike,
         batch_size: int = 1,
-        dem_gen: DemGenLike | None = None,
-        decoder: sinter.Decoder | None = sinter.BUILT_IN_DECODERS["pymatching"],
         seed: int | None = None,
-        decompose_errors: bool = False,
     ):
+        dem_decoder = as_leakage_decoder(dem_decoder, "TablesideSampler")
         self.op_handler = op_handler
-        self.decoder: sinter.Decoder | None = decoder
+        self.dem_decoder = dem_decoder
         self.batch_size = batch_size
-        self.dem_gen = dem_gen
         self.seed = seed
-        self.decompose_errors = decompose_errors
         self._init_pid = os.getpid()
         self._compile_count = 0
 
@@ -70,29 +57,19 @@ class TablesideSampler(_CompiledSeedMixin, sinter.Sampler):
             raise ValueError(
                 "TablesideSampler requires a circuit in the task to compile a sampler."
             )
-        decoder = task.decoder or self.decoder
-        if decoder is None:
-            raise ValueError("TablesideSampler requires a decoder to be specified.")
-        if isinstance(decoder, str):
-            decoder = sinter.BUILT_IN_DECODERS[decoder]
-
-        if self.dem_gen is None:
-            dem_gen = task.detector_error_model or task.circuit.detector_error_model(
-                decompose_errors=self.decompose_errors
-            )
-        else:
-            dem_gen = self.dem_gen
-
-        return CompiledTablesideSampler(
+        compiled_op_handler = self.op_handler.compile_op_handler(
             circuit=task.circuit,
             batch_size=self.batch_size,
-            decoder=decoder,
-            dem_gen=dem_gen,
-            compiled_op_handler=self.op_handler.compile_op_handler(
-                circuit=task.circuit,
-                batch_size=self.batch_size,
-            ),
-            seed=self._next_compiled_seed(),
+        )
+        seed = self._next_compiled_seed()
+        return CompiledTablesideSampler(
+            circuit=task.circuit,
+            compiled_op_handler=compiled_op_handler,
+            batch_size=self.batch_size,
+            compiled_dem_decoder=self.dem_decoder.compile_for_task(task),
+            needs_records=self.dem_decoder.needs_records,
+            needs_leakage_events=self.dem_decoder.needs_leakage_events,
+            seed=seed,
         )
 
 
@@ -100,28 +77,28 @@ class CompiledTablesideSampler(sinter.CompiledSampler):
     def __init__(
         self,
         circuit: stim.Circuit,
-        decoder: sinter.Decoder,
-        dem_gen: DemGenLike,
         compiled_op_handler: CompiledOpHandler,
         batch_size: int,
+        compiled_dem_decoder: CompiledLeakageDecoder,
+        *,
+        needs_records: bool,
+        needs_leakage_events: bool,
         seed: int | None = None,
     ):
         self.circuit = circuit
-        self.batch_size = batch_size
-        self.decoder = decoder
-        self.dem_gen = dem_gen
-        self.compiled_op_handler = compiled_op_handler
         self.tab_simulator = TablesideSimulator(
             circuit=circuit,
             compiled_op_handler=compiled_op_handler,
             batch_size=batch_size,
             seed=seed,
+            record_leakage_events=needs_leakage_events,
         )
 
-        if isinstance(dem_gen, stim.DetectorErrorModel):
-            self.compiled_decoder = decoder.compile_decoder_for_dem(dem=dem_gen)
-        else:
-            self.compiled_decoder = None
+        self.batch_size = batch_size
+        self.compiled_dem_decoder = compiled_dem_decoder
+        self.compiled_op_handler = compiled_op_handler
+        self.needs_records = needs_records
+        self.needs_leakage_events = needs_leakage_events
 
     def sample(self, suggested_shots: int) -> sinter.AnonTaskStats:
         stats = sinter.AnonTaskStats()
@@ -133,11 +110,11 @@ class CompiledTablesideSampler(sinter.CompiledSampler):
             self.tab_simulator.run()
 
             # With batch_size > 1, detection events are sampled on their own unless
-            # the measurement records were sampled first; dem_gen needs the records
-            # of the very shots that get decoded.
+            # the measurement records were sampled first; the dem_decoder needs the
+            # records of the very shots that get decoded.
             records = (
                 self.tab_simulator.get_final_measurement_records()
-                if callable(self.dem_gen)
+                if self.needs_records
                 else None
             )
             det_and_obs_events = self.tab_simulator.get_detector_flips(
@@ -154,25 +131,15 @@ class CompiledTablesideSampler(sinter.CompiledSampler):
                 obs_flips, axis=len(obs_flips.shape) - 1, bitorder="little"
             )
 
-            if callable(self.dem_gen):
-                assert records is not None
-                dem = self.dem_gen(
-                    self.circuit,
-                    records[0],
-                )
-                self.compiled_decoder = self.decoder.compile_decoder_for_dem(dem=dem)
-                decoded_obs_flips = self.compiled_decoder.decode_shots_bit_packed(
-                    bit_packed_detection_event_data=det_events_bit_packed
-                )
-            elif self.compiled_decoder is None:
-                raise ValueError(
-                    "No compiled decoder available."
-                    "dem_gen must be provided as a callable when initializing TablesideSampler."
-                )
-            else:
-                decoded_obs_flips = self.compiled_decoder.decode_shots_bit_packed(
-                    bit_packed_detection_event_data=det_events_bit_packed
-                )
+            decoded_obs_flips = self.compiled_dem_decoder.decode_shots_bit_packed(
+                bit_packed_detection_event_data=det_events_bit_packed,
+                records=records,
+                leakage_events=(
+                    self.tab_simulator.get_leakage_events()
+                    if self.needs_leakage_events
+                    else None
+                ),
+            )
 
             # count a shot as an error if any of the observables was predicted wrong
             num_errors = np.count_nonzero(

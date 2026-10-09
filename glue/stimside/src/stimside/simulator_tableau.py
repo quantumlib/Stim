@@ -10,9 +10,13 @@ from stimside.op_handlers.abstract_op_handler import CompiledOpHandler
 from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageConditioningParams,
     LeakageMeasurementParams,
+    LeakageSwapParams,
     LeakageTransition1Params,
     LeakageTransition2Params,
 )
+from stimside.util.known_states import _replays, _unroll_circuit
+from stimside.util.leakage_events import LeakageEvent, LeakageEventsRecorderMixin
+from stimside.util.seeding import derived_seed
 from stimside.util.unleaked_to_leaked import UnleakedToLeakedRecordsMixin
 
 _STANDARD_LEAKAGE_PARAM_TYPES = (
@@ -20,10 +24,11 @@ _STANDARD_LEAKAGE_PARAM_TYPES = (
     LeakageTransition1Params,
     LeakageTransition2Params,
     LeakageMeasurementParams,
+    LeakageSwapParams,
 )
 
 
-class TablesideSimulator(UnleakedToLeakedRecordsMixin):
+class TablesideSimulator(UnleakedToLeakedRecordsMixin, LeakageEventsRecorderMixin):
     """A convenient correlated error simulator based on stim.TableauSimulator.
 
     Inherits the advantages and disadvantages of a tableau simulator:
@@ -87,7 +92,12 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
         use_cpp_kernels: bool | None = None,
         sync_tableside_rng: bool | None = None,
         record_unleaked_to_leaked: bool = False,
+        record_leakage_events: bool = False,
     ) -> None:
+        """record_leakage_events: record every leakage-state change of each shot
+        (``get_leakage_events()``, see ``stimside.util.leakage_events``). With
+        ``batch_size > 1`` (and no ``sync_tableside_rng``) all shots of a batch share
+        one leakage trajectory, so they get the same events."""
 
         self.circuit = circuit
         self.num_qubits = circuit.num_qubits
@@ -99,6 +109,10 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
             [[] for _ in range(batch_size)]
             if self.record_unleaked_to_leaked
             else []
+        )
+        self.record_leakage_events = bool(record_leakage_events)
+        self._leakage_events: list[list[LeakageEvent]] = (
+            [[] for _ in range(batch_size)] if self.record_leakage_events else []
         )
         self._shot_counter = 0
 
@@ -112,10 +126,11 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
             True if use_cpp_kernels is None else bool(use_cpp_kernels)
         ) and not self._sync_tableside_rng
 
-        self.np_rng = np.random.default_rng(seed=seed)
+        shot_seed = derived_seed(seed, 0) if seed is not None else None
+        self.np_rng = np.random.default_rng(seed=shot_seed)
         self._rng = self.np_rng if seed is not None else np.random.default_rng(seed=None)
 
-        self._tab_seed = int(seed) if seed is not None else int(self._rng.integers(0, 2**31))
+        self._tab_seed = shot_seed if shot_seed is not None else int(self._rng.integers(0, 2**63))
         self._tableau_simulator_inst: stim.TableauSimulator | None = None
         self._new_circuit = stim.Circuit()
         self._construct_reference_circuit = construct_reference_circuit
@@ -169,6 +184,7 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
 
         self._circuit_time = 0
         self._used_interactively = False
+        self._unrolled_ops: list[stim.CircuitInstruction] | None = None  # set by interactive_do
 
         self._final_measurement_records: NDArray[np.bool_] | None = None
         self._detector_flips: NDArray[np.bool_] | None = None
@@ -222,6 +238,7 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
             orig_batch = self.batch_size
             meas_list = []
             saved_events = [[] for _ in range(orig_batch)] if self.record_unleaked_to_leaked else []
+            saved_leakage_events: list[list[LeakageEvent]] = [[] for _ in range(orig_batch)]
             self.batch_size = 1
             try:
                 for b in range(orig_batch):
@@ -233,10 +250,14 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
                     meas_list.append(rec.copy())
                     if self.record_unleaked_to_leaked:
                         saved_events[b] = list(self._unleaked_to_leaked_events[0])
+                    if self.record_leakage_events:
+                        saved_leakage_events[b] = list(self._leakage_events[0])
             finally:
                 self.batch_size = orig_batch
             self._finished_running_circuit = True
             self._final_measurement_records = np.vstack(meas_list)
+            if self.record_leakage_events:
+                self._leakage_events = saved_leakage_events
             if self.record_unleaked_to_leaked:
                 self._unleaked_to_leaked_events = saved_events
                 return self.get_unleaked_to_leaked_records()
@@ -249,6 +270,10 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
 
         if self.batch_size > 1:
             self._final_measurement_records = None
+            if self.record_leakage_events:
+                # All shots of the batch share the one simulated leakage trajectory.
+                ev0 = self._leakage_events[0]
+                self._leakage_events = [list(ev0) for _ in range(self.batch_size)]
             if (
                 self.record_unleaked_to_leaked
                 and len(self._unleaked_to_leaked_events) == self.batch_size
@@ -277,7 +302,7 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
         """
         self._running_tableau = self._initial_running_tableau
         if self.seed is not None:
-            shot_seed = int(self.seed) + int(self._shot_counter)
+            shot_seed = derived_seed(self.seed, self._shot_counter)
             self.np_rng = np.random.default_rng(seed=shot_seed)
             self._rng = self.np_rng
             self._tab_seed = shot_seed
@@ -287,7 +312,7 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
             if self._cpp_runner is not None:
                 self._cpp_runner.clear(shot_seed)
         else:
-            self._tab_seed = int(self._rng.integers(0, 2**31))
+            self._tab_seed = int(self._rng.integers(0, 2**63))
             self._tableau_simulator_inst = (
                 stim.TableauSimulator(seed=self._tab_seed)
                 if self._running_tableau
@@ -317,6 +342,8 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
             self._unleaked_to_leaked_events = [
                 [] for _ in range(self.batch_size)
             ]
+        if self.record_leakage_events:
+            self._leakage_events = [[] for _ in range(self.batch_size)]
 
         self._circuit_time = 0
         self._used_interactively = False
@@ -345,10 +372,24 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
     def interactive_do(
         self, this: stim.Circuit | stim.CircuitInstruction | stim.CircuitRepeatBlock, /
     ):
+        """Do the next operation(s): the circuit this simulator was constructed with, then any more.
+
+        The detector/observable converter and op handler are precomputed from that circuit, so
+        `this` must continue it in order (REPEAT blocks unrolled), except that an untagged noisy gate
+        (e.g. X_ERROR, M(p)) may have a different noise strength; else ValueError. Past its end,
+        untagged operations other than DETECTOR and OBSERVABLE_INCLUDE may follow (their
+        measurements are recorded, but get_detector_flips may then raise); others raise ValueError.
+
+        Pass the circuit itself or consecutive parts of it, not `circuit.flattened()` (which drops
+        SHIFT_COORDS, rewrites DETECTOR coordinates and can merge operations) or `circuit + more`
+        (where stim can merge operations at the seam).
+        """
         if self._finished_running_circuit:
             raise RuntimeError(
                 "Cannot do more operations after finishing an interactive run."
             )
+        if self._unrolled_ops is None:
+            self._unrolled_ops = _unroll_circuit(self.circuit)
         if not self._used_interactively:
             self._used_interactively = True
             self._running_tableau = True
@@ -373,7 +414,30 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
             for _ in range(this.repeat_count):
                 self._do(loop_body)
         elif isinstance(this, stim.CircuitInstruction):
+            if self._used_interactively:
+                self._check_interactive_op(this)
             self._do_instruction(this)
+
+    def _check_interactive_op(self, this: stim.CircuitInstruction) -> None:
+        """Raise ValueError unless interactive_do may do `this` now (see interactive_do)."""
+        assert self._unrolled_ops is not None
+        t, n = self._circuit_time, len(self._unrolled_ops)
+        if t < n and not _replays(this, self._unrolled_ops[t]):
+            raise ValueError(
+                f"interactive_do: operation {t} (REPEAT blocks unrolled) `{this}` doesn't match the "
+                "circuit the TablesideSimulator was constructed with, which has "
+                f"`{self._unrolled_ops[t]}` there. Its detector/observable converter and op handler "
+                "are precomputed from that circuit, so interactive_do must replay it in order before "
+                "continuing past its end. Pass the circuit itself or its parts, not "
+                "`circuit.flattened()` or `circuit + more`."
+            )
+        if t >= n and (this.tag or this.name in ("DETECTOR", "OBSERVABLE_INCLUDE")):
+            raise ValueError(
+                f"interactive_do: operation {t} (REPEAT blocks unrolled) `{this}` is past the end "
+                f"of the circuit the TablesideSimulator was constructed with ({n} operations), "
+                "where tagged operations, DETECTOR and OBSERVABLE_INCLUDE aren't supported: the op "
+                "handler and detector/observable converter only know that circuit."
+            )
 
     def _do_instruction(self, op: stim.CircuitInstruction):
         """for each instruction, update the state of the simulator."""
@@ -547,7 +611,7 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
             self._final_measurement_records = np.array([self.current_tableau_measurement_record()])
         else:
             self._final_measurement_records = self._new_circuit.compile_sampler(
-                    seed=int(self._rng.integers(0, 2**31))
+                    seed=int(self._rng.integers(0, 2**63))
                 ).sample(shots=self.batch_size, bit_packed=False)
             for meas_idx, p0, p1, is_inverted in self._asymmetric_readout_postproc:
                 col = self._final_measurement_records[:, meas_idx]
@@ -566,7 +630,7 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin):
             else:
                 self._detector_flips, self._observable_flips = (
                     self._new_circuit.compile_detector_sampler(
-                        seed=int(self._rng.integers(0, 2**31))
+                        seed=int(self._rng.integers(0, 2**63))
                     ).sample(
                        shots=self.batch_size, separate_observables=True, bit_packed=False
                     )

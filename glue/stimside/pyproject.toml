@@ -40,5 +40,3 @@ pythonpath = ["src"]
 testpaths = ["src"]
 norecursedirs = ["build", "dist", "python_build_stimside", "*.egg-info", ".benchmarks", ".git"]
 
-[tool.uv.extra-build-dependencies]
-stimside = ["setuptools"]

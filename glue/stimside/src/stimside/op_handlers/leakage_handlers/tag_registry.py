@@ -5,6 +5,7 @@ import stimside.op_handlers.leakage_handlers.leakage_tag_parsing_unified as ltp
 
 from stimside.op_handlers.leakage_handlers.common_parsing import (
     LEAKAGE_TAG_MATCH,
+    LEAKAGE_SWAP_TAG_MATCH,
     CONDITION_TAG_MATCH,
     MEASURE_TAG_MATCH,
 )
@@ -98,6 +99,12 @@ TAG_REGISTRY: dict[str, TagDef] = {
         allowed_gates=("MPAD",),
         parser_func=ltp._parse_measurement
     ),
+    "LEAKAGE_SWAP": TagDef(
+        name="LEAKAGE_SWAP",
+        allowed_arity=2,
+        allowed_gates=("SWAP",),
+        parser_func=ltp._parse_swap
+    ),
     "CONDITIONED_ON_SELF": TagDef(
         name="CONDITIONED_ON_SELF",
         allowed_arity=1,
@@ -137,6 +144,8 @@ def parse_leakage_tag(op: stim.CircuitInstruction, simulator: Literal["flip", "t
         match = CONDITION_TAG_MATCH.fullmatch(tag)
     elif tag.startswith("LEAKAGE_MEASUREMENT"):
         match = MEASURE_TAG_MATCH.fullmatch(tag)
+    elif tag == "LEAKAGE_SWAP":
+        match = LEAKAGE_SWAP_TAG_MATCH.fullmatch(tag)
     else:
         match = LEAKAGE_TAG_MATCH.fullmatch(tag)
         

@@ -26,11 +26,34 @@ from stimside.util.reference_chp import (
     UnitaryStepMeta,
     _pauli_image,
 )
+from stimside.util.known_states import _replays, _unroll_circuit
+from stimside.util.leakage_events import LeakageEvent, LeakageEventsRecorderMixin
+from stimside.util.seeding import derived_seed
 from stimside.util.unleaked_to_leaked import UnleakedToLeakedRecordsMixin
 
 # Pauli applied to the qubit of a record-controlled 2Q gate (stim only parses these with rec[] controls).
 _REC_FIRST_PAULI = {"CX": "X", "CNOT": "X", "ZCX": "X", "CY": "Y", "ZCY": "Y"}
 _REC_SECOND_PAULI = {"XCZ": "X", "YCZ": "Y"}
+
+
+def _as_compiled(op: stim.CircuitInstruction) -> stim.CircuitInstruction:
+    """`op` as CompiledReferenceCircuit stores it on its step, to match interactive ops against.
+
+    A two-qubit unitary with rec/sweep-controlled pairs is stored as its qubit pairs only (unless it
+    has none); do_conditional_clifford handles the controlled pairs live from the interactive op.
+    """
+    gd = stim.gate_data(op.name)
+    raw = op.targets_copy()
+    if gd.is_unitary and gd.is_two_qubit_gate and any(t.qubit_value is None for t in raw):
+        quantum = [
+            q
+            for a, b in zip(raw[::2], raw[1::2])
+            if a.qubit_value is not None and b.qubit_value is not None
+            for q in (a.qubit_value, b.qubit_value)
+        ]
+        if quantum:
+            return stim.CircuitInstruction(op.name, quantum, op.gate_args_copy())
+    return op
 
 
 def _word_dot_parity(
@@ -625,7 +648,7 @@ class MRQFState:
         return 1 if exp_mod4 == 0 else -1
 
 
-class CosetsideSimulator(UnleakedToLeakedRecordsMixin):
+class CosetsideSimulator(UnleakedToLeakedRecordsMixin, LeakageEventsRecorderMixin):
     """High-performance batched Clifford-error & stabilizer simulator via Moving-Reference Quadratic Forms (MRQF).
 
     Combines:
@@ -647,7 +670,10 @@ class CosetsideSimulator(UnleakedToLeakedRecordsMixin):
         sync_tableside_rng: bool | None = None,
         use_cpp_kernels: bool = True,
         record_unleaked_to_leaked: bool = False,
+        record_leakage_events: bool = False,
     ) -> None:
+        """record_leakage_events: record every leakage-state change of each shot
+        (``get_leakage_events()``, see ``stimside.util.leakage_events``)."""
         self.circuit = circuit
         self.num_qubits = circuit.num_qubits
         self.seed = seed
@@ -657,6 +683,10 @@ class CosetsideSimulator(UnleakedToLeakedRecordsMixin):
             [[] for _ in range(batch_size)]
             if self.record_unleaked_to_leaked
             else []
+        )
+        self.record_leakage_events = bool(record_leakage_events)
+        self._leakage_events: list[list[LeakageEvent]] = (
+            [[] for _ in range(batch_size)] if self.record_leakage_events else []
         )
         self.sync_tableside_rng = bool(sync_tableside_rng)
         self.use_cpp_kernels = bool(use_cpp_kernels)
@@ -728,6 +758,7 @@ class CosetsideSimulator(UnleakedToLeakedRecordsMixin):
         self._circuit_time = 0
         self._step_cursor = 0
         self._used_interactively = False
+        self._unrolled_ops: list[stim.CircuitInstruction] | None = None  # set by interactive_do
         self._finished_running_circuit = False
 
         self._final_measurement_records: NDArray[np.bool_] | None = None
@@ -840,13 +871,16 @@ class CosetsideSimulator(UnleakedToLeakedRecordsMixin):
 
     def _init_rngs(self) -> None:
         if self.sync_tableside_rng:
-            base_seed = (
-                int(np.random.default_rng().integers(0, 2**31))
-                if self.seed is None
-                else int(self.seed) + self._batches_completed * self.batch_size
-            )
+            if self.seed is None:
+                base_seed = int(np.random.default_rng().integers(0, 2**63))
+                shot_seeds = [derived_seed(base_seed, b) for b in range(self.batch_size)]
+            else:
+                # Shot n of the run (counting across batches) is seeded as in TablesideSimulator.
+                n0 = self._batches_completed * self.batch_size
+                shot_seeds = [derived_seed(self.seed, n0 + b) for b in range(self.batch_size)]
+                base_seed = shot_seeds[0]
             self._shot_np_rngs = [
-                np.random.default_rng(seed=base_seed + b)
+                np.random.default_rng(seed=shot_seeds[b])
                 for b in range(self.batch_size)
             ]
             self.np_rng = self._shot_np_rngs[0]
@@ -854,11 +888,11 @@ class CosetsideSimulator(UnleakedToLeakedRecordsMixin):
             self._tab_rngs_x = []
             all_data_q = list(range(self.num_qubits))
             for b in range(self.batch_size):
-                ts_z = stim.TableauSimulator(seed=base_seed + b)
+                ts_z = stim.TableauSimulator(seed=shot_seeds[b])
                 ts_z.set_num_qubits(self.num_qubits + 1)
                 self._tab_rngs.append(ts_z)
 
-                ts_x = stim.TableauSimulator(seed=base_seed + b)
+                ts_x = stim.TableauSimulator(seed=shot_seeds[b])
                 ts_x.set_num_qubits(self.num_qubits + 1)
                 if all_data_q:
                     ts_x.h(*all_data_q)
@@ -870,7 +904,7 @@ class CosetsideSimulator(UnleakedToLeakedRecordsMixin):
             base_seed = (
                 None
                 if self.seed is None
-                else int(self.seed) + self._batches_completed
+                else derived_seed(self.seed, self._batches_completed)
             )
             self.np_rng = np.random.default_rng(seed=base_seed)
 
@@ -990,6 +1024,8 @@ class CosetsideSimulator(UnleakedToLeakedRecordsMixin):
             self._unleaked_to_leaked_events = [
                 [] for _ in range(self.batch_size)
             ]
+        if self.record_leakage_events:
+            self._leakage_events = [[] for _ in range(self.batch_size)]
 
         self._circuit_time = 0
         self._step_cursor = 0
@@ -1006,10 +1042,25 @@ class CosetsideSimulator(UnleakedToLeakedRecordsMixin):
     def interactive_do(
         self, this: stim.Circuit | stim.CircuitInstruction | stim.CircuitRepeatBlock, /
     ) -> None:
+        """Do the next operation(s): the circuit this simulator was constructed with, then any more.
+
+        The reference tape, detector/observable converter and op handler are precomputed from that
+        circuit, so `this` must continue it in order (REPEAT blocks unrolled), except that an untagged
+        noisy gate (e.g. X_ERROR, M(p)) may have a different noise strength; else ValueError. Past its
+        end, untagged operations other than DETECTOR and OBSERVABLE_INCLUDE may follow (their
+        measurements are recorded, but get_detector_flips then raises); others, and operations
+        acting on qubits >= the circuit's num_qubits, raise ValueError.
+
+        Pass the circuit itself or consecutive parts of it, not `circuit.flattened()` (which drops
+        SHIFT_COORDS, rewrites DETECTOR coordinates and can merge operations) or `circuit + more`
+        (where stim can merge operations at the seam).
+        """
         if self._finished_running_circuit:
             raise RuntimeError(
                 "Cannot do more operations after finishing an interactive run."
             )
+        if self._unrolled_ops is None:
+            self._unrolled_ops = _unroll_circuit(self.circuit)
         self._used_interactively = True
         self._do(this)
 
@@ -1048,13 +1099,22 @@ class CosetsideSimulator(UnleakedToLeakedRecordsMixin):
     def _next_step_meta(self, op: stim.CircuitInstruction) -> StepMeta:
         if self._step_cursor < len(self._compiled_ref.steps):
             step = self._compiled_ref.steps[self._step_cursor]
+            # interactive_do checked the full op against the circuit; this guards the steps earlier
+            # interactive runs appended past its end (kept by clear()). A step only depends on the
+            # op's name and targets, so tags (which op handlers remove) and arguments aren't compared.
             if not self._used_interactively or (
                 step.op.name == op.name
-                and [t.value for t in step.op.targets_copy()]
-                == [t.value for t in op.targets_copy()]
+                and _as_compiled(op).targets_copy() == step.op.targets_copy()
             ):
                 self._step_cursor += 1
                 return step
+            # The live reference is at the end of the tape, not at this step: appending here is wrong.
+            raise ValueError(
+                f"interactive_do: `{op}` doesn't match `{step.op}`, operation {self._step_cursor} of "
+                "the reference the CosetsideSimulator compiled from its circuit (plus any operations "
+                "earlier interactive runs appended after it). interactive_do can only replay that "
+                "reference in order, then continue past its end."
+            )
         step = self._compiled_ref.compile_and_append_instruction(op)
         self._step_cursor = len(self._compiled_ref.steps)
         return step
@@ -1074,9 +1134,42 @@ class CosetsideSimulator(UnleakedToLeakedRecordsMixin):
             for _ in range(this.repeat_count):
                 self._do(loop_body)
         elif isinstance(this, stim.CircuitInstruction):
+            if self._used_interactively:
+                self._check_interactive_op(this)
             self._do_instruction(this)
         else:
             raise NotImplementedError(f"Unsupported circuit object: {type(this)}")
+
+    def _check_interactive_op(self, this: stim.CircuitInstruction) -> None:
+        """Raise ValueError unless interactive_do may do `this` now (see interactive_do)."""
+        assert self._unrolled_ops is not None
+        t, n = self._circuit_time, len(self._unrolled_ops)
+        if t < n and not _replays(this, self._unrolled_ops[t]):
+            raise ValueError(
+                f"interactive_do: operation {t} (REPEAT blocks unrolled) `{this}` doesn't match the "
+                "circuit the CosetsideSimulator was constructed with, which has "
+                f"`{self._unrolled_ops[t]}` there. Its reference tape, detector/observable converter "
+                "and op handler are precomputed from that circuit, so interactive_do must replay it "
+                "in order before continuing past its end. Pass the circuit itself or its parts, "
+                "not `circuit.flattened()` or `circuit + more`."
+            )
+        if t >= n and (this.tag or this.name in ("DETECTOR", "OBSERVABLE_INCLUDE")):
+            raise ValueError(
+                f"interactive_do: operation {t} (REPEAT blocks unrolled) `{this}` is past the end "
+                f"of the circuit the CosetsideSimulator was constructed with ({n} operations), "
+                "where tagged operations, DETECTOR and OBSERVABLE_INCLUDE aren't supported: the op "
+                "handler and detector/observable converter only know that circuit."
+            )
+        if t >= n and this.name not in ("MPAD", "QUBIT_COORDS"):  # bit values; an annotation
+            for target in this.targets_copy():
+                q = target.qubit_value  # None for rec, sweep and combiner targets
+                if q is not None and q >= self.num_qubits:
+                    raise ValueError(
+                        f"interactive_do: operation {t} (REPEAT blocks unrolled) `{this}` targets "
+                        f"qubit {q}, which the CosetsideSimulator wasn't constructed for (its "
+                        f"circuit has num_qubits={self.num_qubits}). Construct it with a circuit "
+                        "that uses all qubits."
+                    )
 
     def _do_instruction(self, op: stim.CircuitInstruction) -> None:
         if op.name == "QUBIT_COORDS":

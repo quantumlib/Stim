@@ -8,15 +8,16 @@ from unittest import mock
 import pytest
 
 import stimside
-from stimside.util import coset_kernels, tableside_kernels
+from stimside.util import coset_kernels, marginal_dem_kernels, tableside_kernels
 
 KERNELS = pytest.mark.parametrize(
     "mod,name",
     [
         (coset_kernels, "coset_kernels"),
         (tableside_kernels, "tableside_kernels"),
+        (marginal_dem_kernels, "marginal_dem_kernels"),
     ],
-    ids=["coset", "tablesid"],
+    ids=["coset", "tableside", "marginal_dem"],
 )
 
 
@@ -36,6 +37,7 @@ def test_top_level_stimside_exports() -> None:
     assert hasattr(stimside, "FlipsideSampler")
     assert hasattr(stimside, "TablesideSampler")
     assert hasattr(stimside, "CosetsideSampler")
+    assert hasattr(stimside, "MarginalLeakageDemGenerator")
 
 
 @KERNELS

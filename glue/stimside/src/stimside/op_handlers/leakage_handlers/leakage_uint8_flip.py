@@ -12,13 +12,15 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageTransition1Params,
     LeakageTransition2Params,
     LeakageTransitionZParams,
-    LeakageMeasurementParams
+    LeakageMeasurementParams,
+    LeakageSwapParams,
 )
 from stimside.op_handlers.leakage_handlers.leakage_tag_parsing_flip import (
     parse_leakage_in_circuit,
 )
 from stimside.simulator_flip import FlipsideSimulator
 from stimside.util.numpy_types import Bool2DArray
+from stimside.util.stim_workarounds import split_fused_instruction
 
 
 @dataclasses.dataclass
@@ -67,6 +69,20 @@ _DEPOLARIZE_AFTER_OPS: frozenset[str] = frozenset(
 )
 
 
+def _reset_value(s_in: object, s_out: object) -> int | None:
+    """Z value an s_in-->s_out transition resets a qubit to (as in Tableside/Cosetside), else None.
+
+    -->0 / -->1 reset to |0> / |1>; a leaked qubit going to X/Y/Z is reset to |0> before the Pauli.
+    """
+    if s_out == s_in:
+        return None
+    if isinstance(s_out, int) and s_out in (0, 1):
+        return s_out
+    if s_out in ("X", "Y", "Z") and isinstance(s_in, int) and s_in >= 2:
+        return 0
+    return None
+
+
 @dataclasses.dataclass
 class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
 
@@ -76,12 +92,23 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
 
     ops_to_params: dict[stim.CircuitInstruction, LeakageParams]
 
+    # This is a safety feature
+    # you should generally not turn it off unless you are performing testing
+    # or are handling the depolarization of leaked qubits yourself somehow.
+    # That said, if you are implementing physically realistic errors using appropriate tags,
+    # and not accidentally letting the computational states of leaked qubits sneak out at measurements
+    # this behaviour should not strictly be necessary
     _depolarize_on_leak: bool = True
 
     def __post_init__(self):
         self._op_targets_cache: dict[stim.CircuitInstruction, np.ndarray] = {}
         self._op_pair_targets_cache: dict[
             stim.CircuitInstruction, tuple[np.ndarray, np.ndarray]
+        ] = {}
+        # id(LEAKAGE_TRANSITION_1/2 params) -> per leg: (has 0/1 input keys, can reset to |0>/|1>)
+        self._z_legs_cache: dict[int, tuple[tuple[bool, bool], ...]] = {}
+        self._repeat_free_pieces_cache: dict[
+            stim.CircuitInstruction, list[stim.CircuitInstruction]
         ] = {}
         self.clear()
 
@@ -135,12 +162,145 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
         even_target_mask[target_indices[1::2], :] = 1
         return odd_target_mask, even_target_mask
 
+    def mpad_z_collapse_targets(self, op: stim.CircuitInstruction) -> list[int] | None:
+        """Qubits a MPAD[LEAKAGE_MEASUREMENT] with 0/1 keys Z-collapses (else None).
+
+        Read by FlipsideSimulator's reference walk, which collapses them in the reference.
+        """
+        params = self.ops_to_params.get(op)
+        if (
+            op.name == "MPAD"
+            and isinstance(params, LeakageMeasurementParams)
+            and params.targets is not None
+            and (0 in params.prob_for_input_state or 1 in params.prob_for_input_state)
+        ):
+            return [int(q) for q in params.targets]
+        return None
+
+    def _z_legs(
+        self, params: LeakageTransition1Params | LeakageTransition2Params
+    ) -> tuple[tuple[bool, bool], ...]:
+        """Per leg (1 for LEAKAGE_TRANSITION_1, 2 for _2): (has 0/1 input keys, can reset to |0>/|1>)."""
+        cached = self._z_legs_cache.get(id(params))
+        if cached is not None:
+            return cached
+        items: list = [  # (input states, output states) per transition, one entry per leg
+            ((s_in,), (s_out,)) if isinstance(params, LeakageTransition1Params) else (s_in, s_out)
+            for s_in, transitions in params.args_by_input_state.items()
+            for s_out, _ in transitions
+        ]
+        n_legs = 1 if isinstance(params, LeakageTransition1Params) else 2
+        legs = tuple(
+            (
+                any(s_in[k] in (0, 1) for s_in, _ in items),
+                any(_reset_value(s_in[k], s_out[k]) is not None for s_in, s_out in items),
+            )
+            for k in range(n_legs)
+        )
+        self._z_legs_cache[id(params)] = legs
+        return legs
+
+    def op_z_collapse_targets(
+        self, op: stim.CircuitInstruction
+    ) -> tuple[list[int], list[int]] | None:
+        """(qubits a LEAKAGE_TRANSITION_1/2 reads the Z value of, qubits it may reset), else None.
+
+        Read by FlipsideSimulator's reference walk: it Z-collapses superposed read qubits (0/1 input
+        keys) and records the reference Z value of every listed qubit (None if superposed).
+        """
+        params = self.ops_to_params.get(op)
+        if not isinstance(params, (LeakageTransition1Params, LeakageTransition2Params)):
+            return None
+        z_legs = self._z_legs(params)
+        if not any(r or s for r, s in z_legs):
+            return None
+        leg_qs = (
+            (self._get_target_indices(op),)
+            if isinstance(params, LeakageTransition1Params)
+            else self._get_pair_target_indices(op)
+        )
+        reads: list[int] = []
+        resets: list[int] = []
+        for (r, s), qs in zip(z_legs, leg_qs):
+            if r:
+                reads += qs.tolist()
+            if s:
+                resets += qs.tolist()
+        return reads, resets
+
+    def _reference_z(
+        self, op: stim.CircuitInstruction, fss: FlipsideSimulator, qubits: np.ndarray
+    ) -> tuple[NDArray[np.bool_], list[int]]:
+        """Reference walk's Z value of each of `qubits` at this op, and the qubits it collapsed here.
+
+        self.state never stores 1, so 0/1 states are read as reference Z value XOR X frame (superposed
+        read targets are Z-collapsed by the reference walk, as for 0/1-keyed MPAD).
+        """
+        fss._precompute_sync_reference()
+        t = fss.get_current_circuit_time()
+        entry = fss._op_ref_z.get(t)
+        if (
+            entry is None
+            or fss._unrolled_ops[t].name != op.name
+            or any(int(q) not in entry[0] for q in qubits)
+        ):
+            raise ValueError(
+                f"{op} has 0/1 input or output states, which FlipsideSimulator resolves from its "
+                f"reference walk of the circuit, but the op at circuit time {t} doesn't match it "
+                "(interactive_do with a different op sequence?). Run the circuit with run()."
+            )
+        ref_z, collapsed = entry
+        rz = np.empty(len(qubits), dtype=np.bool_)
+        for k, q in enumerate(qubits.tolist()):
+            v = ref_z[q]
+            if v is None:
+                raise ValueError(
+                    f"{op} can reset qubit {q} to |0> or |1>, but FlipsideSimulator can only do that "
+                    "where the qubit's Z value is definite in the noiseless circuit, or where the op "
+                    "also has a 0/1 input key on it (which Z-collapses it). Use TablesideSimulator or "
+                    "CosetsideSimulator."
+                )
+            rz[k] = v
+        return rz, collapsed
+
+    def _collapse_back_action(
+        self, fss: FlipsideSimulator, collapsed: list[int], qubits: np.ndarray
+    ) -> None:
+        """Randomize the Z frame of the `qubits` that the reference walk Z-collapsed at this op."""
+        hit = sorted(set(collapsed) & set(qubits.tolist()))
+        if hit:
+            mask = np.zeros_like(self.state, dtype=bool)
+            mask[hit, :] = True
+            fss.broadcast_pauli_errors(error_mask=mask, pauli="Z", p=0.5)
+
+    def _apply_resets(
+        self,
+        fss: FlipsideSimulator,
+        to_reset: Bool2DArray,
+        reset_to_one: Bool2DArray,
+        z_ref: NDArray[np.bool_],
+    ) -> None:
+        """Reset the to_reset entries to |0> (|1> where reset_to_one), as Tableside/Cosetside R (+X).
+
+        X-flip where the shot's Z value (reference Z value XOR X frame) is wrong, then randomize the
+        phase, as R does. No depolarization.
+        """
+        xs, _, _, _, _ = fss._flip_simulator.to_numpy(output_xs=True, output_zs=False)
+        flip = to_reset & (z_ref[:, None] ^ xs ^ reset_to_one)
+        fss.broadcast_pauli_errors(error_mask=flip, pauli="X", p=1.0)
+        fss.broadcast_pauli_errors(error_mask=to_reset, pauli="Z", p=0.5)
+
     def handle_op(self, op: stim.CircuitInstruction, sss: FlipsideSimulator):
         params = self.ops_to_params.get(op)
         if params is None:
-            sss.do_on_flip_simulator(op)
             if self._depolarize_on_leak and op.name in _DEPOLARIZE_AFTER_OPS:
-                self._depolarize_leaked_qubits(fss=sss, op=op)
+                # Depolarize after each repeat-free piece, so a qubit the op repeats (e.g. stim-fused
+                # `M 0` lines) is re-scrambled between its occurrences, as with separate instructions.
+                for piece in self._repeat_free_pieces(op):
+                    sss.do_on_flip_simulator(piece)
+                    self._depolarize_leaked_qubits(fss=sss, op=piece)
+            else:
+                sss.do_on_flip_simulator(op)
             return
 
         if sss.record_unleaked_to_leaked and isinstance(
@@ -149,6 +309,7 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
                 LeakageTransition1Params,
                 LeakageTransitionZParams,
                 LeakageTransition2Params,
+                LeakageSwapParams,
             ),
         ):
             target_indices = np.unique(self._get_target_indices(op))
@@ -168,6 +329,8 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
                 self.leakage_transition_2(op=op, fss=sss, params=params)
             case LeakageMeasurementParams():
                 self.leakage_projection_Z(op=op, fss=sss, params=params)
+            case LeakageSwapParams():
+                self.leakage_swap(op=op, fss=sss)
             case _:
                 raise ValueError(f"Unrecognised LEAKAGE params: {params}")
 
@@ -175,6 +338,40 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
             now_leaked = self.state[target_indices, :] >= 2
             counts = np.count_nonzero(was_unleaked & now_leaked, axis=0)
             sss._record_unleaked_to_leaked_counts(counts, sss._circuit_time)
+
+    def leakage_swap(self, op: stim.CircuitInstruction, fss: FlipsideSimulator):
+        """SWAP[LEAKAGE_SWAP]: SWAP the qubits' frames, then their leakage states, pair by pair
+        from left to right.
+        """
+        fss.do_on_flip_simulator(op)
+        q0s, q1s = self._get_pair_target_indices(op)
+        for q0, q1 in zip(q0s.tolist(), q1s.tolist()):
+            self.state[[q0, q1], :] = self.state[[q1, q0], :]
+
+    def _repeat_free_pieces(
+        self, op: stim.CircuitInstruction
+    ) -> list[stim.CircuitInstruction]:
+        """`op` split into consecutive pieces that repeat no qubit ([op] if it repeats none)."""
+        pieces = self._repeat_free_pieces_cache.get(op)
+        if pieces is None:
+            chunks: list[list[stim.GateTarget]] = [[]]
+            seen: set[int] = set()
+            for t in op.targets_copy():
+                if t.qubit_value in seen:
+                    chunks.append([])
+                    seen.clear()
+                chunks[-1].append(t)
+                seen.add(t.qubit_value)
+            pieces = (
+                [op]
+                if len(chunks) == 1
+                else [
+                    stim.CircuitInstruction(op.name, c, op.gate_args_copy(), tag=op.tag)
+                    for c in chunks
+                ]
+            )
+            self._repeat_free_pieces_cache[op] = pieces
+        return pieces
 
     def _depolarize_leaked_qubits(
         self, op: stim.CircuitInstruction, fss: FlipsideSimulator
@@ -297,9 +494,22 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
             else self.state
         )
         sub_state = initial_state[target_indices, :]
+        reads_z, resets_z = self._z_legs(params)[0]
+        z_ref: NDArray[np.bool_] | None = None
+        if reads_z or resets_z:
+            rz, collapsed = self._reference_z(op, fss, target_indices)
+            z_ref = np.zeros(self.num_qubits, dtype=np.bool_)
+            z_ref[target_indices] = rz
+            if reads_z:
+                # Mark |1> rows in the local copy only (self.state never stores 1).
+                xs, _, _, _, _ = fss._flip_simulator.to_numpy(output_xs=True, output_zs=False)
+                sub_state[(sub_state < 2) & (rz[:, None] ^ xs[target_indices, :])] = 1
+                self._collapse_back_action(fss, collapsed, target_indices)
         any_initially_leaked = bool(np.any(sub_state >= 2))
 
         to_depolarize: Bool2DArray | None = None
+        to_reset: Bool2DArray | None = None
+        reset_to_one: Bool2DArray | None = None
 
         for input_state, transitions in params.args_by_input_state.items():
             total_p = sum(p for _, p in transitions)
@@ -378,15 +588,21 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
                 else:
                     out_int = int(out_st)
                     self.state[q_hit, b_hit] = 0 if out_int < 2 else out_int
-                    in_unleaked = input_state in ("U", 0, 1)
-                    if (
-                        (out_int >= 2 and self._depolarize_on_leak and in_unleaked)
-                        or (out_int < 2 and not in_unleaked)
-                    ):
+                    if out_int < 2:
+                        if to_reset is None or reset_to_one is None:
+                            to_reset = np.zeros_like(self.state, dtype=bool)
+                            reset_to_one = np.zeros_like(self.state, dtype=bool)
+                        to_reset[q_hit, b_hit] = True
+                        if out_int == 1:
+                            reset_to_one[q_hit, b_hit] = True
+                    elif self._depolarize_on_leak and input_state in ("U", 0, 1):
                         if to_depolarize is None:
                             to_depolarize = np.zeros_like(self.state, dtype=bool)
                         to_depolarize[q_hit, b_hit] = True
 
+        if to_reset is not None and reset_to_one is not None:
+            assert z_ref is not None
+            self._apply_resets(fss, to_reset, reset_to_one, z_ref)
         if to_depolarize is not None:
             fss.broadcast_pauli_errors(error_mask=to_depolarize, pauli="Z", p=0.5)
             fss.broadcast_pauli_errors(error_mask=to_depolarize, pauli="X", p=0.5)
@@ -536,6 +752,23 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
         )
         even_target_states = initial_state[even_targets, :]
         odd_target_states = initial_state[odd_targets, :]
+        z_legs = self._z_legs(params)
+        z_ref: NDArray[np.bool_] | None = None
+        if any(r or s for r, s in z_legs):
+            leg_qs = (even_targets, odd_targets)
+            z_qs = np.concatenate([qs for (r, s), qs in zip(z_legs, leg_qs) if r or s])
+            rz, collapsed = self._reference_z(op, fss, z_qs)
+            z_ref = np.zeros(self.num_qubits, dtype=np.bool_)
+            z_ref[z_qs] = rz
+            if z_legs[0][0] or z_legs[1][0]:
+                # Mark |1> rows in the local copies only (self.state never stores 1).
+                xs, _, _, _, _ = fss._flip_simulator.to_numpy(output_xs=True, output_zs=False)
+                for (r, _), qs, leg_states in zip(
+                    z_legs, leg_qs, (even_target_states, odd_target_states)
+                ):
+                    if r:
+                        leg_states[(leg_states < 2) & (z_ref[qs][:, None] ^ xs[qs, :])] = 1
+                        self._collapse_back_action(fss, collapsed, qs)
         any_initially_leaked = bool(
             np.any(even_target_states >= 2) or np.any(odd_target_states >= 2)
         )
@@ -544,6 +777,8 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
         to_pauli_X: Bool2DArray | None = None
         to_pauli_Y: Bool2DArray | None = None
         to_pauli_Z: Bool2DArray | None = None
+        to_reset: Bool2DArray | None = None
+        reset_to_one: Bool2DArray | None = None
 
         for input_state, transitions in params.args_by_input_state.items():
             total_p = sum(p for _, p in transitions)
@@ -630,6 +865,14 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
                 ):
                     if leg_out == leg_in:
                         continue
+                    reset_val = _reset_value(leg_in, leg_out)
+                    if reset_val is not None:
+                        if to_reset is None or reset_to_one is None:
+                            to_reset = np.zeros_like(self.state, dtype=bool)
+                            reset_to_one = np.zeros_like(self.state, dtype=bool)
+                        to_reset[q_hit, b_hit] = True
+                        if reset_val == 1:
+                            reset_to_one[q_hit, b_hit] = True
                     if leg_out in ("U", "V", "D"):
                         self.state[q_hit, b_hit] = 0
                         if to_depolarize is None:
@@ -653,15 +896,14 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
                     else:
                         out_int = int(leg_out)
                         self.state[q_hit, b_hit] = 0 if out_int < 2 else out_int
-                        in_unleaked = leg_in in ("U", 0, 1)
-                        if (
-                            (out_int >= 2 and self._depolarize_on_leak and in_unleaked)
-                            or (out_int < 2 and not in_unleaked)
-                        ):
+                        if out_int >= 2 and self._depolarize_on_leak and leg_in in ("U", 0, 1):
                             if to_depolarize is None:
                                 to_depolarize = np.zeros_like(self.state, dtype=bool)
                             to_depolarize[q_hit, b_hit] = True
 
+        if to_reset is not None and reset_to_one is not None:
+            assert z_ref is not None
+            self._apply_resets(fss, to_reset, reset_to_one, z_ref)
         if to_depolarize is not None:
             fss.broadcast_pauli_errors(error_mask=to_depolarize, pauli="Z", p=0.5)
             fss.broadcast_pauli_errors(error_mask=to_depolarize, pauli="X", p=0.5)
@@ -681,6 +923,12 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
         params: LeakageMeasurementParams,
     ):
         """Implement measurement projections for qubits in known eigenstates."""
+        if params.targets:
+            copies = split_fused_instruction(op, len(params.targets))
+            if len(copies) > 1:
+                for sub_op in copies:
+                    self.leakage_projection_Z(sub_op, fss, params)
+                return
         is_mpad = params.targets is not None
         raw_op_targets = op.targets_copy()
 
@@ -723,8 +971,16 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
         ref_slice = fss.ref_measurements[m_idx : m_idx + len(targets)]
 
         if is_mpad:
+            mpad_ref = fss._mpad_ref_z.get(m_idx)
+            if mpad_ref is not None:
+                # 0/1-keyed: the reference walk Z-collapsed superposed targets; each shot's Z value is
+                # its reference Z value XOR its X frame bit.
+                xs, _, _, _, _ = fss._flip_simulator.to_numpy(
+                    output_xs=True, output_zs=False
+                )
+                target_computational_states = mpad_ref[0][:, None] ^ xs[targets, :]
             # For MPAD, if targets are in known Z states, use their Z state; otherwise use xs flip state
-            if fss._all_targets_in_known_state(targets=targets, pauli="Z"):
+            elif fss._all_targets_in_known_state(targets=targets, pauli="Z"):
                 _, known_state_mask = fss._get_current_known_state_masks(pauli="Z")
                 target_computational_states = known_state_mask[targets, :]
             else:
@@ -818,6 +1074,13 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
         measurement_flips = np.logical_xor(final_outcomes, ref_slice[:, None])
         fss.append_measurement_flips(measurement_flip_data=measurement_flips)
 
+        if is_mpad and mpad_ref is not None and np.any(mpad_ref[1]):
+            # Collapse back-action (as from CX onto a fresh ancilla that is then measured): randomize
+            # the Z frame of the targets the reference walk collapsed.
+            collapse_mask = np.zeros_like(self.state, dtype=bool)
+            collapse_mask[targets[mpad_ref[1]], :] = True
+            fss.broadcast_pauli_errors(error_mask=collapse_mask, pauli="Z", p=0.5)
+
         if not is_mpad:
             target_mask = np.zeros_like(self.state, dtype=bool)
             target_mask[targets, :] = True
@@ -846,7 +1109,7 @@ class CompiledLeakageUint8(CompiledOpHandler[FlipsideSimulator]):
                     error_mask=unleaked_targets_mask, pauli=pauli, p=0.5
                 )
 
-            if self._depolarize_on_leak and np.any(leaked_targets_mask):
+            if np.any(leaked_targets_mask):
                 fss.broadcast_pauli_errors(
                     error_mask=leaked_targets_mask, pauli="Z", p=0.5
                 )

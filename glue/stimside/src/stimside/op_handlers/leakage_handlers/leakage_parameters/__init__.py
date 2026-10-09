@@ -16,6 +16,9 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters.leakage_conditioni
 from stimside.op_handlers.leakage_handlers.leakage_parameters.leakage_measurement import (
     LeakageMeasurementParams,
 )
+from stimside.op_handlers.leakage_handlers.leakage_parameters.leakage_swap import (
+    LeakageSwapParams,
+)
 
 # poor man's discriminated union
 LeakageParams = (
@@ -25,4 +28,5 @@ LeakageParams = (
     | LeakageTransition2Params
     | LeakageConditioningParams
     | LeakageMeasurementParams
+    | LeakageSwapParams
 )

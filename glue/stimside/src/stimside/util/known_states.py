@@ -130,6 +130,22 @@ def _unroll_circuit(circuit: stim.Circuit) -> list[stim.CircuitInstruction]:
     return ops
 
 
+def _replays(this: stim.CircuitInstruction, op: stim.CircuitInstruction) -> bool:
+    """Whether interactive_do may do `this` where the construction circuit has `op`.
+
+    Used by the Flipside, Cosetside and Tableside simulators. Only an untagged noisy gate's
+    arguments (noise strengths) may differ: what they precompute from the construction circuit
+    (reference sample or tape, known states, detector/observable converter, op handler tag map) is
+    noiseless or keyed by tagged ops, and noise is applied live from `this`.
+    """
+    return this == op or (
+        this.tag == op.tag == ""
+        and this.name == op.name
+        and this.targets_copy() == op.targets_copy()
+        and stim.gate_data(this.name).is_noisy_gate
+    )
+
+
 def compute_known_states_uint8(
     circuit: stim.Circuit,
     unrolled_ops: list[stim.CircuitInstruction] | None = None,

@@ -77,6 +77,8 @@ struct FastEngine {
     int record_unleaked_to_leaked = 0;
     int32_t cur_unrolled_idx = 0;
     std::vector<int32_t> segment_leaked_ops;
+    int record_leakage_events = 0;
+    std::vector<int32_t> segment_events;  // (unrolled_idx, qubit, old_state, new_state) per event
 
     std::vector<StepDesc> steps;
     std::vector<uint32_t> all_raw_targets;
@@ -108,6 +110,12 @@ struct FastEngine {
         uint8_t old_st = state[q];
         if (old_st == new_st) return;
         state[q] = new_st;
+        if (record_leakage_events && (old_st >= 2 || new_st >= 2)) {
+            segment_events.push_back(cur_unrolled_idx);
+            segment_events.push_back(q);
+            segment_events.push_back(old_st);
+            segment_events.push_back(new_st);
+        }
         int w = q >> 6;
         uint64_t bit = 1ULL << (q & 63);
         if (old_st < 2 && new_st >= 2) {
@@ -315,10 +323,22 @@ void fast_engine_clear(FastEngine* eng, uint64_t new_seed) {
     eng->actions.clear();
     eng->out_targets.clear();
     eng->segment_leaked_ops.clear();
+    eng->segment_events.clear();
 }
 
 void fast_engine_set_record_leakage(FastEngine* eng, int enabled) {
     eng->record_unleaked_to_leaked = enabled;
+}
+
+void fast_engine_set_record_events(FastEngine* eng, int enabled) {
+    eng->record_leakage_events = enabled;
+}
+
+// Number of leakage events of the last segment; *out_ptr gets 4 int32 per event:
+// (unrolled_idx, qubit, old_state, new_state).
+int fast_engine_get_segment_events(FastEngine* eng, int32_t** out_ptr) {
+    *out_ptr = eng->segment_events.data();
+    return (int)(eng->segment_events.size() / 4);
 }
 
 int fast_engine_get_segment_leaked_ops(FastEngine* eng, int32_t** out_ptr) {
@@ -396,6 +416,7 @@ int fast_engine_run_segment(
     eng->actions.clear();
     eng->out_targets.clear();
     eng->segment_leaked_ops.clear();
+    eng->segment_events.clear();
 
     int slice_start = start_step;
 

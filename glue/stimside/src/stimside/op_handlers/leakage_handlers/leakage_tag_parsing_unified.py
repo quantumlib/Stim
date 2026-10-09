@@ -16,6 +16,7 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageConditioningParams,
     LeakageMeasurementParams,
     LeakageControlledErrorParams,
+    LeakageSwapParams,
 )
 
 # --- PARSER HELPERS ---
@@ -137,5 +138,10 @@ def _parse_conditioned_pair(op: stim.CircuitInstruction, match: Any, sim: str) -
         states[0].append(converted[0])
         states[1].append(converted[1])
     return LeakageConditioningParams(args=(tuple(states[0]), tuple(states[1])), from_tag=op.tag, targets=None)
+
+def _parse_swap(op: stim.CircuitInstruction, match: Any, sim: str) -> LeakageSwapParams:
+    if op.tag != "LEAKAGE_SWAP":
+        raise ValueError(f"LEAKAGE_SWAP takes no arguments, got tag '{op.tag}'.")
+    return LeakageSwapParams(from_tag=op.tag)
 
 

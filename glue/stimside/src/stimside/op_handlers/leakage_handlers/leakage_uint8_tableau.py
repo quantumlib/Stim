@@ -12,9 +12,11 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageTransition2Params,
     LeakageConditioningParams,
     LeakageMeasurementParams,
+    LeakageSwapParams,
 )
 from stimside.simulator_tableau import TablesideSimulator
 from stimside.util.numpy_types import Bool2DArray, Int2DArray
+from stimside.util.stim_workarounds import split_fused_instruction
 
 
 @dataclasses.dataclass
@@ -29,6 +31,16 @@ class LeakageUint8(OpHandler[TablesideSimulator]):
         We spend a reasonable amount of time computing masks like state==2
 
     We leave state == 0 and 1 alone so as to not be confusing. 2 means 2.
+
+    Args:
+        unconditional_condition_on_U: if True (default), untagged unitary gates and
+            noise channels are treated as conditioned on U, i.e. they skip leaked
+            qubits, whose computational state stays frozen from when they leaked.
+            If False, they act on that frozen state as if the qubits were unleaked.
+            Instructions that produce measurement results (including heralded noise)
+            and resets are never filtered: they act on, or read, the frozen state.
+            Details are in "Untagged Instructions on Leaked Qubits" in the top-level
+            README.
     """
 
     def __init__(self, unconditional_condition_on_U: bool = True) -> None:
@@ -286,6 +298,9 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
                         for t in raw_targets
                     ]
                     mask = self._filter_targets_1q_mask(qubit_indices, (("U",),), sss)
+                    if not gate_data.is_single_qubit_gate and not np.all(mask):
+                        # A correlated error is one Pauli product (like a pair for 2q ops): skip all of it.
+                        mask = np.zeros_like(mask)
                     filtered_targets = [
                         t for t, keep in zip(raw_targets, mask) if keep
                     ]
@@ -294,6 +309,15 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
                     filtered_targets = self._filter_targets_2q(
                         target_groups, (("U",), ("U",)), sss
                     )
+                elif op_name in ("SPP", "SPP_DAG"):
+                    # Keep each Pauli product term only if none of its qubits is leaked.
+                    filtered_targets = []
+                    for term in op.target_groups():
+                        if all(self.state[t.qubit_value] < 2 for t in term):
+                            for k, t in enumerate(term):
+                                if k > 0:
+                                    filtered_targets.append(stim.target_combiner())
+                                filtered_targets.append(t)
                 else:
                     sss._do_bare_instruction(op)
                     return
@@ -318,9 +342,11 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
                 return
 
         params = self.ops_to_params[op]
-        if sss.record_unleaked_to_leaked and isinstance(
-            params, (LeakageTransition1Params, LeakageTransition2Params)
-        ):
+        is_transition = isinstance(
+            params, (LeakageTransition1Params, LeakageTransition2Params, LeakageSwapParams)
+        )
+        rec_ev = is_transition and getattr(sss, "record_leakage_events", False)
+        if (sss.record_unleaked_to_leaked or rec_ev) and is_transition:
             target_indices = np.unique(
                 [
                     t.qubit_value if t.qubit_value is not None else t.value
@@ -329,9 +355,11 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
                 ]
             )
             was_unleaked = (self.state[target_indices] < 2).copy()
+            old_states = self.state[target_indices].copy() if rec_ev else None
         else:
             target_indices = None
             was_unleaked = None
+            old_states = None
 
         match params:
             case LeakageConditioningParams():
@@ -342,13 +370,36 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
                 self.leakage_transition_2(op=op, tss=sss, params=params)
             case LeakageMeasurementParams():
                 self.leakage_measurement(op, tss=sss, params=params)
+            case LeakageSwapParams():
+                self.leakage_swap(op=op, tss=sss)
             case _:
                 raise ValueError(f"Unrecognised LEAKAGE params: {params}")
 
-        if was_unleaked is not None and target_indices is not None:
+        if (
+            sss.record_unleaked_to_leaked
+            and was_unleaked is not None
+            and target_indices is not None
+        ):
             k = int(np.count_nonzero(was_unleaked & (self.state[target_indices] >= 2)))
             if k > 0:
                 sss._record_unleaked_to_leaked_count(k, sss._circuit_time)
+        if old_states is not None and target_indices is not None:
+            for q, old_st, new_st in zip(
+                target_indices, old_states, self.state[target_indices]
+            ):
+                if old_st != new_st:
+                    sss._record_leakage_event(sss._circuit_time, q, old_st, new_st)
+
+    def leakage_swap(self, op: stim.CircuitInstruction, tss: TablesideSimulator):
+        """SWAP[LEAKAGE_SWAP]: SWAP the qubits, leaked ones included (their frozen computational
+        states move with them), then swap their leakage states, pair by pair from left to right.
+        """
+        tss._do_bare_instruction(
+            self._construct_stim_instruction(op.name, op.targets_copy(), op.gate_args_copy())
+        )
+        targets = [t.qubit_value for t in op.targets_copy()]
+        for q0, q1 in zip(targets[::2], targets[1::2]):
+            self.state[[q0, q1]] = self.state[[q1, q0]]
 
     def leakage_conditioning(
         self,
@@ -357,6 +408,14 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
         params: LeakageConditioningParams,
     ):
         """implement conditioning on qubit (leakage) state"""
+
+        if params.targets:
+            copy_len = len(params.targets) * (2 if stim.gate_data(op.name).is_two_qubit_gate else 1)
+            copies = split_fused_instruction(op, copy_len)
+            if len(copies) > 1:
+                for sub_op in copies:
+                    self.leakage_conditioning(sub_op, tss, params)
+                return
 
         # controller state is an array where each qubit has the leakage state
         # of the qubit controlling it (or 0 if it's not being targeted)
@@ -856,6 +915,13 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
     ):
         """implement qubit state projection measurement that can be affected by leakage."""
 
+        if params.targets:
+            copies = split_fused_instruction(op, len(params.targets))
+            if len(copies) > 1:
+                for sub_op in copies:
+                    self.leakage_measurement(sub_op, tss, params)
+                return
+
         targets: list[int]
         is_mpad = params.targets is not None
         raw_op_targets = op.targets_copy()
@@ -955,6 +1021,32 @@ class CompiledLeakageUint8(CompiledOpHandler[TablesideSimulator]):
                         tss._do_bare_only_on_tableau(
                             self._construct_stim_instruction(
                                 "X_ERROR", anc_comp, [p0]
+                            )
+                        )
+                elif is_mpad and tss.batch_size > 1 and hasattr(tss, "_asymmetric_readout_postproc"):
+                    # batch_size > 1 frame-samples _new_circuit, so the readout must follow each shot's own Z value:
+                    # copy it onto a fresh ancilla (measuring the ancilla Z-collapses a superposed target, as at
+                    # batch_size == 1) and apply p(0)/p(1) per shot when the records are sampled.
+                    anc_comp = list(
+                        range(n_qbt, n_qbt + len(targets_in_qubit_space))
+                    )
+                    n_qbt += len(targets_in_qubit_space)
+                    targets_new[idx_of_targets_in_qubit_space] = anc_comp
+                    cx_targets = []
+                    for q_d, q_a in zip(targets_in_qubit_space, anc_comp):
+                        cx_targets.extend([int(q_d), int(q_a)])
+                    tss._do_bare_only_on_tableau(
+                        self._construct_stim_instruction("CX", cx_targets)
+                    )
+                    base_meas_idx = tss._new_circuit.num_measurements
+                    for i_pos in idx_of_targets_in_qubit_space:
+                        t_raw = raw_op_targets[int(i_pos)]
+                        tss._asymmetric_readout_postproc.append(
+                            (
+                                int(base_meas_idx + i_pos),
+                                float(p0),
+                                float(p1),
+                                bool(t_raw.value) ^ bool(t_raw.is_inverted_result_target),
                             )
                         )
                 else:

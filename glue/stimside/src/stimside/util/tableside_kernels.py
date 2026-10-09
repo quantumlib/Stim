@@ -12,6 +12,7 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageConditioningParams,
     LeakageMeasurementParams,
     LeakageParams,
+    LeakageSwapParams,
     LeakageTransition1Params,
     LeakageTransition2Params,
 )
@@ -77,7 +78,7 @@ def get_tableside_kernels_lib() -> ctypes.CDLL:
     if _LIB_INSTANCE is not None:
         return _LIB_INSTANCE
 
-    lib = load_cdll(_resolve_tableside_kernels_so, "fast_engine_set_record_leakage")
+    lib = load_cdll(_resolve_tableside_kernels_so, "fast_engine_get_segment_events")
     lib.fast_engine_create.argtypes = [
         ctypes.c_int,
         ctypes.c_int,
@@ -103,6 +104,13 @@ def get_tableside_kernels_lib() -> ctypes.CDLL:
         ctypes.POINTER(ctypes.POINTER(ctypes.c_int32)),
     ]
     lib.fast_engine_get_segment_leaked_ops.restype = ctypes.c_int
+    lib.fast_engine_set_record_events.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    lib.fast_engine_set_record_events.restype = None
+    lib.fast_engine_get_segment_events.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.POINTER(ctypes.c_int32)),
+    ]
+    lib.fast_engine_get_segment_events.restype = ctypes.c_int
     lib.fast_engine_get_state_ptr.argtypes = [ctypes.c_void_p]
     lib.fast_engine_get_state_ptr.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.fast_engine_sync_leaked_mask.argtypes = [ctypes.c_void_p]
@@ -219,8 +227,11 @@ class PrecompiledTablesideCircuit:
         self._full_bare_circuit: stim.Circuit | None = None
         self._quantum_bare_circuit: stim.Circuit | None = None
 
+        from stimside.util.known_states import _unroll_circuit
+
         has_repeat = any(isinstance(inst, stim.CircuitRepeatBlock) for inst in circuit)
-        flat_circuit = circuit.flattened() if has_repeat else circuit
+        # Not circuit.flattened(): it fuses identical consecutive instructions, desyncing steps from step_to_unrolled_idx.
+        unrolled_ops = _unroll_circuit(circuit) if has_repeat else list(circuit)
         self.parsed_ops: dict[stim.CircuitInstruction, LeakageParams] = {}
 
         self.final_qubit_coords: dict[int, list[float]] = {}
@@ -271,7 +282,7 @@ class PrecompiledTablesideCircuit:
             op_template_cache[op] = (bare, ref, c_step, s_py)
             push(bare, ref, c_step, s_py)
 
-        for op in flat_circuit:
+        for op in unrolled_ops:
             op_name = op.name
             if op_name in ("DETECTOR", "TICK", "OBSERVABLE_INCLUDE"):
                 self.full_bare_insts.append(op)
@@ -360,10 +371,11 @@ class PrecompiledTablesideCircuit:
                     ],
                     dtype=np.uint32,
                 )
+                qubit_vals = [t.qubit_value for t in raw_t]
                 qubit_i32 = np.array(
                     [
-                        t.qubit_value if t.qubit_value is not None else t.value
-                        for t in raw_t
+                        q if q is not None else t.value
+                        for q, t in zip(qubit_vals, raw_t)
                     ],
                     dtype=np.int32,
                 )
@@ -380,10 +392,13 @@ class PrecompiledTablesideCircuit:
                 raw_u32 = unique_qs.astype(np.uint32)
 
             mask_words = [0] * self.num_words
+            # With special targets, qubit_i32 holds .value for a combiner (0) or sweep[k] (k), not a qubit.
             mask_source = (
                 params.targets
                 if (isinstance(params, LeakageConditioningParams) and params.targets)
                 else qubit_i32
+                if not has_special_targets
+                else [q for q in qubit_vals if q is not None]
             )
             for q in mask_source:
                 q_int = int(q)
@@ -562,6 +577,11 @@ class PrecompiledTablesideCircuit:
                         bare_op_text = ""
                     emit(meas_inst, ref_inst, kind, text=bare_op_text, p_leak=p2)
 
+                elif isinstance(params, LeakageSwapParams):
+                    # The runners yield to the handler (bare SWAP + leakage state swap) when a target
+                    # may be leaked; otherwise the bare SWAP runs in the slice (state swap is a no-op).
+                    emit(bare_inst, bare_inst, 8)
+
         self.num_claimed_ops = len(self.parsed_ops)
         self.step_to_full_idx.append(len(self.full_bare_insts))
         self.step_to_quant_idx.append(len(self.quantum_bare_insts))
@@ -597,9 +617,6 @@ class PrecompiledTablesideCircuit:
         self._full_blocks: list[stim.Circuit] = []
         self._quant_blocks: list[stim.Circuit] = []
 
-        from stimside.util.known_states import _unroll_circuit
-
-        unrolled_ops = _unroll_circuit(circuit) if has_repeat else list(circuit)
         self.unrolled_num_ops = len(unrolled_ops)
         self.step_to_unrolled_idx = [
             idx
@@ -749,13 +766,17 @@ def run_tableside_sync_rng(
         if kind == 0:
             continue
         elif kind in (1, 2, 5, 8):
+            is_other = isinstance(params, LeakageConditioningParams) and params.targets
             check_qs = (
                 np.asarray(params.targets, dtype=np.int32)
-                if isinstance(params, LeakageConditioningParams)
-                and params.targets
+                if is_other
                 else qubit_i32[qubit_i32 >= 0]
             )
-            if not np.any(state[check_qs] >= 2):
+            # A stim-fused CONDITIONED_ON_OTHER op (more targets than the tag lists) goes to the
+            # handler, which applies its copies one by one, drawing RNG like CosetsideSimulator.
+            if not np.any(state[check_qs] >= 2) and not (
+                is_other and len(qubit_i32) > len(params.targets)
+            ):
                 continue
 
         f_s = step_to_full[s]
@@ -795,6 +816,7 @@ def run_tableside_python_v2(
     step_to_full = pre.step_to_full_idx
     step_to_quant = pre.step_to_quant_idx
     use_tableau = tss._running_tableau
+    rec_ev = bool(getattr(tss, "record_leakage_events", False))
 
     num_leaked = int(np.count_nonzero(state >= 2))
     f_cursor = 0
@@ -898,6 +920,7 @@ def run_tableside_python_v2(
                         one_qs: list[int] = []
                         for q_val, out_st in zip(hit_qs, out_states):
                             q_int = int(q_val)
+                            old_st = int(state[q_int]) if rec_ev else 0
                             if out_st == "U":
                                 state[q_int] = 0
                             elif out_st == 0 or out_st == "0":
@@ -908,6 +931,10 @@ def run_tableside_python_v2(
                                 one_qs.append(q_int)
                             else:
                                 state[q_int] = int(out_st)
+                            if rec_ev:
+                                tss._record_leakage_event(
+                                    pre.step_to_unrolled_idx[s], q_int, old_st, state[q_int]
+                                )
                         if tss.record_unleaked_to_leaked:
                             k_leaked = int(np.count_nonzero(state[hit_qs] >= 2))
                             if k_leaked > 0:
@@ -995,6 +1022,7 @@ def run_tableside_python_v2(
                             for leg in (0, 1):
                                 out_leg = out_pair[leg]
                                 q_leg = int(hit_pairs[k_hit, leg])
+                                old_leg = int(state[q_leg]) if rec_ev else 0
                                 if isinstance(out_leg, int) and out_leg >= 2:
                                     state[q_leg] = out_leg
                                 elif out_leg == "D":
@@ -1017,6 +1045,10 @@ def run_tableside_python_v2(
                                     z_2q.append(q_leg)
                                 else:
                                     state[q_leg] = 0
+                                if rec_ev:
+                                    tss._record_leakage_event(
+                                        pre.step_to_unrolled_idx[s], q_leg, old_leg, state[q_leg]
+                                    )
                         if tss.record_unleaked_to_leaked:
                             k_leaked = int(np.count_nonzero(state[qubit_i32] >= 2))
                             if k_leaked > 0:
@@ -1190,6 +1222,14 @@ def run_tableside_python_v2(
                     if tss._tableau_simulator.peek_z(int(q)) == -1
                 ]
                 if newly_leaked:
+                    if rec_ev:
+                        for q_new in newly_leaked:
+                            tss._record_leakage_event(
+                                pre.step_to_unrolled_idx[s],
+                                q_new,
+                                state[q_new],
+                                int(one_args[0][0]),
+                            )
                     state[newly_leaked] = int(one_args[0][0])
                     if tss.record_unleaked_to_leaked:
                         tss._record_unleaked_to_leaked_count(
@@ -1355,6 +1395,9 @@ class CppTablesideRunner:
         rec_leak = tss.record_unleaked_to_leaked
         self.lib.fast_engine_set_record_leakage(self._eng, 1 if rec_leak else 0)
         leaked_ops_ptr = ctypes.POINTER(ctypes.c_int32)() if rec_leak else None
+        rec_ev = bool(getattr(tss, "record_leakage_events", False))
+        self.lib.fast_engine_set_record_events(self._eng, 1 if rec_ev else 0)
+        events_ptr = ctypes.POINTER(ctypes.c_int32)()
 
         actions_ptr = ctypes.POINTER(EmittedActionC)()
         targets_ptr = ctypes.POINTER(ctypes.c_uint32)()
@@ -1384,6 +1427,17 @@ class CppTablesideRunner:
                     ev_list = tss._unleaked_to_leaked_events[0]
                     for k_ev in range(n_leaked_ops):
                         ev_list.append(int(leaked_ops_ptr[k_ev]))
+            if rec_ev:
+                n_events = self.lib.fast_engine_get_segment_events(
+                    self._eng, ctypes.byref(events_ptr)
+                )
+                for k_ev in range(n_events):
+                    tss._record_leakage_event(
+                        events_ptr[4 * k_ev],
+                        events_ptr[4 * k_ev + 1],
+                        events_ptr[4 * k_ev + 2],
+                        events_ptr[4 * k_ev + 3],
+                    )
             next_step = num_steps
             for i in range(n_act):
                 act = actions_ptr[i]
@@ -1551,6 +1605,14 @@ class CppTablesideRunner:
                         out_state = int(
                             steps_py[s_trans][6].args_by_input_state[1][0][0]
                         )
+                        if rec_ev:
+                            for q_new in newly_leaked:
+                                tss._record_leakage_event(
+                                    pre.step_to_unrolled_idx[s_trans],
+                                    q_new,
+                                    self.state[q_new],
+                                    out_state,
+                                )
                         self.state[newly_leaked] = out_state
                         if rec_leak:
                             tss._record_unleaked_to_leaked_count(

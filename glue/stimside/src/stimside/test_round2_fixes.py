@@ -16,6 +16,7 @@ from stimside.op_handlers.leakage_handlers.leakage_uint8_tableau import (
 from stimside.op_handlers.leakage_handlers.tag_registry import (
     parse_leakage_tag,
 )
+from stimside.dem_generators.leakage_decoder import BaseDecoder
 from stimside.sampler_coset import CosetsideSampler
 from stimside.sampler_flip import FlipsideSampler
 from stimside.sampler_tableau import TablesideSampler
@@ -137,13 +138,17 @@ def test_3_sampler_distinct_seeds_across_compiles_and_workers(monkeypatch):
         (TablesideSampler, LeakageUint8Tableau),
         (CosetsideSampler, LeakageUint8Coset),
     ):
-        sampler = sampler_cls(op_handler=handler_cls(), seed=42, batch_size=4)
+        sampler = sampler_cls(
+            op_handler=handler_cls(), dem_decoder=BaseDecoder(), seed=42, batch_size=4
+        )
         s0 = sampler._next_compiled_seed()
         s1 = sampler._next_compiled_seed()
         assert s0 == 42
         assert s1 is not None and s1 != 42
 
-        sampler_w = sampler_cls(op_handler=handler_cls(), seed=42, batch_size=4)
+        sampler_w = sampler_cls(
+            op_handler=handler_cls(), dem_decoder=BaseDecoder(), seed=42, batch_size=4
+        )
         orig_pid = os.getpid()
         monkeypatch.setattr(os, "getpid", lambda: orig_pid + 99)
         s_worker = sampler_w._next_compiled_seed()
@@ -182,7 +187,7 @@ def test_6_tableside_batch_size_greater_than_one_and_sampler():
         op_handler=LeakageUint8Tableau(),
         seed=77,
         batch_size=4,
-        decoder="vacuous",
+        dem_decoder=BaseDecoder(decoder="vacuous"),
     )
     compiled = sampler.compiled_sampler_for_task(sinter.Task(circuit=circuit))
     stats = compiled.sample(8)

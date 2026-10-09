@@ -1,15 +1,55 @@
 import sinter
 import stim # type: ignore[import-untyped]
 
+from stimside.dem_generators.dem_decoding import decode_with_generated_dems
+from stimside.dem_generators.leakage_decoder import (
+    CompiledLeakageDecoder,
+    BaseDecoder,
+    LeakageDecoder,
+    MarginalDecoder,
+)
 from stimside.op_handlers.abstract_op_handler import _TrivialOpHandler
 from stimside.sampler_tableau import TablesideSampler
+
+
+class _CallableCompiled(CompiledLeakageDecoder):
+    def __init__(self, dem_gen, circuit):
+        self.dem_gen = dem_gen
+        self.circuit = circuit
+
+    def decode_shots_bit_packed(
+        self, *, bit_packed_detection_event_data, records=None, leakage_events=None
+    ):
+        return decode_with_generated_dems(
+            "pymatching",
+            self.dem_gen(self.circuit, records),
+            bit_packed_detection_event_data,
+        )
+
+
+class _CallableDecoder(LeakageDecoder):
+    """A custom LeakageDecoder decoding with the DEM(s) of dem_gen(circuit, records)."""
+
+    def __init__(self, dem_gen):
+        self.dem_gen = dem_gen
+
+    @property
+    def name(self):
+        return "callable"
+
+    @property
+    def needs_records(self):
+        return True
+
+    def compile_for_task(self, task):
+        return _CallableCompiled(self.dem_gen, task.circuit)
 
 
 def test_sampler():
 
     op_handler = _TrivialOpHandler()
 
-    sampler = TablesideSampler(op_handler=op_handler)
+    sampler = TablesideSampler(op_handler=op_handler, dem_decoder=BaseDecoder())
 
     circuit = stim.Circuit(
         """
@@ -45,14 +85,14 @@ def test_sampler_sample_and_dem_gen():
         return circ.detector_error_model()
 
     sampler = TablesideSampler(
-        op_handler=op_handler, batch_size=4, dem_gen=custom_dem_gen, decoder=None
+        op_handler=op_handler, batch_size=4, dem_decoder=_CallableDecoder(custom_dem_gen)
     )
     task = sinter.Task(circuit=circuit, decoder="pymatching")
     compiled = sampler.compiled_sampler_for_task(task=task)
     stats = compiled.sample(suggested_shots=4)
     assert stats.shots == 4
-    assert called_with_records == [(2,)]
+    assert called_with_records == [(4, 2)]
 
-    with pytest.raises(ValueError, match="TablesideSampler requires a decoder"):
-        sampler.compiled_sampler_for_task(sinter.Task(circuit=circuit, decoder=None))
+    with pytest.raises(ValueError, match="MarginalDecoder requires a decoder"):
+        MarginalDecoder(decoder=None)
 

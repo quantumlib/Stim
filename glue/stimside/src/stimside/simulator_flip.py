@@ -7,11 +7,13 @@ import stim  # type: ignore[import-untyped]
 
 from stimside.op_handlers.abstract_op_handler import CompiledOpHandler
 from stimside.util.known_states import (
+    _replays,
     _unroll_circuit,
     compute_known_states_uint8,
     convert_paulis_to_arrays,
 )
 from stimside.util.numpy_types import Bool1DArray, Bool2DArray
+from stimside.util.stim_workarounds import broadcast_pauli_errors, split_fused_instruction
 from stimside.util.unleaked_to_leaked import UnleakedToLeakedRecordsMixin
 
 
@@ -133,6 +135,13 @@ class FlipsideSimulator(UnleakedToLeakedRecordsMixin):
 
         self.np_rng = np.random.default_rng(seed=seed)
         self._reference_sample: np.ndarray | None = None
+        # measurement index of a Z-collapsing MPAD -> (reference Z value, collapsed here) per target
+        self._mpad_ref_z: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+        # unrolled op index of an op that reads/resets Z values -> ({qubit: reference Z value, None if
+        # superposed}, qubits collapsed here)
+        self._op_ref_z: dict[int, tuple[dict[int, bool | None], list[int]]] = {}
+        # (detector, observable) offsets vs stim's reference sample; None entry = all zero
+        self._ref_offsets: tuple[np.ndarray | None, np.ndarray | None] | None = None
 
         self.qubit_coords: dict[int, list[float]] = {}
         self.qubit_tags: dict[int, str] = {}
@@ -156,17 +165,55 @@ class FlipsideSimulator(UnleakedToLeakedRecordsMixin):
         ref_ts = stim.TableauSimulator(seed=0)
         ref_ts.set_num_qubits(self.num_qubits)
         ref_chunks: list[np.ndarray] = []
-        for op in self._unrolled_ops:
+        # Handler hook: qubits an MPAD Z-collapses (e.g. 0/1-keyed LEAKAGE_MEASUREMENT), or None.
+        mpad_z_targets = getattr(self.compiled_op_handler, "mpad_z_collapse_targets", None)
+        # Handler hook: (qubits a non-MPAD op reads the Z value of, qubits it may reset to |0>/|1>), or
+        # None (e.g. 0/1-keyed LEAKAGE_TRANSITION_1/2). Read qubits are Z-collapsed like MPAD targets;
+        # reset-only qubits are not (only shots that reset them collapse), so superposed ones get None.
+        op_z_targets = getattr(self.compiled_op_handler, "op_z_collapse_targets", None)
+        num_meas, num_chunks_counted = 0, 0
+        for op_idx, op in enumerate(self._unrolled_ops):
             name = op.name
+            z_qs = op_z_targets(op) if op_z_targets is not None else None
+            if z_qs is not None:
+                op_ref_z: dict[int, bool | None] = {}
+                op_collapsed: list[int] = []
+                for q in z_qs[0]:
+                    if q not in op_ref_z:
+                        if ref_ts.peek_z(q) == 0:
+                            ref_ts.postselect_z(q, desired_value=False)
+                            op_collapsed.append(q)
+                        op_ref_z[q] = ref_ts.peek_z(q) == -1
+                for q in z_qs[1]:
+                    if q not in op_ref_z:
+                        pz = ref_ts.peek_z(q)
+                        op_ref_z[q] = None if pz == 0 else pz == -1
+                self._op_ref_z[op_idx] = (op_ref_z, op_collapsed)
             if name == "MPAD":
-                crs = np.array(
-                    [
-                        bool(gt.value) ^ bool(gt.is_inverted_result_target)
-                        for gt in op.targets_copy()
-                    ],
-                    dtype=np.bool_,
-                )
-                ref_chunks.append(crs)
+                z_targets = mpad_z_targets(op) if mpad_z_targets is not None else None
+                copies = split_fused_instruction(op, len(z_targets)) if z_targets else [op]
+                for op_copy in copies:
+                    crs = np.array(
+                        [
+                            bool(gt.value) ^ bool(gt.is_inverted_result_target)
+                            for gt in op_copy.targets_copy()
+                        ],
+                        dtype=np.bool_,
+                    )
+                    if z_targets is not None:
+                        num_meas += sum(len(c) for c in ref_chunks[num_chunks_counted:])
+                        num_chunks_counted = len(ref_chunks)
+                        # Collapse superposed targets to 0 (postselect: no reference RNG use) and record
+                        # each target's reference Z value and whether it was collapsed here.
+                        ref_z = np.zeros(len(z_targets), dtype=np.bool_)
+                        collapsed = np.zeros(len(z_targets), dtype=np.bool_)
+                        for k, q in enumerate(z_targets):
+                            if ref_ts.peek_z(q) == 0:
+                                ref_ts.postselect_z(q, desired_value=False)
+                                collapsed[k] = True
+                            ref_z[k] = ref_ts.peek_z(q) == -1
+                        self._mpad_ref_z[num_meas] = (ref_z, collapsed)
+                    ref_chunks.append(crs)
             elif name in ("HERALDED_ERASE", "HERALDED_PAULI_CHANNEL_1"):
                 crs = np.zeros(len(op.targets_copy()), dtype=np.bool_)
                 ref_chunks.append(crs)
@@ -304,7 +351,25 @@ class FlipsideSimulator(UnleakedToLeakedRecordsMixin):
                 gd = stim.gate_data(name)
                 if gd.is_unitary or gd.is_reset:
                     if name not in ("I", "II", "I_ERROR", "II_ERROR"):
-                        ref_ts.do(op)
+                        if name in ("CX", "CY", "CZ", "XCZ", "YCZ") and (
+                            "rec[" in str(op) or "sweep[" in str(op)
+                        ):
+                            targets = op.targets_copy()
+                            # Classical control (CX/CY/CZ/XCZ/YCZ): read ref_chunks (stim's record),
+                            # not ref_ts's record (no MPAD/herald bits or inversions, has resets).
+                            rec = np.concatenate(ref_chunks) if ref_chunks else np.zeros(0, bool)
+                            for a, b in zip(targets[::2], targets[1::2]):
+                                if a.is_qubit_target and b.is_qubit_target:
+                                    ref_ts.do(stim.CircuitInstruction(name, [a, b]))
+                                elif a.is_qubit_target:  # CZ/XCZ/YCZ q rec
+                                    if b.is_measurement_record_target and rec[b.value]:
+                                        pauli = "Z" if name == "CZ" else name[0]
+                                        ref_ts.do(stim.CircuitInstruction(pauli, [a]))
+                                elif a.is_measurement_record_target and rec[a.value]:  # CX/CY/CZ rec q
+                                    ref_ts.do(stim.CircuitInstruction(name[-1], [b]))
+                                # sweep bits are 0, as in stim's m2d reference sample
+                        else:
+                            ref_ts.do(op)
         if ref_chunks:
             self._reference_sample = np.concatenate(ref_chunks)
         else:
@@ -374,33 +439,76 @@ class FlipsideSimulator(UnleakedToLeakedRecordsMixin):
         return self._flip_simulator.batch_size
 
     def get_detector_flips(self, *args, bit_packed: bool = False, **kwargs):
+        offset = self._stim_reference_offsets()[0]
         if bit_packed:
             raw_packed = self._flip_simulator.get_detector_flips(
                 *args, bit_packed=True, **kwargs
             )
-            return _bit_transpose_swar(raw_packed, self.batch_size)
-        return self._flip_simulator.get_detector_flips(
+            out = _bit_transpose_swar(raw_packed, self.batch_size)
+            return self._xor_offset(out, offset, len(raw_packed), None, None)
+        out = self._flip_simulator.get_detector_flips(
             *args, bit_packed=False, **kwargs
         )
+        return self._xor_offset(
+            out, offset, None, kwargs.get("detector_index"), kwargs.get("instance_index")
+        )
+
+    def _stim_reference_offsets(self) -> tuple[np.ndarray | None, np.ndarray | None]:
+        """Per-circuit (detector, observable) values of this simulator's reference sample
+        relative to stim's reference sample (None if all zero).
+
+        Flip-frame detectors are relative to `ref_measurements`; XORing these offsets makes them
+        relative to stim's reference sample, as in TablesideSimulator and CosetsideSimulator. They
+        are nonzero only where the two reference samples disagree on a detector's parity (e.g.
+        non-deterministic detectors, or 0/1-keyed MPAD[LEAKAGE_MEASUREMENT] collapses).
+        """
+        if self._ref_offsets is None:
+            ref = self.circuit.compile_m2d_converter().convert(
+                measurements=self.ref_measurements[None, :], append_observables=True
+            )[0]
+            det, obs = ref[: self.circuit.num_detectors], ref[self.circuit.num_detectors :]
+            self._ref_offsets = (det if det.any() else None, obs if obs.any() else None)
+        return self._ref_offsets
+
+    @staticmethod
+    def _xor_offset(out, offset, num_packed, item_index, instance_index):
+        """XOR `offset` into a detector/observable getter output (see stim.FlipSimulator)."""
+        if offset is None:
+            return out
+        if num_packed is not None:  # bit-packed (batch_size, ceil(num_packed / 8))
+            out ^= np.packbits(offset[:num_packed], bitorder="little")
+            return out
+        if item_index is not None:
+            out ^= offset[item_index]
+        elif instance_index is not None:
+            out ^= offset[: len(out)]
+        else:
+            out ^= offset[: len(out), None]
+        return out
 
     def get_measurement_flips(self, *args, **kwargs):
         return self._flip_simulator.get_measurement_flips(*args, **kwargs)
 
     def get_final_measurement_records(self) -> np.ndarray:
-        """Return measurement records of shape (batch_size, num_measurements)."""
+        """Return measurement records of shape (batch_size, num_measurements done so far)."""
         self._precompute_sync_reference()
         assert self._reference_sample is not None
         flips = self.get_measurement_flips()
-        return np.logical_xor(self._reference_sample[:, None], flips).T
+        return np.logical_xor(self._reference_sample[: len(flips), None], flips).T
 
     def get_observable_flips(self, *args, bit_packed: bool = False, **kwargs):
+        offset = self._stim_reference_offsets()[1]
         if bit_packed:
             raw_packed = self._flip_simulator.get_observable_flips(
                 *args, bit_packed=True, **kwargs
             )
-            return _bit_transpose_swar(raw_packed, self.batch_size)
-        return self._flip_simulator.get_observable_flips(
+            out = _bit_transpose_swar(raw_packed, self.batch_size)
+            return self._xor_offset(out, offset, len(raw_packed), None, None)
+        out = self._flip_simulator.get_observable_flips(
             *args, bit_packed=False, **kwargs
+        )
+        return self._xor_offset(
+            out, offset, None, kwargs.get("observable_index"), kwargs.get("instance_index")
         )
 
     def broadcast_pauli_errors(
@@ -421,7 +529,9 @@ class FlipsideSimulator(UnleakedToLeakedRecordsMixin):
         """
         if p <= 0.0 or not np.any(error_mask):
             return error_mask
-        self._flip_simulator.broadcast_pauli_errors(pauli=pauli, mask=error_mask, p=p)
+        broadcast_pauli_errors(
+            self._flip_simulator, pauli=pauli, mask=error_mask, p=p, np_rng=self.np_rng
+        )
         return error_mask
 
     def do_on_flip_simulator(
@@ -570,6 +680,16 @@ class FlipsideSimulator(UnleakedToLeakedRecordsMixin):
     def interactive_do(
         self, this: stim.Circuit | stim.CircuitInstruction | stim.CircuitRepeatBlock, /
     ):
+        """Do the next operation(s) of the circuit this simulator was constructed with.
+
+        The reference sample, known states and 0/1 reference values are precomputed from that
+        circuit, so `this` must continue it in order (REPEAT blocks unrolled), except that an untagged
+        noisy gate (e.g. X_ERROR, M(p)) may have a different noise strength; else ValueError.
+
+        Pass the circuit itself or consecutive parts of it, not `circuit.flattened()` (which drops
+        SHIFT_COORDS, rewrites DETECTOR coordinates and can merge operations) or `circuit + more`
+        (where stim can merge operations at the seam).
+        """
         self._used_interactively = True
         self._do(this)
 
@@ -584,6 +704,21 @@ class FlipsideSimulator(UnleakedToLeakedRecordsMixin):
             for _ in range(this.repeat_count):
                 self._do(loop_body)
         elif isinstance(this, stim.CircuitInstruction):
+            t = self._circuit_time
+            if t >= len(self._unrolled_ops) or not _replays(this, self._unrolled_ops[t]):
+                expected = (
+                    f"which has `{self._unrolled_ops[t]}` there"
+                    if t < len(self._unrolled_ops)
+                    else f"which ends after {len(self._unrolled_ops)} operations"
+                )
+                raise ValueError(
+                    f"interactive_do: operation {t} (REPEAT blocks unrolled) `{this}` doesn't match "
+                    f"the circuit the FlipsideSimulator was constructed with, {expected}. Its "
+                    "reference values are precomputed from that circuit, so interactive_do can only "
+                    "replay it in order. Construct the simulator with the circuit to step through. "
+                    "Pass the circuit itself or its parts, not `circuit.flattened()` or "
+                    "`circuit + more`."
+                )
             self._do_instruction(this)
         else:
             raise NotImplementedError

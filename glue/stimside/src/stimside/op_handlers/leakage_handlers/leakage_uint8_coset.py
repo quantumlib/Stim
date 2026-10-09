@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Literal, Sequence, cast
+from typing import Callable, Literal, Sequence, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,6 +12,7 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageConditioningParams,
     LeakageMeasurementParams,
     LeakageParams,
+    LeakageSwapParams,
     LeakageTransition1Params,
     LeakageTransition2Params,
 )
@@ -19,6 +20,26 @@ from stimside.op_handlers.leakage_handlers.leakage_tag_parsing_tableau import (
     parse_leakage_in_circuit,
 )
 from stimside.simulator_coset import CosetsideSimulator
+from stimside.util.stim_workarounds import broadcast_pauli_errors, split_fused_instruction
+
+
+def _do_copies_on_fused_step(
+    tss: CosetsideSimulator,
+    op: stim.CircuitInstruction,
+    copies: list[stim.CircuitInstruction],
+    do_copy: Callable[[stim.CircuitInstruction], None],
+) -> None:
+    """Apply the copies of a stim-fused op in sequence on the op's one (no-op) reference step."""
+    tss._next_step_meta(op)  # matched (or, interactively, appended) for the fused op
+    step_cursor = tss._step_cursor - 1
+    used_interactively, tss._used_interactively = tss._used_interactively, False
+    try:
+        for sub_op in copies:
+            tss._step_cursor = step_cursor  # each copy re-reads the fused op's step
+            do_copy(sub_op)
+    finally:
+        tss._used_interactively = used_interactively
+    tss._step_cursor = step_cursor + 1
 
 
 class LeakageStateArray(np.ndarray):
@@ -56,7 +77,18 @@ class LeakageStateArray(np.ndarray):
 
 @dataclasses.dataclass
 class LeakageUint8Coset(OpHandler[CosetsideSimulator]):
-    """Batched uint8 leakage OpHandler for CosetsideSimulator reusing tableside tag parsers."""
+    """Batched uint8 leakage OpHandler for CosetsideSimulator reusing tableside tag parsers.
+
+    Args:
+        unconditional_condition_on_U: if True (default), untagged unitary gates and
+            noise channels are treated as conditioned on U, i.e. they skip leaked
+            qubits, whose computational state stays frozen from when they leaked.
+            If False, they act on that frozen state as if the qubits were unleaked.
+            Instructions that produce measurement results (including heralded noise)
+            and resets are never filtered: they act on, or read, the frozen state.
+            Details are in "Untagged Instructions on Leaked Qubits" in the top-level
+            README.
+    """
 
     unconditional_condition_on_U: bool = True
 
@@ -304,6 +336,9 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
                     cond_mask = self._filter_targets_1q_mask(
                         targets, (("U",),), sss
                     )
+                    if not gd.is_single_qubit_gate:
+                        # A correlated error is one Pauli product (like a pair for 2q ops): skip all of it.
+                        cond_mask[:] = cond_mask.all(axis=0)
                 elif gd.is_two_qubit_gate:
                     target_pairs = [
                         [
@@ -333,9 +368,11 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
             return
 
         params = self.ops_to_params[op]
-        if sss.record_unleaked_to_leaked and isinstance(
-            params, (LeakageTransition1Params, LeakageTransition2Params)
-        ):
+        is_transition = isinstance(
+            params, (LeakageTransition1Params, LeakageTransition2Params, LeakageSwapParams)
+        )
+        rec_ev = is_transition and getattr(sss, "record_leakage_events", False)
+        if (sss.record_unleaked_to_leaked or rec_ev) and is_transition:
             self._ensure_batch_size(sss.batch_size)
             target_indices = np.unique(
                 [
@@ -345,9 +382,11 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
                 ]
             )
             was_unleaked = (self._state[target_indices, :] < 2).copy()
+            old_states = self._state[target_indices, :].copy() if rec_ev else None
         else:
             target_indices = None
             was_unleaked = None
+            old_states = None
 
         match params:
             case LeakageConditioningParams():
@@ -358,13 +397,41 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
                 self.leakage_transition_2(op=op, tss=sss, params=params)
             case LeakageMeasurementParams():
                 self.leakage_measurement(op=op, tss=sss, params=params)
+            case LeakageSwapParams():
+                self.leakage_swap(op=op, tss=sss)
             case _:
                 raise ValueError(f"Unrecognised LEAKAGE params: {params}")
 
-        if was_unleaked is not None and target_indices is not None:
+        if (
+            sss.record_unleaked_to_leaked
+            and was_unleaked is not None
+            and target_indices is not None
+        ):
             now_leaked = self._state[target_indices, :] >= 2
             counts = np.count_nonzero(was_unleaked & now_leaked, axis=0)
             sss._record_unleaked_to_leaked_counts(counts, sss._circuit_time)
+        if old_states is not None and target_indices is not None:
+            new_states = self._state[target_indices, :]
+            for i_q, b in zip(*np.nonzero(old_states != new_states)):
+                sss._record_leakage_event(
+                    sss._circuit_time,
+                    target_indices[i_q],
+                    old_states[i_q, b],
+                    new_states[i_q, b],
+                    shot_idx=int(b),
+                )
+
+    def leakage_swap(self, op: stim.CircuitInstruction, tss: CosetsideSimulator) -> None:
+        """SWAP[LEAKAGE_SWAP]: SWAP the qubits in every shot, leaked ones included (their frozen
+        computational states move with them), then swap their leakage states, pair by pair from
+        left to right.
+        """
+        tss._do_bare_instruction(
+            stim.CircuitInstruction(op.name, op.targets_copy(), op.gate_args_copy())
+        )
+        targets = [t.qubit_value for t in op.targets_copy()]
+        for q0, q1 in zip(targets[::2], targets[1::2]):
+            self._state[[q0, q1], :] = self._state[[q1, q0], :]
 
     def leakage_conditioning(
         self,
@@ -388,6 +455,19 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
                 ),
             )
         other_targets = params.targets
+        if other_targets:
+            # stim fuses k identical consecutive CONDITIONED_ON_OTHER lines into one op with k times
+            # the targets; each copy reuses the tag's controls.
+            copy_len = len(other_targets) * (2 if stim.gate_data(op.name).is_two_qubit_gate else 1)
+            copies = split_fused_instruction(op, copy_len)
+            if len(copies) > 1 and not stim.gate_data(op.name).is_unitary:
+                # Noise has a no-op reference step, so loop (RNG draws as for k separate ops).
+                _do_copies_on_fused_step(
+                    tss, op, copies, lambda sub_op: self.leakage_conditioning(sub_op, tss, params)
+                )
+                return
+            # A unitary's reference step is the fused op, so tile the controls instead of looping.
+            other_targets = other_targets * len(copies)
         gd = stim.gate_data(op.name)
         raw_targets = op.targets_copy()
         if gd.is_unitary and any(0 in g or 1 in g for g in condition_groups):
@@ -601,11 +681,11 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
                     "DEPOLARIZE1", targets_per_shot, [0.75]
                 )
             else:
-                tss._flip_simulator.broadcast_pauli_errors(
-                    pauli="X", mask=to_depolarize, p=0.5
+                broadcast_pauli_errors(
+                    tss._flip_simulator, pauli="X", mask=to_depolarize, p=0.5, np_rng=tss.np_rng
                 )
-                tss._flip_simulator.broadcast_pauli_errors(
-                    pauli="Z", mask=to_depolarize, p=0.5
+                broadcast_pauli_errors(
+                    tss._flip_simulator, pauli="Z", mask=to_depolarize, p=0.5, np_rng=tss.np_rng
                 )
         if np.any(to_pauli_X):
             tss._flip_simulator.broadcast_pauli_errors(
@@ -629,8 +709,8 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
                     "X_ERROR", targets_per_shot, [0.5]
                 )
             else:
-                tss._flip_simulator.broadcast_pauli_errors(
-                    pauli="X", mask=to_randomize_X, p=0.5
+                broadcast_pauli_errors(
+                    tss._flip_simulator, pauli="X", mask=to_randomize_X, p=0.5, np_rng=tss.np_rng
                 )
         if np.any(randomize_phase):
             if tss._tab_rngs is not None:
@@ -642,8 +722,8 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
                     "Z_ERROR", targets_per_shot, [0.5]
                 )
             else:
-                tss._flip_simulator.broadcast_pauli_errors(
-                    pauli="Z", mask=randomize_phase, p=0.5
+                broadcast_pauli_errors(
+                    tss._flip_simulator, pauli="Z", mask=randomize_phase, p=0.5, np_rng=tss.np_rng
                 )
 
     def leakage_transition_1(
@@ -1098,6 +1178,13 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
         tss: CosetsideSimulator,
         params: LeakageMeasurementParams,
     ) -> None:
+        if params.targets:
+            copies = split_fused_instruction(op, len(params.targets))
+            if len(copies) > 1:
+                _do_copies_on_fused_step(
+                    tss, op, copies, lambda sub_op: self.leakage_measurement(sub_op, tss, params)
+                )
+                return
         raw_op_targets = op.targets_copy()
         if params.targets:
             targets = list(params.targets)
@@ -1319,7 +1406,7 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
                 idx_in_q = np.where(in_comp_b)[0]
                 ps_b = pauli_states[in_comp_b, b]
 
-                if is_mpad and np.isclose(p0, p1):
+                if is_mpad and not has_01_cond and np.isclose(p0, p1):
                     t_all_q = [int(q) for q in targets_in_q]
                     if len(t_all_q) > 0 and p0 > 0:
                         inst_c = stim.CircuitInstruction(
@@ -1523,9 +1610,9 @@ class CompiledLeakageUint8Coset(CompiledOpHandler[CosetsideSimulator]):
             to_dep = self._scratch_depolarize
             to_dep.fill(False)
             to_dep[targets_arr, :] = ~in_comp
-            tss._flip_simulator.broadcast_pauli_errors(
-                pauli="X", mask=to_dep, p=0.5
+            broadcast_pauli_errors(
+                tss._flip_simulator, pauli="X", mask=to_dep, p=0.5, np_rng=tss.np_rng
             )
-            tss._flip_simulator.broadcast_pauli_errors(
-                pauli="Z", mask=to_dep, p=0.5
+            broadcast_pauli_errors(
+                tss._flip_simulator, pauli="Z", mask=to_dep, p=0.5, np_rng=tss.np_rng
             )

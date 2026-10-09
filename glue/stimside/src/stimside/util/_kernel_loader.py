@@ -1,4 +1,4 @@
-"""Shared locate-or-compile logic for the ctypes kernel libraries (coset / tableside)."""
+"""Shared locate-or-compile logic for the ctypes kernel libraries (coset / tableside / marginal_dem)."""
 
 from __future__ import annotations
 

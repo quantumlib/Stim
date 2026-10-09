@@ -311,3 +311,44 @@ class TestFlipsideSimulator:
             det_packed, np.packbits(det_bool.T, axis=1, bitorder="little")
         )
 
+    def test_interactive_do_must_replay_the_circuit(self):
+        circuit = stim.Circuit("X 0\nREPEAT 2 {\n    M 0\n}\nM 1")
+        fss = self.make_simulator(circuit)
+        fss.interactive_do(circuit[0])
+        fss.interactive_do(circuit[1])  # a REPEAT block replays as its unrolled ops
+        fss.interactive_do(stim.Circuit("M 1"))  # an equal op from another circuit object is fine
+        assert fss.get_final_measurement_records().tolist() == [[True, True, False]] * self.batch_size
+        with pytest.raises(ValueError, match="ends after 4 operations"):
+            fss.interactive_do(stim.Circuit("M 0"))
+        # Any other op raises, even one that only changes the reference sample (I 0 for X 0 used to
+        # give M 0 = 1, the construction circuit's reference value).
+        for other in ["I 0\nM 0", "X 1", "X 0\nM 1", "X 0\nM !0"]:
+            with pytest.raises(ValueError, match="doesn't match the circuit"):
+                self.make_simulator(circuit).interactive_do(stim.Circuit(other))
+        # flattened() drops the SHIFT_COORDS (operation 2 here), so it doesn't replay the circuit.
+        rounds = stim.Circuit("REPEAT 2 {\n    M 0\n    DETECTOR(0) rec[-1]\n    SHIFT_COORDS(1)\n}")
+        with pytest.raises(ValueError, match=r"not `circuit\.flattened\(\)` or `circuit \+ more`"):
+            self.make_simulator(rounds).interactive_do(rounds.flattened())
+
+    def test_interactive_do_noise_strength_may_differ(self):
+        # Only an untagged noisy gate's strength may differ: it is applied live, and everything
+        # precomputed from the construction circuit is noiseless.
+        fss = self.make_simulator(stim.Circuit("X_ERROR(0) 0\nM(0) 0 1"))
+        fss.interactive_do(stim.Circuit("X_ERROR(1) 0\nM(1) 0 1"))
+        assert fss.get_final_measurement_records().tolist() == [[False, True]] * self.batch_size
+        for a, b in [
+            ("X_ERROR(0.1) 0", "Z_ERROR(0.1) 0"),
+            ("X_ERROR[t](0.1) 0", "X_ERROR[t](0.2) 0"),
+            ("M 0\nOBSERVABLE_INCLUDE(0) rec[-1]", "M 0\nOBSERVABLE_INCLUDE(1) rec[-1]"),
+        ]:
+            with pytest.raises(ValueError, match="doesn't match the circuit"):
+                self.make_simulator(stim.Circuit(a)).interactive_do(stim.Circuit(b))
+
+    def test_final_measurement_records_after_partial_replay(self):
+        circuit = stim.Circuit("X 0\nM 0\nI 0\nM 0 1")
+        fss = self.make_simulator(circuit)
+        fss.interactive_do(circuit[:2])  # used to broadcast the 3 reference bits over 1 measurement
+        assert fss.get_final_measurement_records().tolist() == [[True]] * self.batch_size
+        fss.interactive_do(circuit[2:])
+        assert fss.get_final_measurement_records().tolist() == [[True, True, False]] * self.batch_size
+

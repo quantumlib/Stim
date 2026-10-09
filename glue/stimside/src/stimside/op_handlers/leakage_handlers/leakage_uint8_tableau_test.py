@@ -494,8 +494,8 @@ class TestCompiledLeakageUint8:
         records = tss.get_final_measurement_records()
         # M !0 on |1> gives 0
         assert np.all(records[:, 0] == 0)
-        # E(1.0) X1 X2 flips unleaked qubit 1 to |1>, while leaked qubit 2 is filtered out
-        assert np.all(records[:, 1] == 1)
+        # E(1.0) X1 X2 is skipped entirely because qubit 2 is leaked (like a 2q pair), so qubit 1 stays |0>
+        assert np.all(records[:, 1] == 0)
         assert np.all(records[:, 2] == 0)
 
     def test_no_spurious_depolarize_or_reset_on_untriggered_transitions(self):
@@ -832,3 +832,126 @@ class TestCompiledLeakageUint8:
             assert np.all(recs[:, 0] == 0)
             # X[CONDITIONED_ON_OTHER: U : 0] 2 must be skipped because controller q0 is in state 2
             assert np.all(recs[:, 1] == 0)
+
+    @pytest.mark.parametrize("use_cpp", [True, False])
+    def test_mpad_01_readout_collapses_and_tracks_each_shot_at_batch_size_gt_1(self, use_cpp: bool):
+        """Non-sync batch_size > 1: MPAD[LEAKAGE_MEASUREMENT] with 0/1 keys Z-collapses superposed targets and reads
+        each shot's own Z value (incl. Pauli-frame flips), as batch_size == 1 and Cosetside do."""
+        p0, p1 = 0.1, 0.7
+        tag = "(0.1, 0), (0.7, 1), (0.9, 2)"
+
+        def recs(text: str) -> np.ndarray:
+            c = stim.Circuit(text)
+            out = []
+            for s in range(10):
+                op = LeakageUint8().compile_op_handler(circuit=c, batch_size=400)
+                sim = TablesideSimulator(
+                    circuit=c, compiled_op_handler=op, batch_size=400, seed=7 + s, use_cpp_kernels=use_cpp
+                )
+                sim.run()
+                out.append(sim.get_final_measurement_records())
+            return np.vstack(out).astype(bool)
+
+        # Bell pair, MPAD on q0: collapse => XX parity becomes random.
+        r_x = recs(f"H 0\nCX 0 1\nMPAD[LEAKAGE_MEASUREMENT: {tag} : 0] 0\nH 0 1\nM 0 1")
+        assert abs(np.mean(r_x[:, 1] ^ r_x[:, 2]) - 0.5) < 4.5 * 0.5 / np.sqrt(len(r_x))
+        # Readout is p0/p1 noise on each shot's Z value: Bell partner, and a frame-only X_ERROR flip (inverted pad).
+        for text, inv in (
+            (f"H 0\nCX 0 1\nMPAD[LEAKAGE_MEASUREMENT: {tag} : 0] 0\nM 1", False),
+            (f"X_ERROR(0.5) 0\nMPAD[LEAKAGE_MEASUREMENT: {tag} : 0] 1\nM 0", True),
+        ):
+            r_z = recs(text)
+            r, m = r_z[:, 0] ^ inv, r_z[:, 1]
+            for mask, p in ((~m, p0), (m, p1)):
+                assert abs(np.mean(r[mask]) - p) < 4.5 * np.sqrt(p * (1 - p) / mask.sum())
+
+    @pytest.mark.parametrize("use_cpp", [True, False])
+    @pytest.mark.parametrize("gate", ["SPP", "SPP_DAG"])
+    def test_spp_terms_on_leaked_qubits_are_skipped(self, use_cpp: bool, gate: str):
+        # Like a 2q pair, an SPP/SPP_DAG Pauli product term is skipped iff it touches a leaked qubit; the other
+        # terms still apply. Each term appears twice, so when applied it composes to its Pauli (X3 / X4).
+        circuit = stim.Circuit(
+            f"""
+            R 1 3 4
+            I[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 1
+            {gate} Z1*X3 X4 X4 Z1*X3
+            M 3 4
+            """
+        )
+        for batch_size, sync_rng in ((1, False), (16, False), (16, True)):
+            coh = LeakageUint8().compile_op_handler(circuit=circuit, batch_size=1)
+            tss = TablesideSimulator(
+                circuit=circuit,
+                compiled_op_handler=coh,
+                batch_size=batch_size,
+                seed=5,
+                use_cpp_kernels=use_cpp,
+                sync_tableside_rng=sync_rng,
+            )
+            tss.run()
+            recs = tss.get_final_measurement_records()
+            assert np.all(recs[:, 0] == 0)
+            assert np.all(recs[:, 1] == 1)
+
+    @pytest.mark.parametrize("use_cpp", [True, False])
+    def test_correlated_error_on_a_leaked_qubit_is_skipped_like_pauli_channel_2(self, use_cpp: bool):
+        # E(1) X1 X3 is the same channel as PAULI_CHANNEL_2(XX=1) 1 3, so with q1 leaked it must not flip q3 either.
+        # A skipped E still counts as fired, so the following ELSE_CORRELATED_ERROR stays blocked.
+        pc2_xx = "PAULI_CHANNEL_2(0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) 1 3"
+        for noise, expected in (
+            ("E(1) X1 X3", [0, 0]),
+            ("E(1) X3 X1", [0, 0]),
+            (pc2_xx, [0, 0]),
+            ("E(1) X1 X3\nELSE_CORRELATED_ERROR(1) X4", [0, 0]),
+            ("E(1) X3 X4", [1, 1]),
+        ):
+            circuit = stim.Circuit(f"R 1 3 4\nI[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 1\n{noise}\nM 3 4")
+            for batch_size, sync_rng in ((1, False), (16, False), (16, True)):
+                coh = LeakageUint8().compile_op_handler(circuit=circuit, batch_size=1)
+                tss = TablesideSimulator(
+                    circuit=circuit,
+                    compiled_op_handler=coh,
+                    batch_size=batch_size,
+                    seed=5,
+                    use_cpp_kernels=use_cpp,
+                    sync_tableside_rng=sync_rng,
+                )
+                tss.run()
+                assert np.all(tss.get_final_measurement_records() == expected), (noise, batch_size, sync_rng)
+
+    @pytest.mark.parametrize(
+        "op_text, expected, to_python",
+        [
+            ("SPP X1*X2 X1*X2", [1, 1], False),
+            ("SPP_DAG Y1*Z2 Y1*Z2", [1, 0], False),
+            ("E(1) X1*X2", [1, 1], False),
+            ("CX sweep[0] 1", [0, 0], False),
+            ("CX[CONDITIONED_ON_PAIR: (U, U)] sweep[0] 1", [0, 0], False),
+            ("SPP X0*X1 X0*X1", [0, 0], True),
+        ],
+    )
+    def test_cpp_engine_ignores_combiner_and_sweep_targets_when_checking_for_leaked_qubits(
+        self, op_text: str, expected: list[int], to_python: bool, monkeypatch: pytest.MonkeyPatch
+    ):
+        # The C++ engine hands such an op to Python only if one of its qubits is leaked. A `*` combiner or sweep[0]
+        # is not qubit 0, so the leaked q0 must not send the op to Python (unless q0 is a real target).
+        circuit = stim.Circuit(f"R 0 1 2\nI[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 0\n{op_text}\nM 1 2")
+        handled: list[stim.CircuitInstruction] = []
+        for batch_size in (1, 16):
+            coh = LeakageUint8().compile_op_handler(circuit=circuit, batch_size=1)
+
+            def spy(op, sss, handle_op=coh.handle_op):
+                handled.append(op)
+                handle_op(op=op, sss=sss)
+
+            monkeypatch.setattr(coh, "handle_op", spy)
+            tss = TablesideSimulator(
+                circuit=circuit,
+                compiled_op_handler=coh,
+                batch_size=batch_size,
+                seed=5,
+                use_cpp_kernels=True,
+            )
+            tss.run()
+            assert np.all(tss.get_final_measurement_records() == expected), batch_size
+        assert (len(handled) == 2) if to_python else (handled == [])
