@@ -4803,13 +4803,13 @@ class CompiledDetectorSampler:
             prepend_observables: Prefer `separate_observables`. Defaults to false.
                 When set, observables are included with the detectors and are placed at
                 the start of the results. Using this argument is generally a bad idea,
-                compared to using `separate_observable=True`, because you will
+                compared to using `separate_observables=True`, because you will
                 inevitably just end up immediately separating the observable data
                 from the detector data anyways.
             append_observables: Prefer `separate_observables`. Defaults to false.
                 When set, observables are included with the detectors and are placed at
                 the end of the results. Using this argument is generally a bad idea,
-                compared to using `separate_observable=True`, because you will
+                compared to using `separate_observables=True`, because you will
                 inevitably just end up immediately separating the observable data
                 from the detector data anyways.
 
