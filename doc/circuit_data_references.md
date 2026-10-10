@@ -48,3 +48,7 @@
 - [arXiv:2507.08069](https://arxiv.org/abs/2507.08069) → [Stim circuits and simulation results for "A dynamic circuit for the honeycomb Floquet code"](https://zenodo.org/records/15854678)
 - [arXiv:2507.19430](https://arxiv.org/abs/2507.19430) → [Stim circuits and parity check matrices for "Directional Codes: a new family of quantum LDPC codes on hexagonal- and square-grid connectivity hardware" manuscript](https://zenodo.org/records/16422162)
 - [arXiv:2512.17999](https://arxiv.org/abs/2512.17999) → [Stim circuits for "Logical gates on Floquet codes via folds and twists"](https://zenodo.org/records/17966122)
+
+## 2026
+
+- [arXiv:2603.00228](https://arxiv.org/abs/2603.00228) → [Scripts, Stim circuits and simulation results for "Stairway Codes: Floquetifying Bivariate Bicycle Codes and Beyond"](https://zenodo.org/records/18763633)
