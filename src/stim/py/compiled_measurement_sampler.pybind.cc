@@ -25,11 +25,20 @@ using namespace stim_pybind;
 
 CompiledMeasurementSampler::CompiledMeasurementSampler(
     simd_bits<MAX_BITWORD_WIDTH> ref_sample, Circuit circuit, bool skip_reference_sample, std::mt19937_64 &&rng)
-    : ref_sample(ref_sample), circuit(circuit), skip_reference_sample(skip_reference_sample), rng(std::move(rng)) {
+    : ref_sample(ref_sample),
+      circuit(circuit),
+      skip_reference_sample(skip_reference_sample),
+      rng(std::move(rng)),
+      rng_mutex(std::make_unique<std::mutex>()) {
 }
 
 pybind11::object CompiledMeasurementSampler::sample_to_numpy(size_t num_shots, bool bit_packed) {
-    simd_bit_table<MAX_BITWORD_WIDTH> sample = sample_batch_measurements(circuit, ref_sample, num_shots, rng, false);
+    simd_bit_table<MAX_BITWORD_WIDTH> sample;
+    {
+        pybind11::gil_scoped_release release;
+        std::lock_guard<std::mutex> guard(*rng_mutex);
+        sample = sample_batch_measurements(circuit, ref_sample, num_shots, rng, false);
+    }
     size_t bits_per_sample = circuit.count_measurements();
     return simd_bit_table_to_numpy(sample, bits_per_sample, num_shots, bit_packed, true, pybind11::none());
 }
@@ -40,7 +49,11 @@ void CompiledMeasurementSampler::sample_write(size_t num_samples, std::string_vi
     if (out == nullptr) {
         throw std::invalid_argument("Failed to open '" + std::string(filepath) + "' to write.");
     }
-    sample_batch_measurements_writing_results_to_disk(circuit, ref_sample, num_samples, out, f, rng);
+    {
+        pybind11::gil_scoped_release release;
+        std::lock_guard<std::mutex> guard(*rng_mutex);
+        sample_batch_measurements_writing_results_to_disk(circuit, ref_sample, num_samples, out, f, rng);
+    }
     fclose(out);
 }
 

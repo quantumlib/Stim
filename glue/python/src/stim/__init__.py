@@ -5,6 +5,12 @@
 # It does runtime detection of CPU features, and based on that imports the fastest pre-built C++ extension that only uses
 # compatible instructions. Importing a different one can result in runtime segfaults that crash the python interpreter.
 
+import numpy as _np
+try:
+    import numpy.core.multiarray as _np_multiarray
+except ImportError:
+    pass
+
 import stim._detect_machine_architecture as _tmp
 
 

@@ -190,3 +190,28 @@ def test_circuit_sampler_actually_fills_array():
     sampler = circuit.compile_detector_sampler()
     measure_data = sampler.sample(shots=10000)
     assert np.all(measure_data)
+
+
+def test_concurrent_measurement_sampler():
+    import concurrent.futures
+    circuit = stim.Circuit.generated("repetition_code:memory", rounds=5, distance=3, before_round_data_depolarization=0.01)
+
+    # Test concurrent calls sharing the same sampler instance
+    sampler = circuit.compile_sampler()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
+        futures = [ex.submit(sampler.sample, shots=50) for _ in range(8)]
+        results = [f.result() for f in futures]
+    for r in results:
+        assert r.shape == (50, circuit.num_measurements)
+
+    # Test concurrent calls across separate sampler instances
+    def run_separate():
+        s = circuit.compile_sampler()
+        return s.sample(shots=50)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
+        futures = [ex.submit(run_separate) for _ in range(8)]
+        results = [f.result() for f in futures]
+    for r in results:
+        assert r.shape == (50, circuit.num_measurements)
+

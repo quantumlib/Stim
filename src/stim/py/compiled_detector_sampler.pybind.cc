@@ -28,7 +28,8 @@ using namespace stim_pybind;
 CompiledDetectorSampler::CompiledDetectorSampler(Circuit init_circuit, std::mt19937_64 &&rng)
     : circuit_stats(init_circuit.compute_stats()),
       circuit(std::move(init_circuit)),
-      frame_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, std::move(rng)) {
+      frame_sim(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, 0, std::move(rng)),
+      sim_mutex(std::make_unique<std::mutex>()) {
 }
 
 pybind11::object CompiledDetectorSampler::sample_to_numpy(
@@ -46,6 +47,7 @@ pybind11::object CompiledDetectorSampler::sample_to_numpy(
             "Can't specify separate_observables=True with append_observables=True or prepend_observables=True");
     }
 
+    std::lock_guard<std::mutex> guard(*sim_mutex);
     {
         pybind11::gil_scoped_release release;
         frame_sim.configure_for(circuit_stats, FrameSimulatorMode::STORE_DETECTIONS_TO_MEMORY, num_shots);
@@ -130,16 +132,20 @@ void CompiledDetectorSampler::sample_write(
     RaiiFile out(filepath, "wb");
     RaiiFile obs_out(obs_out_filepath_view, "wb");
     auto parsed_obs_out_format = format_to_enum(obs_out_format);
-    sample_batch_detection_events_writing_results_to_disk<MAX_BITWORD_WIDTH>(
-        circuit,
-        num_samples,
-        prepend_observables,
-        append_observables,
-        out.f,
-        f,
-        frame_sim.rng,
-        obs_out.f,
-        parsed_obs_out_format);
+    {
+        pybind11::gil_scoped_release release;
+        std::lock_guard<std::mutex> guard(*sim_mutex);
+        sample_batch_detection_events_writing_results_to_disk<MAX_BITWORD_WIDTH>(
+            circuit,
+            num_samples,
+            prepend_observables,
+            append_observables,
+            out.f,
+            f,
+            frame_sim.rng,
+            obs_out.f,
+            parsed_obs_out_format);
+    }
 }
 
 std::string CompiledDetectorSampler::repr() const {

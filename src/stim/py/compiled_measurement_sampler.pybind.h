@@ -15,6 +15,8 @@
 #ifndef _STIM_PY_COMPILED_MEASUREMENT_SAMPLER_PYBIND_H
 #define _STIM_PY_COMPILED_MEASUREMENT_SAMPLER_PYBIND_H
 
+#include <memory>
+#include <mutex>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -29,6 +31,7 @@ struct CompiledMeasurementSampler {
     const stim::Circuit circuit;
     const bool skip_reference_sample;
     std::mt19937_64 rng;
+    std::unique_ptr<std::mutex> rng_mutex;
     CompiledMeasurementSampler() = delete;
     CompiledMeasurementSampler(const CompiledMeasurementSampler &) = delete;
     CompiledMeasurementSampler(CompiledMeasurementSampler &&) = default;

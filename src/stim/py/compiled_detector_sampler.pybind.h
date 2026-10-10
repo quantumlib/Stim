@@ -15,6 +15,8 @@
 #ifndef _STIM_PY_COMPILED_DETECTOR_SAMPLER_PYBIND_H
 #define _STIM_PY_COMPILED_DETECTOR_SAMPLER_PYBIND_H
 
+#include <memory>
+#include <mutex>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -29,6 +31,7 @@ struct CompiledDetectorSampler {
     stim::CircuitStats circuit_stats;
     stim::Circuit circuit;
     stim::FrameSimulator<stim::MAX_BITWORD_WIDTH> frame_sim;
+    std::unique_ptr<std::mutex> sim_mutex;
 
     CompiledDetectorSampler() = delete;
     CompiledDetectorSampler(const CompiledDetectorSampler &) = delete;

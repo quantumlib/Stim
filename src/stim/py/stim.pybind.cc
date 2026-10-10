@@ -573,6 +573,10 @@ void top_level(pybind11::module &m) {
 
 PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.attr("__version__") = xstr_literal(VERSION_INFO);
+    try {
+        pybind11::module_::import("numpy");
+    } catch (const pybind11::error_already_set &) {
+    }
     m.doc() = R"pbdoc(
         Stim: A fast stabilizer circuit library.
     )pbdoc";
