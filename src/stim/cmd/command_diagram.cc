@@ -18,6 +18,7 @@
 
 #include "command_help.h"
 #include "stim/diagram/crumble.h"
+#include "stim/diagram/detector_slice/detector_slice_animation.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/graph/match_graph_3d_drawer.h"
 #include "stim/diagram/graph/match_graph_svg_drawer.h"
@@ -40,6 +41,7 @@ enum class DiagramTypes {
     TIMELINE_3D_HTML,
     TIME_SLICE_SVG,
     TIME_SLICE_PLUS_DETECTOR_SLICE_SVG,
+    ANIMATED_DETECTOR_SLICE_WITH_OPS,
     MATCH_GRAPH_SVG,
     MATCH_GRAPH_3D,
     MATCH_GRAPH_3D_HTML,
@@ -108,6 +110,7 @@ DiagramTypes _read_diagram_type(int argc, const char **argv) {
         {"timeline-3d-html", DiagramTypes::TIMELINE_3D_HTML},
         {"timeslice-svg", DiagramTypes::TIME_SLICE_SVG},
         {"detslice-with-ops-svg", DiagramTypes::TIME_SLICE_PLUS_DETECTOR_SLICE_SVG},
+        {"animated-detslice-with-ops", DiagramTypes::ANIMATED_DETECTOR_SLICE_WITH_OPS},
         {"matchgraph-svg", DiagramTypes::MATCH_GRAPH_SVG},
         {"matchgraph-3d", DiagramTypes::MATCH_GRAPH_3D},
         {"matchgraph-3d-html", DiagramTypes::MATCH_GRAPH_3D_HTML},
@@ -211,6 +214,10 @@ int stim::command_diagram(int argc, const char **argv) {
             tick_num,
             DiagramTimelineSvgDrawerMode::SVG_MODE_TIME_DETECTOR_SLICE,
             coord_filter);
+    } else if (type == DiagramTypes::ANIMATED_DETECTOR_SLICE_WITH_OPS) {
+        auto circuit = _read_circuit(in, argc, argv);
+        auto coord_filter = _read_coord_filter(argc, argv);
+        out << make_detector_slice_animation_html(circuit, tick_start, tick_num, coord_filter);
     } else if (type == DiagramTypes::TIMELINE_3D) {
         auto circuit = _read_circuit(in, argc, argv);
         DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
@@ -467,6 +474,11 @@ SubCommandHelp stim::command_diagram_help() {
                 circuit applies during the specified tick or range of ticks,
                 combined with the detector slices after those operations are
                 applied.
+
+                INPUT MUST BE A CIRCUIT.
+
+            "animated-detslice-with-ops": A self-contained HTML animation of
+                detslice-with-ops-svg diagrams.
 
                 INPUT MUST BE A CIRCUIT.
         )PARAGRAPH"),

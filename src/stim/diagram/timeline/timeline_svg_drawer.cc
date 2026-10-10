@@ -849,7 +849,8 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     uint64_t tick_slice_num,
     DiagramTimelineSvgDrawerMode mode,
     SpanRef<const CoordFilter> filter,
-    size_t num_rows) {
+    size_t num_rows,
+    DetectorSliceSvgMetadata *detector_slice_metadata) {
     uint64_t circuit_num_ticks = circuit.count_ticks();
     auto circuit_has_ticks = circuit_num_ticks > 0;
     auto num_qubits = circuit.count_qubits();
@@ -924,7 +925,8 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
                 return obj.qt2xy(tick - 1, 0, qubit);
             },
             obj.max_tick + 2,
-            24);
+            24,
+            detector_slice_metadata);
     }
 
     // Make sure qubit lines/points are drawn first, so they are in the background.
