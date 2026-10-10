@@ -1,0 +1,315 @@
+#!/usr/bin/env python3
+
+"""Runs all performance benchmarks in the given directories."""
+
+import argparse
+import importlib.util
+import pathlib
+import re
+import sys
+
+
+import math
+import time
+from typing import Callable, Iterable
+
+
+def _si2(val: float) -> str:
+    """Describe quantity as an SI-prefixed value with two significant figures."""
+    unit = ' '
+    if val < 1:
+        if val < 1:
+            val *= 1000
+            unit = 'm'
+        if val < 1:
+            val *= 1000
+            unit = 'u'
+        if val < 1:
+            val *= 1000
+            unit = 'n'
+        if val < 1:
+            val *= 1000
+            unit = 'p'
+    else:
+        if val > 1000:
+            val /= 1000
+            unit = 'k'
+        if val > 1000:
+            val /= 1000
+            unit = 'M'
+        if val > 1000:
+            val /= 1000
+            unit = 'G'
+        if val > 1000:
+            val /= 1000
+            unit = 'T'
+    if 1 <= val < 10:
+        v = str(round(val * 10))
+        return f'''{v[:-1]}.{v[-1]} {unit}'''
+    elif 10 <= val < 100:
+        v = round(val)
+        if v == 0:
+            v = 1
+        if v == 100:
+            v = 99
+        return f''' {v} {unit}'''
+    elif 100 <= val < 1000:
+        v = round(val / 10) * 10
+        if v == 1000:
+            v = 990
+        return f'''{v} {unit}'''
+    else:
+        return f'''{val} {unit}'''
+
+
+class _BenchmarkResult:
+    def __init__(
+            self,
+            *,
+            name: str | None,
+            total_seconds: float,
+            total_reps: int,
+            rates: Iterable[tuple[str, float]],
+            goal_seconds: None | float,
+    ):
+        self.name = name
+        self.total_seconds = total_seconds
+        self.total_reps = total_reps
+        self.goal_seconds: float | None = goal_seconds
+        self.rates: tuple[tuple[str, float], ...] = tuple(rates)
+
+    def __str__(self) -> str:
+        parts = []
+        actual_seconds_per_rep = self.total_seconds / self.total_reps
+        if self.goal_seconds is not None:
+            deviation = round(
+                (math.log(self.goal_seconds) - math.log(actual_seconds_per_rep))
+                / (math.log(10) / 10.0)
+            )
+            parts.append("[")
+            for k in range(-20, 21):
+                if (k < deviation and k < 0) or (k > deviation and k > 0):
+                    parts.append('.')
+                elif k == deviation:
+                    parts.append('*')
+                elif k == 0:
+                    parts.append('|')
+                elif deviation < 0:
+                    parts.append('<')
+                else:
+                    parts.append('>')
+            parts.append("] ")
+            parts.append(_si2(actual_seconds_per_rep))
+            parts.append("s")
+            parts.append(" (vs ")
+            parts.append(_si2(self.goal_seconds))
+            parts.append("s) ")
+        else:
+            parts.append(_si2(actual_seconds_per_rep))
+            parts.append("s ")
+        for unit, multiplier in self.rates:
+            parts.append("(")
+            parts.append(_si2(self.total_reps / self.total_seconds * multiplier))
+            parts.append(unit)
+            parts.append("/s) ")
+        if self.name is not None:
+            parts.append(self.name)
+        return ''.join(parts)
+
+
+class BenchmarkSuite:
+    def __init__(self, name: str, *, target_wait_time_seconds: float | None = None):
+        self.name = name
+        self.benchmarks = []
+        self.target_wait_time_seconds = (
+            0.5 if target_wait_time_seconds is None else target_wait_time_seconds
+        )
+
+    def __call__(
+            self,
+            original_method: Callable[[], _BenchmarkResult] | None = None,
+            /,
+            *,
+            goal_nanos: float | None = None,
+            goal_micros: float | None = None,
+            goal_millis: float | None = None,
+            units: dict[str, float | int] | None = None,
+    ):
+        """A decorator marking a method as a benchmark."""
+        assert (goal_micros is not None) + (goal_millis is not None) + (
+                goal_nanos is not None
+        ) <= 1, "Specified multiple goal units."
+        goal_seconds: float | None = None
+        if goal_micros is not None:
+            goal_seconds = goal_micros * 1e-6
+        if goal_millis is not None:
+            goal_seconds = goal_millis * 1e-3
+        if goal_nanos is not None:
+            goal_seconds = goal_nanos * 1e-9
+
+        def wrap(method: Callable[[], _BenchmarkResult], /):
+            def run():
+                result = method()
+                return _BenchmarkResult(
+                    name=self.name + '.' + method.__name__,
+                    total_reps=result.total_reps,
+                    total_seconds=result.total_seconds,
+                    rates=tuple([*(() if units is None else units.items()), *result.rates]),
+                    goal_seconds=goal_seconds,
+                )
+
+            self.benchmarks.append(run)
+            return run
+
+        if original_method is None:
+            return wrap
+        else:
+            return wrap(original_method)
+
+    def go(
+            self, body: Callable, *, rates: dict[str, float | int] | None = None
+    ) -> _BenchmarkResult:
+        """Benchmarks how long it takes to run a method.
+
+        Args:
+            body: The method to time.
+            rates: Describes the names and per-shot quantities of rates to print.
+
+        Returns:
+            Benchmark data, such as number of shots completed and amount of time spent.
+        """
+
+        total_reps: int = 0
+        total_seconds: float = 0.0
+
+        rep_limit = 1
+        while total_seconds < self.target_wait_time_seconds:
+            remaining_time: float = self.target_wait_time_seconds - total_seconds
+            reps: int = rep_limit
+            if total_seconds > 0:
+                reps = int(remaining_time * total_reps // total_seconds)
+                if reps < total_reps * 0.1:
+                    break
+                if reps > rep_limit:
+                    reps = rep_limit
+                if reps < 1:
+                    reps = 1
+            if reps > 50:
+                # Reduce loop overhead by unrolling.
+                reps8 = reps >> 3
+                reps = reps8 << 3
+                start_s = time.monotonic()
+                for _ in range(reps8):
+                    body()
+                    body()
+                    body()
+                    body()
+                    body()
+                    body()
+                    body()
+                    body()
+                end_s = time.monotonic()
+            else:
+                start_s = time.monotonic()
+                for _ in range(reps):
+                    body()
+                end_s = time.monotonic()
+            dt_s = end_s - start_s
+            total_reps += reps
+            total_seconds += dt_s
+            rep_limit *= 100
+
+        return _BenchmarkResult(
+            total_seconds=total_seconds,
+            total_reps=total_reps,
+            name=None,
+            rates=() if rates is None else tuple(rates.items()),
+            goal_seconds=None,
+        )
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("roots", nargs='*')
+    parser.add_argument("-f", type=str, required=False, default='.+')
+    parser.add_argument("-t", type=float, required=False, default=0.5)
+    args = parser.parse_args()
+
+    paths = []
+    roots = args.roots
+    if len(roots) == 0:
+        roots = [pathlib.Path.cwd()]
+    target_seconds = args.t
+    matcher = re.compile('.*' + args.f + '.*')
+
+    path: pathlib.Path
+    for root in roots:
+        path = pathlib.Path(root)
+        if path.is_dir():
+            paths.extend(path.rglob("*_perf.py"))
+        else:
+            paths.append(path)
+
+    for path in paths:
+        suite_name = path.name
+        if suite_name.endswith('_perf.py'):
+            suite_name = suite_name[:-8]
+        if suite_name.endswith('.py'):
+            suite_name = suite_name[:-3]
+        suite = BenchmarkSuite(suite_name, target_wait_time_seconds=target_seconds)
+        spec = importlib.util.spec_from_file_location('<anon>', path)
+        if spec is None:
+            continue
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        for obj_name in dir(module):
+            if not matcher.match(obj_name):
+                continue
+            if obj_name.startswith('benchmark_'):
+                benchmark_dict: dict = getattr(module, obj_name)()
+                if not isinstance(benchmark_dict, dict):
+                    print(f"Warning: Skipped {path}:{obj_name}", file=sys.stderr)
+                    print(f"    ({obj_name}() didn't return a dict)", file=sys.stderr)
+                    continue
+
+                extra_keys = benchmark_dict.keys() - {'goal', 'run', 'rates'}
+                if extra_keys:
+                    print(f"Warning: Skipped {path}:{obj_name}", file=sys.stderr)
+                    print(f"    ({obj_name}() returned a dict with unexpected keys: {sorted(extra_keys)}", file=sys.stderr)
+                    continue
+
+                if 'run' not in benchmark_dict:
+                    print(f"Warning: Skipped {path}:{obj_name}", file=sys.stderr)
+                    print(f"    ({obj_name}() returned a dict without a 'run' key: {benchmark_dict})", file=sys.stderr)
+                    continue
+                goal_obj = benchmark_dict.get('goal')
+                goal_seconds: float | int | None = None
+                if goal_obj is None:
+                    goal_seconds = None
+                elif isinstance(goal_obj, tuple) and len(goal_obj) == 2 and isinstance(goal_obj[0], (float, int)):
+                    t, u = goal_obj
+                    if u == 'us':
+                        goal_seconds = t * 1e-6
+                    elif u == 'ns':
+                        goal_seconds = t * 1e-9
+                    elif u == 'ms':
+                        goal_seconds = t * 1e-3
+                    elif u == 's':
+                        goal_seconds = t
+                    else:
+                        print(f"Warning: Skipped {path}:{obj_name}", file=sys.stderr)
+                        print(f"    (Failed to understand 'goal' time of {goal_obj!r}). Expected a value like 2 or (2, 'us').", file=sys.stderr)
+                else:
+                    print(f"Warning: Skipped {path}:{obj_name}", file=sys.stderr)
+                    print(f"    (Failed to parse 'goal' time of {goal_obj!r})", file=sys.stderr)
+                    continue
+                data = suite.go(
+                    benchmark_dict['run'],
+                    rates=benchmark_dict.get('rates'))
+                data.name = suite.name + '.' + obj_name[10:]
+                data.goal_seconds = goal_seconds
+                print(data)
+
+
+if __name__ == '__main__':
+    main()

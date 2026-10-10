@@ -104,7 +104,7 @@ struct CircuitTargetsInsideInstruction {
     std::vector<GateTargetWithCoords> targets_in_range;
 
     void fill_args_and_targets_in_range(
-        const CircuitInstruction &actual_op, const std::map<uint64_t, std::vector<double>> &qubit_coords);
+        const CircuitInstruction &actual_op, const std::unordered_map<uint64_t, std::vector<double>> &qubit_coords);
 
     bool operator<(const CircuitTargetsInsideInstruction &other) const;
 
@@ -159,7 +159,7 @@ struct ExplainedError {
     std::vector<CircuitErrorLocation> circuit_error_locations;
 
     void fill_in_dem_targets(
-        SpanRef<const DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords);
+        SpanRef<const DemTarget> targets, const std::unordered_map<uint64_t, std::vector<double>> &dem_coords);
 
     void canonicalize();
 

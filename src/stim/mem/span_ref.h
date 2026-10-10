@@ -19,6 +19,7 @@
 
 #include <array>
 #include <cstdlib>
+#include <functional>
 #include <span>
 #include <sstream>
 #include <vector>
@@ -173,5 +174,20 @@ std::ostream &operator<<(std::ostream &out, const stim::SpanRef<T> &v) {
 }
 
 }  // namespace stim
+
+namespace std {
+template <typename T>
+struct hash<stim::SpanRef<T>> {
+    size_t operator()(const stim::SpanRef<T> &v) const noexcept {
+        // Just a simple hash function.
+        size_t hash = std::hash<size_t>{}(v.size());
+        for (size_t k = 0; k < v.size(); k++) {
+            hash *= static_cast<size_t>(8389844335622102689ULL);  // Intentional truncation on 32-bit systems.
+            hash ^= std::hash<std::remove_const_t<T>>{}(v[k]);
+        }
+        return hash;
+    }
+};
+}
 
 #endif

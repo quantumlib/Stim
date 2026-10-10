@@ -89,7 +89,7 @@ void print_circuit_error_loc_indent(std::ostream &out, const CircuitErrorLocatio
 }
 
 void CircuitTargetsInsideInstruction::fill_args_and_targets_in_range(
-    const CircuitInstruction &actual_op, const std::map<uint64_t, std::vector<double>> &qubit_coords) {
+    const CircuitInstruction &actual_op, const std::unordered_map<uint64_t, std::vector<double>> &qubit_coords) {
     targets_in_range.clear();
     for (size_t k = target_range_start; k < target_range_end; k++) {
         const auto &t = actual_op.targets[k];
@@ -107,7 +107,7 @@ void CircuitTargetsInsideInstruction::fill_args_and_targets_in_range(
 }
 
 void ExplainedError::fill_in_dem_targets(
-    SpanRef<const DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords) {
+    SpanRef<const DemTarget> targets, const std::unordered_map<uint64_t, std::vector<double>> &dem_coords) {
     dem_error_terms.clear();
     for (const auto &t : targets) {
         auto entry = dem_coords.find(t.raw_id());

@@ -1041,14 +1041,19 @@ DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
 
 void ErrorAnalyzer::flush() {
     do_global_error_decomposition_pass();
-    for (auto kv = error_class_probabilities.crbegin(); kv != error_class_probabilities.crend(); kv++) {
-        const ErrorEquivalenceClass &key = kv->first;
-        const double &probability = kv->second;
-        if (key.targets.empty() || probability == 0) {
+    for (const auto &e : error_class_probabilities) {
+        if (e.first.targets.empty() || e.second == 0) {
             continue;
         }
+        flush_buf.push_back(e.first);
+    }
+    std::sort(flush_buf.begin(), flush_buf.end());
+    for (size_t k = flush_buf.size(); k-- > 0;) {
+        const ErrorEquivalenceClass &key = flush_buf[k];
+        const double &probability = error_class_probabilities[key];
         flushed_reversed_model.append_error_instruction(probability, key.targets, key.tag);
     }
+    flush_buf.clear();
     error_class_probabilities.clear();
 }
 

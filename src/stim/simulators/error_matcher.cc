@@ -37,10 +37,13 @@ ErrorMatcher::ErrorMatcher(
       allow_adding_new_dem_errors_to_output_map(init_filter == nullptr),
       reduce_to_one_representative_error(reduce_to_one_representative_error),
       dem_coords_map(),
-      qubit_coords_map(circuit.get_final_qubit_coords()),
+      qubit_coords_map(),
       cur_coord_offset(circuit.final_coord_shift()),
       total_measurements_in_circuit(error_analyzer.tracker.num_measurements_in_past),
       total_ticks_in_circuit(error_analyzer.num_ticks_in_past) {
+    for (const auto &e : circuit.get_final_qubit_coords()) {
+        qubit_coords_map.insert(e);
+    }
     // If filtering, get the filter errors into the output map immediately.
     if (!allow_adding_new_dem_errors_to_output_map) {
         SparseXorVec<DemTarget> buf;
@@ -417,9 +420,14 @@ std::vector<ExplainedError> ErrorMatcher::explain_errors_from_circuit(
     ErrorMatcher finder(circuit, filter, reduce_to_one_representative_error);
     finder.rev_process_circuit(1, circuit);
 
+    std::map<SpanRef<const DemTarget>, ExplainedError> sorted_map;
+    for (const auto &e : finder.output_map) {
+        sorted_map.insert(e);
+    }
+
     // And list them out.
     std::vector<ExplainedError> result;
-    for (auto &e : finder.output_map) {
+    for (auto &e : sorted_map) {
         e.second.fill_in_dem_targets(e.first, finder.dem_coords_map);
         result.push_back(std::move(e.second));
     }

@@ -21,6 +21,7 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <functional>
 
 #include "sparse_rev_frame_tracker.h"
 #include "stim/circuit/circuit.h"
@@ -31,7 +32,6 @@
 #include "stim/stabilizers/pauli_string.h"
 
 namespace stim {
-
 struct ErrorEquivalenceClass {
     SpanRef<const DemTarget> targets;
     std::string_view tag;
@@ -52,6 +52,20 @@ struct ErrorEquivalenceClass {
         return false;
     }
 };
+}
+
+namespace std {
+template <>
+struct hash<stim::ErrorEquivalenceClass> {
+    size_t operator()(const stim::ErrorEquivalenceClass &v) const noexcept {
+        size_t hash = std::hash<stim::SpanRef<const stim::DemTarget>>{}(v.targets);
+        hash += std::hash<std::string_view>{}(v.tag);
+        return hash;
+    }
+};
+}
+
+namespace stim {
 
 /// This class is responsible for iterating backwards over a circuit, tracking which detectors are currently
 /// sensitive to an X or Z error on each qubit. This is done by having a SparseXorVec for the X and Z
@@ -124,9 +138,10 @@ struct ErrorAnalyzer {
     /// Certain events during period solving of loops can cause the error probabilities
     /// to flush into this buffer.
     DetectorErrorModel flushed_reversed_model;
+    std::vector<ErrorEquivalenceClass> flush_buf;
 
     /// Recorded errors. Independent probabilities of flipping various sets of detectors.
-    std::map<ErrorEquivalenceClass, double> error_class_probabilities;
+    std::unordered_map<ErrorEquivalenceClass, double> error_class_probabilities;
     /// Backing datastore for values in error_class_probabilities.
     MonotonicBuffer<DemTarget> mono_buf;
 

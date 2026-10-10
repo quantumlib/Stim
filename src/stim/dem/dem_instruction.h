@@ -3,7 +3,7 @@
 
 #include <cstdint>
 #include <memory>
-#include <set>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -84,5 +84,14 @@ std::ostream &operator<<(std::ostream &out, const DemTarget &v);
 std::ostream &operator<<(std::ostream &out, const DemInstruction &v);
 
 }  // namespace stim
+
+namespace std {
+template <>
+struct hash<stim::DemTarget> {
+    size_t operator()(const stim::DemTarget &u) const noexcept {
+        return std::hash<uint64_t>{}(u.data);
+    }
+};
+}
 
 #endif
