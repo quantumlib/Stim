@@ -1,4 +1,9 @@
 __version__ = '1.17.dev0'
+from ._annotation_gates import (
+    CumulativeObservableAnnotationGate,
+    DetAnnotationGate,
+    ShiftCoordsAnnotationGate,
+)
 from ._cirq_to_stim import cirq_circuit_to_stim_circuit
 from ._cx_swap_gate import CXSwapGate
 from ._cz_swap_gate import CZSwapGate
@@ -19,10 +24,13 @@ from ._ii_gate import IIGate
 
 JSON_RESOLVERS_DICT = {
     "CumulativeObservableAnnotation": CumulativeObservableAnnotation,
+    "CumulativeObservableAnnotationGate": CumulativeObservableAnnotationGate,
     "DetAnnotation": DetAnnotation,
+    "DetAnnotationGate": DetAnnotationGate,
     "FeedbackPauli": FeedbackPauli,
     "MeasureAndOrResetGate": MeasureAndOrResetGate,
     "ShiftCoordsAnnotation": ShiftCoordsAnnotation,
+    "ShiftCoordsAnnotationGate": ShiftCoordsAnnotationGate,
     "SweepPauli": SweepPauli,
     "TwoQubitAsymmetricDepolarizingChannel": TwoQubitAsymmetricDepolarizingChannel,
     "CXSwapGate": CXSwapGate,
