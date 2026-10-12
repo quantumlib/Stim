@@ -3,6 +3,8 @@ from typing import Any, Dict, Iterable, List, Tuple
 import cirq
 import stim
 
+from ._annotation_gates import ShiftCoordsAnnotationGate
+
 
 @cirq.value_equality
 class ShiftCoordsAnnotation(cirq.Operation):
@@ -25,6 +27,11 @@ class ShiftCoordsAnnotation(cirq.Operation):
 
     def with_qubits(self, *new_qubits) -> 'ShiftCoordsAnnotation':
         return self
+
+    @property
+    def gate(self) -> ShiftCoordsAnnotationGate:
+        """The gate form of this annotation, e.g. for matching against a `cirq.Gateset`."""
+        return ShiftCoordsAnnotationGate(self)
 
     def _value_equality_values_(self) -> Any:
         return self.shift
