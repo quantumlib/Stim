@@ -43,6 +43,7 @@
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau.pybind.h"
 #include "stim/stabilizers/tableau_iter.pybind.h"
+#include "stim/stabilizers/tableau_sampler.pybind.h"
 
 #define xstr_literal(s) str_literal(s)
 #define str_literal(s) #s
@@ -594,6 +595,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_pauli_string_iter = pybind_pauli_string_iter(m);
     auto c_tableau = pybind_tableau(m);
     auto c_tableau_iter = pybind_tableau_iter(m);
+    auto c_tableau_sampler = pybind_tableau_sampler(m);
 
     auto c_circuit_gate_target = pybind_circuit_gate_target(m);
     auto c_gate_data = pybind_gate_data(m);
@@ -633,6 +635,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_circuit_methods_extra(m, c_circuit);
 
     pybind_tableau_iter_methods(m, c_tableau_iter);
+    pybind_tableau_sampler_methods(m, c_tableau_sampler);
     pybind_dem_sampler_methods(m, c_dem_sampler);
 
     pybind_detector_error_model_instruction_methods(m, c_detector_error_model_instruction);
