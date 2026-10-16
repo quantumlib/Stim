@@ -1430,7 +1430,7 @@ bool brute_force_decomp_helper(
         }
         start++;
     }
-    used_term_mask |= 1 << start;
+    used_term_mask |= uint64_t{1} << start;
 
     FixedCapVector<DemTarget, 2> key;
     key.push_back(problem[start]);
@@ -1440,7 +1440,7 @@ bool brute_force_decomp_helper(
                 continue;
             }
             key.push_back(problem[k]);
-            used_term_mask ^= 1 << k;
+            used_term_mask ^= uint64_t{1} << k;
         }
         auto match = known_symptoms.find(key);
         if (match != known_symptoms.end()) {
@@ -1453,7 +1453,7 @@ bool brute_force_decomp_helper(
         }
         if (k < problem.size()) {
             key.pop_back();
-            used_term_mask ^= 1 << k;
+            used_term_mask ^= uint64_t{1} << k;
         }
     }
 
