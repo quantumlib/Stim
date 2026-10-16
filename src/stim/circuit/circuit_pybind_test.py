@@ -1126,6 +1126,12 @@ q2: ------
     assert c.diagram("detector-slice-text", tick=1) is not None
 
     assert c.diagram("detslice-with-ops-svg", tick=1) is not None
+    animation = c.diagram("animated-detslice-with-ops", tick=range(0, 2))
+    html = str(animation)
+    assert html.startswith("<!doctype html>")
+    assert "requestAnimationFrame(animate)" in html
+    with pytest.raises(ValueError, match="rows"):
+        c.diagram("animated-detslice-with-ops", rows=2)
     assert c.diagram("timeslice-svg", tick=1) is not None
     assert c.diagram("time-slice-svg", tick=1) is not None
     assert c.diagram("time+detector-slice-svg", tick=1) is not None

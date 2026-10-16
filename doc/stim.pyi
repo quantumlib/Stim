@@ -1049,7 +1049,7 @@ class Circuit:
         """
     def diagram(
         self,
-        type: Literal["timeline-text", "timeline-svg", "timeline-svg-html", "timeline-3d", "timeline-3d-html", "detslice-text", "detslice-svg", "detslice-svg-html", "matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html", "timeslice-svg", "timeslice-svg-html", "detslice-with-ops-svg", "detslice-with-ops-svg-html", "interactive", "interactive-html"] = 'timeline-text',
+        type: Literal["timeline-text", "timeline-svg", "timeline-svg-html", "timeline-3d", "timeline-3d-html", "detslice-text", "detslice-svg", "detslice-svg-html", "matchgraph-svg", "matchgraph-svg-html", "matchgraph-3d", "matchgraph-3d-html", "timeslice-svg", "timeslice-svg-html", "detslice-with-ops-svg", "detslice-with-ops-svg-html", "animated-detslice-with-ops", "interactive", "interactive-html"] = 'timeline-text',
         *,
         tick: Union[None, int, range] = None,
         filter_coords: Iterable[Union[Iterable[float], stim.DemTarget]] = ((),),
@@ -1113,6 +1113,13 @@ class Circuit:
                     operations were applied.
                 "detslice-with-ops-svg-html": Same as detslice-with-ops-svg
                     but the SVG image is inside a resizable HTML iframe.
+                "animated-detslice-with-ops": A self-contained interactive
+                    HTML animation of detslice-with-ops-svg diagrams. Exact
+                    Stim SVG frames are shown at integer diagram ticks, and
+                    detector region boundaries are interpolated between
+                    ticks. The animation starts playing and loops
+                    automatically. The HTML embeds every selected integer
+                    frame, so its size grows with the selected tick range.
                 "interactive" or "interactive-html": An HTML web page
                     containing Crumble (an interactive editor for 2D
                     stabilizer circuits) initialized with the given circuit
@@ -1128,6 +1135,11 @@ class Circuit:
 
                 Passing `range(A, B)` for a time slice will show the
                 operations between tick A and tick B.
+
+                For animated-detslice-with-ops, `tick=None` animates all
+                available diagram ticks. Passing an integer shows one
+                exact frame. Passing `range(A, B)` animates the half-open
+                range containing ticks A through B-1.
             rows: In diagrams that have multiple separate pieces, such as timeslice
                 diagrams and detslice diagrams, this controls how many rows of
                 pieces there will be. If not specified, a number of rows that creates
