@@ -562,3 +562,30 @@ def test_pickles_and_runs_in_two_sinter_workers():
     )
     assert sorted(s.decoder for s in stats) == sorted(samplers)
     assert all(s.shots >= 64 for s in stats)
+
+
+@fork_only
+# The search's edge weight for p >= 1 is 0; np.where still evaluates (and discards) log((1-p)/p).
+@pytest.mark.filterwarnings("ignore:invalid value encountered in log:RuntimeWarning")
+def test_node_dem_mixed_from_certain_entries_is_clamped_to_1():
+    # A decoder other than PyMatching decodes the undecomposed node DEM, whose unconstrained event
+    # gets its envelope: both candidates flip D0 for sure, and their weights sum a few ulps above 1.
+    circuit = stim.Circuit(
+        """
+        R 0 1
+        II_ERROR[LEAKAGE_TRANSITION_2: (0.03, U_U-->2_X)] 0 1
+        II_ERROR[LEAKAGE_TRANSITION_2: (0.29, U_U-->2_X)] 0 1
+        M 1
+        DETECTOR rec[-1]
+        MPAD[LEAKAGE_MEASUREMENT: (1.0, 2): 0] 0
+        """
+    )
+    with pytest.warns(UserWarning, match="decodes like MarginalDecoder"):
+        comp = BranchAndBoundDecoder(decoder="vacuous").compile_for_task(sinter.Task(circuit=circuit))
+    node_dem = comp._hyper_dem([0], {})
+    assert [inst.args_copy() for inst in node_dem.flattened() if inst.type == "error"] == [[1.0]]
+    records = np.array([[False, True]])  # M 1, then the flag
+    out = comp.decode_shots_bit_packed(
+        bit_packed_detection_event_data=np.ones((1, 1), dtype=np.uint8), records=records
+    )
+    assert out.shape == (1, 0)

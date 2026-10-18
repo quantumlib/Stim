@@ -24,9 +24,9 @@ LEAKAGE_TRANSITIONS_1_MATCH = re.compile(
 )
 
 # Matches "state_state-->state_state"
-# Allows states: digits, U, V, D, X, Y, Z
+# Allows multi-digit states (validated to 0..9 by the params), U, V, D, X, Y, Z
 LEAKAGE_TRANSITIONS_2_MATCH = re.compile(
-    r"(?P<s0>[\dU])_(?P<s1>[\dU])(?P<direction>[-<]->)(?P<s2>[\dUVDXYZ])_(?P<s3>[\dUVDXYZ])"
+    r"(?P<s0>\d+|U)_(?P<s1>\d+|U)(?P<direction>[-<]->)(?P<s2>\d+|[UVDXYZ])_(?P<s3>\d+|[UVDXYZ])"
 )
 
 

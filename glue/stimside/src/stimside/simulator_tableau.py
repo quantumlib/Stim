@@ -624,20 +624,8 @@ class TablesideSimulator(UnleakedToLeakedRecordsMixin, LeakageEventsRecorderMixi
     def _convert_measurements_to_detector_flips(self) -> None:
         if not self._finished_running_circuit:
             raise RuntimeError("Have not finished running the circuit.")
-        if self._final_measurement_records is None:
-            if self.batch_size == 1 or self._asymmetric_readout_postproc:
-                self.get_final_measurement_records()
-            else:
-                self._detector_flips, self._observable_flips = (
-                    self._new_circuit.compile_detector_sampler(
-                        seed=int(self._rng.integers(0, 2**63))
-                    ).sample(
-                       shots=self.batch_size, separate_observables=True, bit_packed=False
-                    )
-                )
-                return
         self._detector_flips, self._observable_flips = self._compiled_m2d_converter.convert(
-            measurements=self._final_measurement_records,
+            measurements=self.get_final_measurement_records(),
             separate_observables=True,
         )
 

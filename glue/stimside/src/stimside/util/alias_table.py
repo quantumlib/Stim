@@ -1,8 +1,18 @@
-from typing import TypeVar
+from typing import Iterable, TypeVar
 
 import numpy as np
 
 T = TypeVar("T")
+
+
+def is_1_up_to_rounding(total: float, probs: Iterable[float]) -> bool:
+    """Whether total, the sum of probs, is 1 up to floating-point rounding.
+
+    Probabilities rounded to doubles, and sum() (compensated since Python 3.12), can leave a
+    sum that should be 1, such as a caller's [*probs, 1 - sum(probs)], a few ulps off it.
+    Allows 4 ulps (of 1) per nonzero probability. False for a NaN total.
+    """
+    return bool(abs(total - 1) <= 4 * sum(p != 0 for p in probs) * np.finfo(float).eps)
 
 
 def build_alias_table(
@@ -36,11 +46,15 @@ def build_alias_table(
             f"Can only build an alias table for disjoint probabilities. "
             f"Got {elements}, with probabilities outside 0<=p<=1."
         )
-    if sum([e[1] for e in elements]) != 1:
-        raise ValueError(
-            f"Can only build an alias table for a complete set of disjoint probabilities. "
-            f"Got {elements}, with probabilities that sum to {sum([e[1] for e in elements])} != 1."
-        )
+    total = sum([e[1] for e in elements])
+    if total != 1:
+        # Off 1 by rounding (see is_1_up_to_rounding; `not`, so a NaN total raises): renormalize.
+        if not is_1_up_to_rounding(total, [e[1] for e in elements]):
+            raise ValueError(
+                f"Can only build an alias table for a complete set of disjoint probabilities. "
+                f"Got {elements}, with probabilities that sum to {total} != 1."
+            )
+        elements = [(e[0], e[1] / total) for e in elements]
 
     mean = 1 / len(elements)
 

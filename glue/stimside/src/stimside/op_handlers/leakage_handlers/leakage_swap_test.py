@@ -14,6 +14,7 @@ from stimside.dem_generators import (
     MarginalDecoder,
     MarginalLeakageDemGenerator,
 )
+from stimside.dem_generators.dem_generator_marginal import _match_shot_sources
 from stimside.op_handlers.leakage_handlers import (
     leakage_tag_parsing_flip,
     leakage_tag_parsing_tableau,
@@ -31,6 +32,7 @@ from stimside.sampler_tableau import TablesideSampler
 from stimside.simulator_coset import CosetsideSimulator
 from stimside.simulator_flip import FlipsideSimulator
 from stimside.simulator_tableau import TablesideSimulator
+from stimside.util.leakage_events import LeakageEvent
 
 # The B&B search needs per-shot edge_reweights / return_no_matching (PyMatching fork).
 fork_only = pytest.mark.skipif(
@@ -395,7 +397,7 @@ def test_samplers_run_leakage_swap(sampler_cls, handler):
 
 
 # ##############################################################################
-# DEM generation and decoders: not supported
+# DEM generation and decoders: an unsupported feature (the loss oracle only warns)
 # ##############################################################################
 
 DEM_CIRCUIT = stim.Circuit(
@@ -409,26 +411,56 @@ DEM_CIRCUIT = stim.Circuit(
     "DETECTOR rec[-2]\n"
     "OBSERVABLE_INCLUDE(0) rec[-1]"
 )
+UNSUPPORTED = r"SWAP\[LEAKAGE_SWAP\] is an unsupported feature"
 
 
 @pytest.mark.parametrize("uc", [True, False])
-def test_marginal_dem_generator_and_decoder_reject_leakage_swap(uc):
+def test_weighted_dem_generator_and_marginal_decoder_reject_leakage_swap(uc):
     records = np.zeros((2, DEM_CIRCUIT.num_measurements), dtype=bool)
-    with pytest.raises(NotImplementedError, match="LEAKAGE_SWAP"):
+    with pytest.raises(NotImplementedError, match=UNSUPPORTED):
         MarginalLeakageDemGenerator(uc).base_dem(DEM_CIRCUIT)
-    with pytest.raises(NotImplementedError, match="LEAKAGE_SWAP"):
+    with pytest.raises(NotImplementedError, match=UNSUPPORTED):
         MarginalLeakageDemGenerator(uc, decompose_errors=True)(DEM_CIRCUIT, records)
-    with pytest.raises(NotImplementedError, match="LEAKAGE_SWAP"):
-        MarginalLeakageDemGenerator(uc, loss_oracle=True)(
-            DEM_CIRCUIT, records, leakage_events=[[], []]
-        )
-    compiled = MarginalDecoder(MarginalLeakageDemGenerator(uc)).compile_for_task(
-        sinter.Task(circuit=DEM_CIRCUIT)
-    )
-    with pytest.raises(NotImplementedError, match="LEAKAGE_SWAP"):
-        compiled.decode_shots_bit_packed(
-            bit_packed_detection_event_data=np.zeros((2, 1), dtype=np.uint8), records=records
-        )
+    # The decoder raises when it is compiled for the task, before any shot is simulated.
+    in_repeat = stim.Circuit("R 0 1\nREPEAT 2 {\n    SWAP[LEAKAGE_SWAP] 0 1\n}\nM 0 1")
+    for circuit in (DEM_CIRCUIT, in_repeat):
+        with pytest.raises(NotImplementedError, match=UNSUPPORTED):
+            MarginalDecoder(MarginalLeakageDemGenerator(uc)).compile_for_task(
+                sinter.Task(circuit=circuit)
+            )
+
+
+@pytest.mark.parametrize("uc", [True, False])
+def test_loss_oracle_warns_once_and_ignores_the_leak_the_swap_moves(uc):
+    gen = MarginalLeakageDemGenerator(uc, loss_oracle=True)
+    records = np.zeros((2, DEM_CIRCUIT.num_measurements), dtype=bool)
+    # Op 2 leaks qubit 0, and the swap (op 3) moves the leak onto qubit 1.
+    moved = [LeakageEvent(2, 0, 0, 2), LeakageEvent(3, 0, 2, 0), LeakageEvent(3, 1, 0, 2)]
+    with pytest.warns(UserWarning, match=UNSUPPORTED) as record:
+        dems = gen(DEM_CIRCUIT, records, leakage_events=[moved, []])
+        gen(DEM_CIRCUIT, records, decompose_errors=True, leakage_events=[moved, []])
+        gen.base_dem(DEM_CIRCUIT)
+    assert sum("LEAKAGE_SWAP" in str(w.message) for w in record) == 1  # once per analysed circuit
+    analysis = gen._analyses[False]
+    assert _match_shot_sources(analysis, moved) == ([analysis.source_lookup[(2, 0, 2)]], 1)
+    assert dems[1] == gen.base_dem(DEM_CIRCUIT)
+    # The swap's events add nothing: the shot gets the envelope of the source that leaked.
+    assert dems[0] == gen(DEM_CIRCUIT, records[0], leakage_events=moved[:1])
+    compiled = MarginalDecoder(gen).compile_for_task(sinter.Task(circuit=DEM_CIRCUIT))
+    assert compiled is not None
+
+
+@pytest.mark.parametrize(
+    "sampler_cls, handler",
+    [(TablesideSampler, LeakageUint8Tableau), (CosetsideSampler, LeakageUint8Coset)],
+)
+def test_samplers_with_a_loss_oracle_marginal_decoder_run_leakage_swap(sampler_cls, handler):
+    decoder = MarginalDecoder(MarginalLeakageDemGenerator(loss_oracle=True))
+    sampler = sampler_cls(handler(), decoder, batch_size=8, seed=1)
+    compiled = sampler.compiled_sampler_for_task(sinter.Task(circuit=DEM_CIRCUIT))
+    with pytest.warns(UserWarning, match=UNSUPPORTED):
+        stats = compiled.sample(64)
+    assert stats.shots >= 64
 
 
 @pytest.mark.parametrize(
@@ -441,15 +473,14 @@ def test_marginal_dem_generator_and_decoder_reject_leakage_swap(uc):
 )
 def test_samplers_with_marginal_decoder_reject_leakage_swap(sampler_cls, handler):
     sampler = sampler_cls(handler(), MarginalDecoder(), batch_size=8, seed=1)
-    compiled = sampler.compiled_sampler_for_task(sinter.Task(circuit=DEM_CIRCUIT))
-    with pytest.raises(NotImplementedError, match="LEAKAGE_SWAP"):
-        compiled.sample(8)
+    with pytest.raises(NotImplementedError, match=UNSUPPORTED):
+        sampler.compiled_sampler_for_task(sinter.Task(circuit=DEM_CIRCUIT))
 
 
 @fork_only
 @pytest.mark.parametrize("uc", [True, False])
 def test_bnb_decoder_rejects_leakage_swap(uc):
-    with pytest.raises(NotImplementedError, match="LEAKAGE_SWAP"):
+    with pytest.raises(NotImplementedError, match=UNSUPPORTED):
         BranchAndBoundDecoder(MarginalLeakageDemGenerator(uc)).compile_for_task(
             sinter.Task(circuit=DEM_CIRCUIT)
         )

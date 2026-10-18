@@ -35,6 +35,7 @@ class LeakageConditioningParams:
         return True
 
     def _validate(self):
+        name = self.from_tag.split(":", 1)[0].strip() or self.name
         if not isinstance(self.args, tuple) or not (
             (len(self.args) == 1 and isinstance(self.args[0], tuple))
             or (
@@ -45,21 +46,21 @@ class LeakageConditioningParams:
             )
         ):
             raise ValueError(
-                f"{self.name} args must be a tuple of one or two tuples, got {self.args}"
+                f"{name} args must be a tuple of one or two tuples, got {self.args}"
             )
         for group in self.args:
             for arg in group:
                 if isinstance(arg, str):
                     if arg != "U":
                         raise ValueError(
-                            f"{self.name} state must be 'U' or integers, got {arg}"
+                            f"{name} state must be 'U' or integers, got {arg}"
                         )
                 elif isinstance(arg, int) and not isinstance(arg, bool):
                     if arg < 0 or arg > 9:
                         raise ValueError(
-                            f"{self.name} state integers must be between 0 and 9, got {arg}"
+                            f"{name} has invalid state {arg}, must be 'U' or an int between 0 and 9"
                         )
                 else:
                     raise ValueError(
-                        f"{self.name} args must be a tuple of integers or strings, got {arg}"
+                        f"{name} args must be a tuple of integers or strings, got {arg}"
                     )

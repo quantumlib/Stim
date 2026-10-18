@@ -40,9 +40,9 @@ class LeakageControlledErrorParams:
                 raise ValueError(
                     f"{self.name} has probability argument {p} outside [0,1]"
                 )
-            if not isinstance(state, int) or state <= 1:
+            if not isinstance(state, int) or state <= 1 or state > 9:
                 raise ValueError(
-                    f"{self.name} state argument must be a leakage state >=2, got {state}"
+                    f"{self.name} has invalid state {state}, must be a leaked state between 2 and 9"
                 )
             if pauli not in ["X", "Y", "Z"]:
                 raise ValueError(

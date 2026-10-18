@@ -13,7 +13,20 @@ for circuits written with stimside's leakage tags:
   measurement or gate acting on a leaked qubit after gates skipped it). When
   the leak hops to the partner of a ``LEAKAGE_TRANSITION_2`` with probability
   p < 1, the hop is followed on a separate branch of weight p (only once per
-  source: a branch that already hopped does not branch again).
+  source: a branch that already hopped does not branch again). Likewise, when
+  the leak's next leaked state is random (e.g. ``LEAKAGE_TRANSITION_1:
+  (p, 2-->3)``, a ``LEAKAGE_TRANSITION_2`` that changes the leaked qubit's
+  state, or a certain hop into one of several states), each state other than
+  the one the flow goes on in is followed on a separate branch weighted by its
+  probability. Branches never branch again: at a later random transition a
+  branch goes on in its own state if it can stay in it, else in its most
+  likely state, so only the trajectories that leave the source's root flow at
+  most once are followed exactly. A spread (a ``LEAKAGE_TRANSITION_2`` outcome
+  where the leaked qubit stays leaked and its unleaked partner leaks too)
+  starts the partner's own flow, with an unknown frozen state, at the next pair
+  of the op: in the weighted model an extra flow of the source with weight
+  P(the leak is there) * p (only a source's root flow spreads, as only it
+  hops), and in the loss oracle a source of its own.
 * In each shot, a raised ``MPAD[LEAKAGE_MEASUREMENT...]`` flag that is not
   explained by an earlier raised flag on the same leakage flow is an
   erasure-check event E. Its DEM is the disjoint average
@@ -23,6 +36,26 @@ for circuits written with stimside's leakage tags:
   erasure checks, a raised flag is always attributed to a leak.
 * Events combine independently, and the shot's DEM is
   ``G_base + (G_E1 xor G_E2 xor ...)``.
+
+Not modelled exactly (see the README):
+
+* A leak's flows assume an unleaked partner in every ``LEAKAGE_TRANSITION_2``,
+  so a key with both inputs leaked (e.g. ``(p, 2_3<->3_4)``) is never followed
+  and the DEM misses what it does (unleaking included).
+* A spread partner's leak is seen by the weighted model only through a flag on
+  the partner, like any leak.
+* Random leaked-to-leaked transitions: branches never branch again (above), a
+  root flow lumps the outcomes that clear its leak, and the loss oracle mixes a
+  source's branches instead of selecting them from the shot's leaked-to-leaked
+  events.
+* A skipped pair's depolarization is placed per instruction, not per pair:
+  after the whole instruction for a two-qubit unitary that is not a controlled
+  Pauli (a later pair acting on the skipped pair's partner would not spread
+  it), before it for a controlled Pauli (a later pair of the leaked qubit with
+  another control basis would not get its own). When another pair of the
+  instruction uses a qubit of such a depolarization, the analysis is built
+  again with the pairs applied one by one, and NotImplementedError is raised
+  if any shot's DEM would differ (separate the pairs with TICK).
 
 By default (``decompose_errors=False``), error mechanisms are never decomposed:
 every mechanism keeps its full symptom (detectors and observables), so
@@ -38,6 +71,7 @@ from __future__ import annotations
 from collections import defaultdict
 import dataclasses
 from typing import Any, Sequence
+import warnings
 
 import numpy as np
 from numpy.typing import NDArray
@@ -51,7 +85,8 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageTransition1Params,
     LeakageTransition2Params,
 )
-from stimside.op_handlers.leakage_handlers.tag_registry import parse_leakage_tag
+from stimside.op_handlers.leakage_handlers.tag_registry import check_tag_qubits, parse_leakage_tag
+from stimside.util.known_states import compute_known_states_uint8
 from stimside.util.leakage_events import (
     ShotLeakageEvents,
     unrolled_to_flattened_indices,
@@ -80,6 +115,7 @@ from stimside.util.marginal_dem_kernels import (
     process_shots_cpp,
     trace_flows_cpp,
 )
+from stimside.util.stim_workarounds import split_fused_instruction
 
 _ANNOTATIONS = frozenset(
     {"DETECTOR", "OBSERVABLE_INCLUDE", "QUBIT_COORDS", "SHIFT_COORDS", "TICK"}
@@ -110,6 +146,8 @@ _PAULI_STRINGS = (
     stim.PauliString("-Z"),
 )
 _PAULI_TO_ID = {str(p): idx for idx, p in enumerate(_PAULI_STRINGS) if p is not None}
+# known_states codes (0 unknown, 1 +X, 2 -X, 3 +Y, 4 -Y, 5 +Z, 6 -Z) -> _PAULI_STRINGS ids.
+_KNOWN_CODE_TO_PAULI_ID = (0, 1, 4, 2, 5, 3, 6)
 
 _ONE = 1 - 1e-9
 _SOURCE_TAG = "marginal_leakage_source"
@@ -281,6 +319,33 @@ def _pauli_dist(out) -> NDArray[np.float64]:
     return np.full(4, 0.25)
 
 
+def _split_leaked(dist: dict[int, float], state: int) -> tuple[int, list[tuple[int, float]]]:
+    """(the leaked state a flow in ``state`` goes on in, [(other state, probability)]).
+
+    ``dist`` maps each leaked state the leak can be in after the op to its
+    probability. The flow goes on in ``state`` if that keeps some of the mass,
+    else in the most likely state (-1 if there is no mass); a flow that can
+    fork follows each other state on a branch of that probability. Masses of at
+    most 1e-9 of the total are ignored, so a transition that is certain given
+    that the leak stays gives no branch.
+    """
+    total = sum(dist.values())
+    if total <= 1 - _ONE:
+        return -1, []
+    kept = {st: p for st, p in sorted(dist.items()) if p > (1 - _ONE) * total}
+    next_state = state if state in kept else max(kept, key=kept.__getitem__)
+    return next_state, [(st, p) for st, p in kept.items() if st != next_state]
+
+
+def _pauli_channel_args(xyz: NDArray[np.float64]) -> tuple[float, ...]:
+    """PAULI_CHANNEL_1 args of a conditional channel, minus float overshoot (stim rejects x + y + z > 1)."""
+    args = [float(c) for c in xyz]
+    while args[0] + args[1] + args[2] > 1.0:
+        i = args.index(max(args))
+        args[i] = float(np.nextafter(args[i], 0.0))
+    return tuple(args)
+
+
 def _allowed(slot, state) -> bool:
     if slot == "U":
         return state is None or state < 2  # classical (rec) targets count as unleaked
@@ -321,14 +386,31 @@ def _condition_groups(
     return [([t], [t.qubit_value]) for t in targets]  # CONDITIONED_ON_SELF
 
 
+_LEAKAGE_SWAP_UNSUPPORTED = (
+    "SWAP[LEAKAGE_SWAP] is an unsupported feature of MarginalLeakageDemGenerator (and so of "
+    "MarginalDecoder and BranchAndBoundDecoder): it does not model leakage moving between "
+    "qubits. Only MarginalLeakageDemGenerator(loss_oracle=True) accepts it, with a warning."
+)
+_LEAKAGE_SWAP_ORACLE_WARNING = (
+    "SWAP[LEAKAGE_SWAP] is an unsupported feature of MarginalLeakageDemGenerator: the loss "
+    "oracle treats it as a plain SWAP and ignores the leakage events it makes, so leakage it "
+    "moves is not modelled and the oracle DEMs are approximate."
+)
+
+
+def _has_leakage_swap(circuit: stim.Circuit) -> bool:
+    """Whether ``circuit`` (REPEAT blocks included) has a ``SWAP[LEAKAGE_SWAP]``."""
+    for op in circuit:
+        if isinstance(op, stim.CircuitRepeatBlock):
+            if _has_leakage_swap(op.body_copy()):
+                return True
+        elif op.name == "SWAP" and op.tag == "LEAKAGE_SWAP":
+            return True
+    return False
+
+
 def _check_supported(params) -> None:
-    """Reject tags whose simulated effect depends on the computational state, and LEAKAGE_SWAP."""
-    if isinstance(params, LeakageSwapParams):
-        raise NotImplementedError(
-            "MarginalLeakageDemGenerator (and so MarginalDecoder, BranchAndBoundDecoder and the "
-            "loss oracle) does not support SWAP[LEAKAGE_SWAP]: it does not model leakage moving "
-            "between qubits."
-        )
+    """Reject tags whose simulated effect depends on the computational state."""
     if isinstance(params, LeakageTransition1Params):
         bad = any(_is_int_below_2(s) for s in params.args_by_input_state)
     elif isinstance(params, LeakageTransition2Params):
@@ -566,6 +648,40 @@ def _xor(p: float, q: float) -> float:
     return p + q - 2 * p * q
 
 
+def _same_shot_dems(a: _Analysis, b: _Analysis) -> bool:
+    """Whether two analyses of one circuit give every shot the same DEM content (in any order)."""
+
+    def envelopes(x: _Analysis) -> list[dict[Any, float]]:
+        offs = x.flag_env_offsets.tolist()
+        ids, probs = x.flag_env_sym_ids.tolist(), x.flag_env_probs.tolist()
+        return [
+            {x.symptoms[s]: p for s, p in zip(ids[i:k], probs[i:k])} for i, k in zip(offs, offs[1:])
+        ]
+
+    ea, eb = envelopes(a), envelopes(b)
+    return (
+        a.pred_offsets.tolist() == b.pred_offsets.tolist()
+        and a.pred_flags.tolist() == b.pred_flags.tolist()
+        and sorted(map(str, a.matching_base_dem.flattened()))
+        == sorted(map(str, b.matching_base_dem.flattened()))
+        and len(ea) == len(eb)
+        and all(
+            x.keys() == y.keys() and all(abs(x[s] - y[s]) <= 1e-12 for s in x)
+            for x, y in zip(ea, eb)
+        )
+    )
+
+
+def _reuse_message(op: stim.CircuitInstruction, qubit: int) -> str:
+    return (
+        f"MarginalLeakageDemGenerator does not support '{op}': a leaked qubit skips a pair of it, "
+        f"another pair of the same instruction uses qubit {qubit} of that pair, and the skipped "
+        "pair's effect is placed before or after the whole instruction, so the DEM would differ "
+        "from the one with the pairs applied one by one. Separate the pairs with TICK (stim fuses "
+        "identical consecutive instructions into one)."
+    )
+
+
 @dataclasses.dataclass
 class _Source:
     op_index: int
@@ -575,6 +691,7 @@ class _Source:
     weight: float
     partner: int | None = None
     partner_channel: tuple[float, ...] | None = None  # PAULI_CHANNEL_1 args
+    tracked: int = 0  # Pauli id of the qubit's noiseless reference state just before the op (0 = unknown)
 
 
 @dataclasses.dataclass
@@ -603,9 +720,13 @@ class _Analysis:
     source_lookup: dict[tuple[int, int, int], int] = dataclasses.field(
         default_factory=dict
     )  # (flattened op index, qubit, leaked state) -> source index
+    spread_lookup: dict[tuple[int, int, int], int] = dataclasses.field(
+        default_factory=dict
+    )  # (flattened op index of a LEAKAGE_TRANSITION_2, partner qubit, its leaked state) -> spread source
     lt2_partner: dict[tuple[int, int], int] = dataclasses.field(
         default_factory=dict
     )  # (flattened op index of a LEAKAGE_TRANSITION_2, qubit) -> its pair partner
+    leakage_swap_ops: frozenset[int] = frozenset()  # flattened op indices of SWAP[LEAKAGE_SWAP]
     unrolled_to_flat: NDArray[np.int64] | None = None
     # Kept only by `_Builder.build(keep_candidates=True)` (else None): the
     # inputs of `build_envelopes_cpp`, i.e. each flag's candidate flows and
@@ -709,6 +830,8 @@ class _Analysis:
             return [group_objs[int(gid)] for gid in shot_group_ids]
 
         assert group_sym_ids is not None and group_probs is not None
+        # An envelope mixed from certain (p = 1) entries can round above 1, which stim rejects.
+        group_probs = np.minimum(group_probs, 1.0)
         sym_targets = self._get_sym_targets()
         group_dems: list[stim.DetectorErrorModel] = []
         empty_base = (
@@ -760,19 +883,28 @@ class MarginalLeakageDemGenerator(DemGenerator):
             over the sources L that actually leaked in the shot, each included
             with weight 1 (heralds / ``MPAD`` flags are ignored). A shot without
             leakage gets ``G_base``. ``G_L`` is L's full envelope: the disjoint
-            mixture of L's root flow and its hop branches, where a branch forked
-            at a ``LEAKAGE_TRANSITION_2`` op into leaked state m has weight
-            P(the leak is still on the root's qubit just before that op) * p_m
-            (with the unleak / move factors of the weighted model) and the root
+            mixture of L's root flow and its branches (hops and leaked-state
+            changes; the shot's events do not pick one), where a branch forked
+            at an op into leaked state m has weight
+            P(the leak is still on the root flow just before that op) * p_m
+            (with the unleak / move / fork factors of the weighted model) and the root
             has weight 1 - (sum of the branch weights). A source is the
-            unleaked-to-leaked transition of a ``LEAKAGE_TRANSITION_1`` target or
-            of a ``LEAKAGE_TRANSITION_2`` pair whose partner was unleaked before
-            the op; an unleaked-to-leaked event of a ``LEAKAGE_TRANSITION_2`` target
-            whose partner was already leaked before the op (a hop target or a
-            spread) is not a source and is ignored (its effect is part of the
-            leaked partner's source's envelope). Raises NotImplementedError for
+            unleaked-to-leaked transition of a ``LEAKAGE_TRANSITION_1`` target, of
+            a ``LEAKAGE_TRANSITION_2`` pair whose partner was unleaked before the
+            op, or of the partner of a spread (a ``LEAKAGE_TRANSITION_2`` target
+            whose partner was already leaked before the op and stays leaked; its
+            flow starts at the next pair of the op); the unleaked-to-leaked event
+            of a hop target (whose leaked partner unleaks at the op) is not a
+            source and is ignored (its effect is part of the leaked partner's
+            source's envelope). Raises NotImplementedError for
             circuits with a qubit listed twice in one leakage transition, and
             ValueError for an unleaked-to-leaked event that matches no source.
+            ``SWAP[LEAKAGE_SWAP]``, an unsupported feature (leakage moving between
+            qubits is not modelled), is accepted only with ``loss_oracle=True``,
+            with a ``UserWarning`` once per analysed circuit: it is treated as a
+            plain ``SWAP`` and the unleaked-to-leaked events it makes are ignored,
+            so the DEMs are approximate. Without ``loss_oracle`` it raises
+            NotImplementedError.
     """
 
     def __init__(
@@ -800,9 +932,11 @@ class MarginalLeakageDemGenerator(DemGenerator):
             self._analyses = {}
             self._analysis = None
         if decompose_errors not in self._analyses:
-            self._analyses[decompose_errors] = _Builder(
-                circuit, self.unconditional_condition_on_U
-            ).build(decompose_errors=decompose_errors, oracle=self.loss_oracle)
+            builder = _Builder(circuit, self.unconditional_condition_on_U)
+            analysis = builder.build(decompose_errors=decompose_errors, oracle=self.loss_oracle)
+            if self.loss_oracle and builder.leakage_swap_ops and not self._analyses:
+                warnings.warn(_LEAKAGE_SWAP_ORACLE_WARNING, UserWarning, stacklevel=3)
+            self._analyses[decompose_errors] = analysis
         analysis = self._analyses[decompose_errors]
         self._analysis = analysis
         return analysis
@@ -925,8 +1059,11 @@ def _match_shot_sources(
     """(sorted indices of the sources that leaked in a shot, number of ignored events).
 
     Replays the shot's events op by op (stable-sorted by op index). An
-    unleaked-to-leaked event at a ``LEAKAGE_TRANSITION_2`` op whose pair partner
-    was leaked before the op (a hop target or a spread) is ignored and counted;
+    unleaked-to-leaked event is ignored and counted if it is at a
+    ``LEAKAGE_TRANSITION_2`` op whose pair partner was leaked before the op and
+    unleaks at it (a hop target), or at a ``SWAP[LEAKAGE_SWAP]`` (a leak moved
+    onto the qubit, which the oracle does not model). One whose partner was
+    leaked before the op and stays leaked (a spread) matches a spread source;
     every other unleaked-to-leaked event must match a source.
     """
     assert analysis.unrolled_to_flat is not None
@@ -946,11 +1083,19 @@ def _match_shot_sources(
             if not (ev.old_state < 2 <= ev.new_state):
                 continue
             flat_j = int(u2f[op_index]) if 0 <= op_index < len(u2f) else -1
-            partner = analysis.lt2_partner.get((flat_j, ev.qubit))
-            if partner is not None and leaked.get(partner, 0) >= 2:
+            if flat_j in analysis.leakage_swap_ops:
                 ignored += 1
                 continue
-            src = analysis.source_lookup.get((flat_j, ev.qubit, ev.new_state))
+            partner = analysis.lt2_partner.get((flat_j, ev.qubit))
+            if partner is not None and leaked.get(partner, 0) >= 2:
+                # A hop target (the partner unleaks at this op: part of the partner's source's
+                # envelope) is ignored; a spread (the partner stays leaked) is a source of its own.
+                if any(e.qubit == partner and e.new_state < 2 for e in group):
+                    ignored += 1
+                    continue
+                src = analysis.spread_lookup.get((flat_j, ev.qubit, ev.new_state))
+            else:
+                src = analysis.source_lookup.get((flat_j, ev.qubit, ev.new_state))
             if src is None:
                 raise ValueError(f"Leakage event {ev} matches no leakage source of the circuit.")
             matched.add(src)
@@ -969,10 +1114,14 @@ class _Builder:
     def __init__(self, circuit: stim.Circuit, uc: bool) -> None:
         self.uc = uc
         self.circuit = circuit
-        self.ops = list(circuit.flattened())
+        self.ops: list[stim.CircuitInstruction] = []
+        # index in list(circuit.flattened()) -> index of its first copy in self.ops
+        self.flat_to_op: list[int] = []
+        self.leakage_swap_ops: set[int] = set()  # indices in self.ops of the SWAP[LEAKAGE_SWAP] ops
+        self.check_reuse = True  # False in the copy with separated pairs that build() compares with
         parsed: dict[tuple[str, str], object] = {}
         self.params = []
-        for op in self.ops:
+        for op in circuit.flattened():
             if uc and op.name in ("SPP", "SPP_DAG"):
                 raise NotImplementedError(
                     f"MarginalLeakageDemGenerator does not support {op.name} with "
@@ -981,9 +1130,27 @@ class _Builder:
                 )
             key = (op.name, op.tag)
             if key not in parsed:
-                parsed[key] = parse_leakage_tag(op, simulator="tableau")
+                tag_params = parse_leakage_tag(op, simulator="tableau")
+                if tag_params is not None:
+                    check_tag_qubits({op: tag_params}, circuit.num_qubits)
+                parsed[key] = tag_params
                 _check_supported(parsed[key])
-            self.params.append(parsed[key])
+            params = parsed[key]
+            # stim fuses identical consecutive ops; a tag listing its own qubits
+            # applies per copy, as in the simulators.
+            copy_len = 0
+            if isinstance(params, LeakageMeasurementParams) and params.targets is not None:
+                copy_len = len(params.targets)
+            elif isinstance(params, LeakageConditioningParams) and params.targets is not None:
+                copy_len = len(params.targets) * (
+                    2 if stim.gate_data(op.name).is_two_qubit_gate else 1
+                )
+            self.flat_to_op.append(len(self.ops))
+            if isinstance(params, LeakageSwapParams):
+                self.leakage_swap_ops.add(len(self.ops))
+            for copy in split_fused_instruction(op, copy_len):
+                self.ops.append(copy)
+                self.params.append(params)
         self.gate_data = {name: stim.gate_data(name) for name, _ in parsed}
 
     def build(
@@ -992,37 +1159,52 @@ class _Builder:
         oracle: bool = False,
         keep_candidates: bool = False,
     ) -> _Analysis:
+        if self.leakage_swap_ops and not oracle:
+            raise NotImplementedError(_LEAKAGE_SWAP_UNSUPPORTED)
         if oracle:
             self._check_oracle_supported()
-        base = stim.Circuit()
-        self.ref_ops: list[stim.CircuitInstruction | None] = []
-        self.base_ops: list[stim.CircuitInstruction | None] = []
-        for op, params in zip(self.ops, self.params):
-            base_op, ref_op = self._base_and_ref(op, params)
-            if base_op is not None:
-                base.append(base_op)
-            self.base_ops.append(base_op)
-            self.ref_ops.append(ref_op)
+        for clamp in (False, True):
+            base = stim.Circuit()
+            self.ref_ops: list[stim.CircuitInstruction | None] = []
+            self.base_ops: list[stim.CircuitInstruction | None] = []
+            for op, params in zip(self.ops, self.params):
+                base_op, ref_op = self._base_and_ref(op, params, clamp)
+                if base_op is not None:
+                    base.append(base_op)
+                self.base_ops.append(base_op)
+                self.ref_ops.append(ref_op)
 
-        if decompose_errors:
             try:
-                baseline = base.detector_error_model(
-                    decompose_errors=True, approximate_disjoint_errors=True
-                )
+                if decompose_errors:
+                    try:
+                        baseline = base.detector_error_model(
+                            decompose_errors=True, approximate_disjoint_errors=True
+                        )
+                    except ValueError:
+                        baseline = base.detector_error_model(
+                            decompose_errors=True,
+                            approximate_disjoint_errors=True,
+                            ignore_decomposition_failures=True,
+                        )
+                else:
+                    baseline = base.detector_error_model(
+                        decompose_errors=False, approximate_disjoint_errors=True
+                    )
+                break
             except ValueError:
-                baseline = base.detector_error_model(
-                    decompose_errors=True,
-                    approximate_disjoint_errors=True,
-                    ignore_decomposition_failures=True,
-                )
-        else:
-            baseline = base.detector_error_model(
-                decompose_errors=False, approximate_disjoint_errors=True
-            )
+                # A LEAKAGE_TRANSITION_2 base channel summed from branch probabilities can exceed 1
+                # by rounding, and stim rejects a symptom whose probability does: retry with such
+                # channels clamped (only then, so every baseline stim accepts is unchanged).
+                if clamp:
+                    raise
 
         flag_records, flag_invert = self._find_flags()
         self._build_touch_lists()
         sources = self._find_sources()
+        self._set_source_known_states(sources)
+        num_regular_sources = len(sources)
+        if oracle:
+            sources = sources + self._find_spread_sources()
         # In loss-oracle mode the "flags" of the analysis are the sources.
         num_flags = len(sources) if oracle else len(flag_records)
 
@@ -1037,6 +1219,7 @@ class _Builder:
             pred_flags,
             channel_list,
         ) = self._trace_flows_fast(sources, num_flags, source_mode=oracle)
+        reused = self._reused_qubit_ops(sites)
 
         num_sites = sites.shape[0]
         num_used_flows = len(flow_site_offsets) - 1
@@ -1114,14 +1297,23 @@ class _Builder:
 
         oracle_fields: dict[str, Any] = {}
         if oracle:
+            u2f = unrolled_to_flattened_indices(self.circuit)
+            # unrolled op index -> index in self.ops (-1 for SHIFT_COORDS)
+            u2op = np.full(len(u2f), -1, dtype=np.int64)
+            u2op[u2f >= 0] = np.asarray(self.flat_to_op, dtype=np.int64)[u2f[u2f >= 0]]
             oracle_fields = dict(
                 oracle=True,
                 source_lookup={
                     (src.op_index, int(src.qubit), int(src.state)): idx
-                    for idx, src in enumerate(sources)
+                    for idx, src in enumerate(sources[:num_regular_sources])
+                },
+                spread_lookup={
+                    (src.op_index, int(src.qubit), int(src.state)): num_regular_sources + idx
+                    for idx, src in enumerate(sources[num_regular_sources:])
                 },
                 lt2_partner=self._lt2_partners(),
-                unrolled_to_flat=unrolled_to_flattened_indices(self.circuit),
+                leakage_swap_ops=frozenset(self.leakage_swap_ops),
+                unrolled_to_flat=u2op,
             )
         cand_fields: dict[str, Any] = {}
         if keep_candidates:
@@ -1142,7 +1334,7 @@ class _Builder:
                     entry_probs if has_entries else np.empty(0, dtype=np.float64)
                 ),
             )
-        return _Analysis(
+        analysis = _Analysis(
             num_measurements=self.num_measurements,
             baseline=baseline,
             matching_base_dem=matching_base_dem,
@@ -1162,6 +1354,9 @@ class _Builder:
             **oracle_fields,
             **cand_fields,
         )
+        if reused:
+            self._check_reused_qubit_ops(analysis, reused, decompose_errors, oracle, sites)
+        return analysis
 
     def _check_oracle_supported(self) -> None:
         for op, params in zip(self.ops, self.params):
@@ -1172,6 +1367,84 @@ class _Builder:
                         f"loss_oracle=True does not support a qubit listed twice in one "
                         f"leakage transition: {op}"
                     )
+
+    def _reused_qubit_ops(self, sites: NDArray[np.int32]) -> set[int]:
+        """Two-qubit unitary instructions where a qubit of a site is used by more than one pair.
+
+        A pair that a leaked qubit skips (an untagged two-qubit unitary with
+        ``unconditional_condition_on_U=True``, or a ``CONDITIONED_ON_PAIR`` gate) gets its sites
+        before or after the whole instruction, not next to the pair. That can only matter if
+        another pair of the instruction uses a qubit of the site.
+        """
+        ops = set()
+        for j in np.unique(sites[:, 0]).tolist():
+            op, params = self.ops[j], self.params[j]
+            gd = self.gate_data[op.name]
+            if (
+                op.name == "II"
+                or isinstance(params, LeakageTransition2Params)
+                or not (gd.is_unitary and gd.is_two_qubit_gate)
+                or not (self.uc or isinstance(params, LeakageConditioningParams))
+            ):
+                continue
+            qubits = [t.qubit_value for t in op.targets_copy()]
+            if len(set(qubits)) == len(qubits):
+                continue
+            reused = {q for q in qubits if qubits.count(q) > 1}
+            if reused.intersection(sites[sites[:, 0] == j, 2:4].ravel().tolist()):
+                ops.add(j)
+        return ops
+
+    def _check_reused_qubit_ops(
+        self,
+        analysis: _Analysis,
+        reused: set[int],
+        decompose_errors: bool,
+        oracle: bool,
+        sites: NDArray[np.int32],
+    ) -> None:
+        """Raise if applying the pairs of the ``reused`` instructions one by one changes a shot's DEM.
+
+        Builds the analysis again with those instructions split into one instruction per pair
+        (what separating them with TICK does) and compares every shot's DEM content.
+        """
+
+        def separating_changes_dems(split: set[int]) -> bool:
+            twin = object.__new__(_Builder)
+            vars(twin).update(vars(self))
+            twin.check_reuse = False
+            twin.ops, twin.params, first = [], [], []
+            for j, (op, params) in enumerate(zip(self.ops, self.params)):
+                first.append(len(twin.ops))
+                copies = (
+                    [
+                        stim.CircuitInstruction(op.name, group, op.gate_args_copy(), tag=op.tag)
+                        for group in op.target_groups()
+                    ]
+                    if j in split
+                    else [op]
+                )
+                twin.ops.extend(copies)
+                twin.params.extend([params] * len(copies))
+            twin.flat_to_op = [first[i] for i in self.flat_to_op]
+            twin.leakage_swap_ops = {first[i] for i in self.leakage_swap_ops}
+            separated = twin.build(decompose_errors=decompose_errors, oracle=oracle)
+            return not _same_shot_dems(analysis, separated)
+
+        if not self.check_reuse or not separating_changes_dems(reused):
+            return
+        j = min(reused)
+        if len(reused) > 1:  # name an instruction whose own separation changes the DEMs
+            j = next((i for i in sorted(reused) if separating_changes_dems({i})), j)
+        qubits = [t.qubit_value for t in self.ops[j].targets_copy()]
+        q = next(
+            q
+            for row in sites.tolist()
+            if row[0] == j
+            for q in row[2:4]
+            if q >= 0 and qubits.count(q) > 1
+        )
+        raise NotImplementedError(_reuse_message(self.ops[j], q))
 
     def _lt2_partners(self) -> dict[tuple[int, int], int]:
         partners: dict[tuple[int, int], int] = {}
@@ -1326,8 +1599,26 @@ class _Builder:
                     for out, p in branches:
                         if _is_leaked(out) and p >= _ONE:
                             next_s = int(out)
+                    fork_offset = len(move_branches_list)
+                    if next_s < 0 and any(_is_leaked(out) for out, _ in branches):
+                        # The next leaked state is random (or certain only if the qubit stays leaked).
+                        leaked: dict[int, float] = defaultdict(float)
+                        leaked[int(s)] = max(0.0, 1.0 - sum(p for _, p in branches))
+                        for out, p in branches:
+                            if _is_leaked(out):
+                                leaked[int(out)] += p
+                        next_s, forks = _split_leaked(leaked, int(s))
+                        move_branches_list.extend(
+                            MoveBranchC(int(st), float(p), -1) for st, p in forks
+                        )
                     trans1_rules_list.append(
-                        Trans1RuleC(int(s), float(p_unleak), int(next_s))
+                        Trans1RuleC(
+                            int(s),
+                            float(p_unleak),
+                            int(next_s),
+                            fork_offset,
+                            len(move_branches_list) - fork_offset,
+                        )
                     )
                 desc.aux_count = len(trans1_rules_list) - desc.aux_offset
             elif isinstance(params, LeakageTransition2Params):
@@ -1346,6 +1637,7 @@ class _Builder:
                             continue
                         move: dict[int, float] = defaultdict(float)
                         stay: dict[int, float] = defaultdict(float)
+                        spread: dict[int, float] = defaultdict(float)  # the partner's new leaked state
                         p_clear = 0.0
                         channel = np.zeros(4)
                         for outs, p in branches:
@@ -1353,6 +1645,11 @@ class _Builder:
                             if _is_leaked(out_partner):
                                 if not _is_leaked(out_h):
                                     move[out_partner] += p
+                                else:
+                                    # A spread: this leg's (possibly new) leaked state is followed like
+                                    # a stay's, and the partner's new leak seeds a flow of its own.
+                                    stay[int(out_h)] += p
+                                    spread[int(out_partner)] += p
                                 continue
                             channel += p * _pauli_dist(out_partner)
                             if _is_leaked(out_h):
@@ -1363,7 +1660,7 @@ class _Builder:
                         move_offset = len(move_branches_list)
                         for st_m, p_m in move.items():
                             move_branches_list.append(
-                                MoveBranchC(int(st_m), float(p_m))
+                                MoveBranchC(int(st_m), float(p_m), -1)
                             )
                         move_count = len(move_branches_list) - move_offset
                         max_move_state = (
@@ -1374,12 +1671,62 @@ class _Builder:
                             if p_stay >= _ONE:
                                 stay_next_state = int(st_stay)
                         ch_id = (
-                            get_channel_id(
-                                "PAULI_CHANNEL_1",
-                                tuple(float(c) for c in channel[1:]),
-                            )
+                            get_channel_id("PAULI_CHANNEL_1", _pauli_channel_args(channel[1:]))
                             if channel[1:].sum() > 0
                             else -1
+                        )
+                        fork_offset = len(move_branches_list)
+                        fork_ch_id = -1
+                        if p_move >= _ONE and len(move) > 1:
+                            # A certain hop into one of several leaked states.
+                            _, forks = _split_leaked(move, max_move_state)
+                            move_branches_list.extend(
+                                MoveBranchC(int(st), float(p), -1) for st, p in forks
+                            )
+                        elif stay_next_state < 0 and any(st != s for st in stay):
+                            # The leg's next leaked state is random (or certain only if it stays leaked).
+                            stay[int(s)] += max(0.0, 1.0 - sum(p for _, p in branches))
+                            stay_next_state, forks = _split_leaked(stay, int(s))
+                            # Each branch gets the partner channel of its own outcomes (given
+                            # them), and so does the flow (staying in its state or clearing).
+                            fork_states = {st for st, _ in forks}
+                            kept_channel = np.zeros(4)
+                            fork_channels: dict[int, NDArray[np.float64]] = defaultdict(
+                                lambda: np.zeros(4)
+                            )
+                            for pair_out, p in params.args_by_input_state[key]:
+                                leg_out, partner_out = pair_out[leg], pair_out[1 - leg]
+                                if _is_leaked(partner_out):
+                                    continue
+                                if leg_out in fork_states:
+                                    fork_channels[int(leg_out)] += p * _pauli_dist(partner_out)
+                                else:
+                                    kept_channel += p * _pauli_dist(partner_out)
+                            for st, p in forks:
+                                fork_channel = fork_channels[st][1:] / p
+                                move_branches_list.append(
+                                    MoveBranchC(
+                                        int(st),
+                                        float(p),
+                                        get_channel_id(
+                                            "PAULI_CHANNEL_1", _pauli_channel_args(fork_channel)
+                                        )
+                                        if fork_channel.sum() > 0
+                                        else -1,
+                                    )
+                                )
+                            if forks and kept_channel[1:].sum() > 0:
+                                kept_mass = p_clear + sum(
+                                    m for st, m in stay.items() if st not in fork_states
+                                )
+                                fork_ch_id = get_channel_id(
+                                    "PAULI_CHANNEL_1",
+                                    _pauli_channel_args(kept_channel[1:] / kept_mass),
+                                )
+                        fork_count = len(move_branches_list) - fork_offset
+                        spread_offset = len(move_branches_list)
+                        move_branches_list.extend(
+                            MoveBranchC(int(st), float(p), -1) for st, p in spread.items() if p > 0
                         )
                         trans2_rules_list.append(
                             Trans2RuleC(
@@ -1392,6 +1739,11 @@ class _Builder:
                                 max_move_state,
                                 stay_next_state,
                                 ch_id,
+                                fork_offset,
+                                fork_count,
+                                fork_ch_id,
+                                spread_offset,
+                                len(move_branches_list) - spread_offset,
                             )
                         )
                 desc.aux_count = len(trans2_rules_list) - desc.aux_offset
@@ -1424,13 +1776,7 @@ class _Builder:
                 desc.cond_base_fires = (
                     1 if _fires(params, [0] * len(params.args)) else 0
                 )
-                if op.name in _HERALDED:
-                    desc.cond_subkind = 7
-                elif gd.produces_measurements:
-                    desc.cond_subkind = 1
-                elif gd.is_reset:
-                    desc.cond_subkind = 2
-                elif gd.is_noisy_gate:
+                if gd.is_noisy_gate:
                     desc.cond_subkind = 3
                     desc.cond_channel_id = get_channel_id(
                         op.name, tuple(float(a) for a in op.gate_args_copy())
@@ -1536,9 +1882,9 @@ class _Builder:
                 if src.partner_channel is not None
                 else -1
             )
+            s_desc.init_tracked = int(src.tracked)
 
         (
-            err_op,
             sites,
             flow_site_offsets,
             flow_site_ids,
@@ -1564,10 +1910,6 @@ class _Builder:
             sources_arr=sources_arr,
             source_mode=source_mode,
         )
-        if err_op >= 0:
-            raise NotImplementedError(
-                f"Leakage changes whether {self.ops[err_op]} applies a measurement or reset."
-            )
 
         return (
             sites,
@@ -1821,8 +2163,11 @@ class _Builder:
             matching_base_dem,
         )
 
-    def _base_and_ref(self, op, params):
-        """(op in the unleaked noisy baseline, op in the noiseless reference)."""
+    def _base_and_ref(self, op, params, clamp=False):
+        """(op in the unleaked noisy baseline, op in the noiseless reference).
+
+        ``clamp``: take a LEAKAGE_TRANSITION_2 channel's float overshoot above 1 off (see build).
+        """
         gd = self.gate_data[op.name]
         if isinstance(params, LeakageTransition1Params):
             p01 = sum(
@@ -1846,6 +2191,9 @@ class _Builder:
             args = [float(a) for a in table.flatten()[1:]]  # stim order: 4 * P0 + P1
             if sum(args) <= 0:
                 return None, None
+            while clamp and np.cumsum(args)[-1] > 1.0:  # left-to-right sum
+                i = args.index(max(args))
+                args[i] = float(np.nextafter(args[i], 0.0))
             return (
                 stim.CircuitInstruction("PAULI_CHANNEL_2", op.targets_copy(), args),
                 None,
@@ -1858,10 +2206,6 @@ class _Builder:
                 p = (prob.get(0, 0.0) + 1.0 - prob.get(1, 1.0)) / 2
             return _stripped(op, [p] if p > 0 else []), _stripped(op, [])
         if isinstance(params, LeakageConditioningParams) and not _fires(params, [0, 0]):
-            if gd.produces_measurements:
-                raise NotImplementedError(
-                    f"Conditioned measurement {op} that does not fire on unleaked qubits."
-                )
             return None, None
         # Untagged (or foreign-tagged) ops, and conditioned ops that fire when unleaked.
         if gd.produces_measurements:
@@ -1959,10 +2303,61 @@ class _Builder:
                                     w,
                                     partner=pair[1 - leg],
                                     partner_channel=(
-                                        tuple(float(c) for c in channel)
+                                        _pauli_channel_args(channel)
                                         if channel.sum() > 0
                                         else None
                                     ),
                                 )
                             )
+        return sources
+
+    def _set_source_known_states(self, sources: list[_Source]) -> None:
+        """Set each source's ``tracked``: its qubit's noiseless reference state just before the op.
+
+        A source's flow starts with no sites, so the leaked qubit's frozen state is the reference
+        state there, up to the baseline Pauli noise that the base DEM models (which keeps it an
+        eigenstate of the same Pauli). If the known-states analysis fails, every source stays
+        unknown (0), as before.
+        """
+        if not sources:
+            return
+        ref_list = [op for op in self.ref_ops if op is not None]
+        ref_circuit = stim.Circuit()
+        for op in ref_list:
+            ref_circuit.append(op)
+        try:
+            # Row i: the states before ref_list[i] (passed explicitly: `append` fuses ops).
+            states = compute_known_states_uint8(ref_circuit, unrolled_ops=ref_list)
+        except ValueError:  # "Backprop known states disagreed": keep every source unknown
+            return
+        rows = np.cumsum([0] + [op is not None for op in self.ref_ops])  # index in self.ops -> row
+        for src in sources:
+            q = int(src.qubit)
+            code = int(states[rows[src.op_index], q]) if q < states.shape[1] else 5  # never touched: |0>
+            src.tracked = _KNOWN_CODE_TO_PAULI_ID[code]
+
+    def _find_spread_sources(self) -> list[_Source]:
+        """Loss-oracle sources of spreads: an (s, U) -> (s', t) branch (s, s', t leaked) of a pair.
+
+        The source is the partner leaking to t; its flow starts at the next pair of the op with an
+        unknown frozen state. The weight is unused by the oracle.
+        """
+        sources = []
+        for i, (op, params) in enumerate(zip(self.ops, self.params)):
+            if not isinstance(params, LeakageTransition2Params):
+                continue
+            targets = op.targets_copy()
+            for k in range(0, len(targets), 2):
+                pair = (targets[k].qubit_value, targets[k + 1].qubit_value)
+                for leg in (0, 1):  # the leg of the qubit that is already leaked
+                    weights: dict[int, float] = defaultdict(float)
+                    for key, branches in params.args_by_input_state.items():
+                        if not _is_leaked(key[leg]) or key[1 - leg] != "U":
+                            continue
+                        for outs, p in branches:
+                            if _is_leaked(outs[leg]) and _is_leaked(outs[1 - leg]):
+                                weights[int(outs[1 - leg])] += p
+                    for t, w in weights.items():
+                        if w > 0:
+                            sources.append(_Source(i, k // 2, pair[1 - leg], t, w, partner=pair[leg]))
         return sources

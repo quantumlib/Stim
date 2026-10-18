@@ -19,6 +19,7 @@ from stimside.dem_generators.dem_generator_marginal import (
 )
 from stimside.dem_generators.dem_generator_marginal_test import (
     REP_CIRCUIT,
+    _FUSABLE_TAGS_CIRCUIT,
     _dem_dict,
     _make_surface_code_leakage_circuit,
     _records,
@@ -31,6 +32,7 @@ from stimside.op_handlers.leakage_handlers.leakage_uint8_tableau import LeakageU
 from stimside.sampler_coset import CosetsideSampler
 from stimside.sampler_flip import CompiledFlipsideSampler, FlipsideSampler
 from stimside.sampler_tableau import TablesideSampler
+from stimside.simulator_coset import CosetsideSimulator
 from stimside.simulator_tableau import TablesideSimulator
 from stimside.util.leakage_events import LeakageEvent
 
@@ -222,6 +224,73 @@ def test_hop_branch_mixture_weights():
     assert weights[0] == pytest.approx(1 - sum(expected_branches))
 
 
+def test_leaked_state_branch_mixture_weights():
+    circuit = stim.Circuit(
+        """
+        R 0
+        I_ERROR[LEAKAGE_TRANSITION_1: (0.01, U-->2)] 0
+        I_ERROR[LEAKAGE_TRANSITION_1: (0.25, 2-->3) (0.5, 2-->U)] 0
+        TICK
+        I_ERROR[LEAKAGE_TRANSITION_1: (0.25, 2<->3)] 0
+        M 0
+        """
+    )
+    # Root forks into state 3 at the first transition (w.p. 1/4) and at the second one
+    # (still in state 2 w.p. 1/4, then 2-->3 w.p. 1/4); the branch in state 3 does not
+    # branch again at the second one.
+    (weights,) = _source_weights(circuit)
+    assert sorted(weights[1:]) == pytest.approx([0.25 * 0.25, 0.25])
+    assert weights[0] == pytest.approx(1 - 0.25 * 0.25 - 0.25)
+    # A hop branch does not fork at a later random state change either; the root does.
+    hop_then_change = stim.Circuit(
+        """
+        R 0 1
+        I_ERROR[LEAKAGE_TRANSITION_1: (0.01, U-->2)] 0
+        II_ERROR[LEAKAGE_TRANSITION_2: (0.5, 2_U-->U_2)] 0 1
+        I_ERROR[LEAKAGE_TRANSITION_1: (0.25, 2-->3)] 0 1
+        M 0 1
+        """
+    )
+    (weights,) = _source_weights(hop_then_change)
+    assert sorted(weights[1:]) == pytest.approx([0.5 * 0.25, 0.5])
+    assert weights[0] == pytest.approx(1 - 0.5 * 0.25 - 0.5)
+    # A hop and a state change at one op.
+    hop_or_change = stim.Circuit(
+        """
+        R 0 1
+        I_ERROR[LEAKAGE_TRANSITION_1: (0.01, U-->2)] 0
+        II_ERROR[LEAKAGE_TRANSITION_2: (0.25, 2_U-->U_2) (0.25, 2_U-->3_U)] 0 1
+        M 0 1
+        """
+    )
+    (weights,) = _source_weights(hop_or_change)
+    assert sorted(weights[1:]) == pytest.approx([0.25, 0.25])
+    assert weights[0] == pytest.approx(0.5)
+
+
+@pytest.mark.parametrize("uc", [True, False])
+def test_oracle_envelope_mixes_the_leaked_state_branches(uc):
+    cx = "CX" if uc else "CX[CONDITIONED_ON_PAIR: (U, U)]"
+    circuit = stim.Circuit(
+        f"""
+        RX 0
+        R 1
+        I_ERROR[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 0
+        I_ERROR[LEAKAGE_TRANSITION_1: (0.25, 2-->3)] 0
+        I_ERROR[LEAKAGE_TRANSITION_1: (1.0, 3-->U)] 0
+        {cx} 0 1
+        M 0 1
+        DETECTOR rec[-1] rec[-2]
+        """
+    )
+    # The leak skips the CX (D0 random) iff it is still in state 2 (w.p. 3/4). The shot's
+    # leaked-to-leaked event does not pick a branch.
+    events = [LeakageEvent(2, 0, 0, 2), LeakageEvent(3, 0, 2, 3), LeakageEvent(4, 0, 3, 0)]
+    gen = MarginalLeakageDemGenerator(uc, loss_oracle=True)
+    dem = gen(circuit, _records(circuit)[0], leakage_events=events)
+    assert _dem_dict(dem) == {(frozenset({0}), frozenset()): pytest.approx(0.375)}
+
+
 def test_mixture_weights_sum_to_at_most_one_on_a_surface_code():
     circuit = _make_surface_code_leakage_circuit(distance=3, rounds=3)
     all_weights = _source_weights(circuit)
@@ -232,7 +301,7 @@ def test_mixture_weights_sum_to_at_most_one_on_a_surface_code():
         assert weights[0] >= 0
 
 
-def test_hop_targets_and_spreads_are_ignored_and_counted():
+def test_hop_targets_are_ignored_and_spreads_are_sources():
     circuit = stim.Circuit(
         """
         R 0 1 2
@@ -249,11 +318,54 @@ def test_hop_targets_and_spreads_are_ignored_and_counted():
     fresh = [LeakageEvent(2, 2, 0, 2)]
     src_q0 = analysis.source_lookup[(1, 0, 2)]
     src_fresh = analysis.source_lookup[(2, 2, 2)]
+    src_spread = analysis.spread_lookup[(2, 2, 2)]
+    assert src_spread != src_fresh
     assert _match_shot_sources(analysis, hop) == ([src_q0], 1)
-    assert _match_shot_sources(analysis, spread) == ([src_q0], 1)
+    assert _match_shot_sources(analysis, spread) == (sorted([src_q0, src_spread]), 0)
     assert _match_shot_sources(analysis, fresh) == ([src_fresh], 0)
     # Events are matched against the partner's state before the op, whatever their order.
     assert _match_shot_sources(analysis, list(reversed(hop))) == ([src_q0], 1)
+    assert _match_shot_sources(analysis, list(reversed(spread))) == (sorted([src_q0, src_spread]), 0)
+
+
+def test_partner_event_that_changes_its_leaked_state_is_a_spread_not_a_hop():
+    circuit = stim.Circuit(
+        """
+        R 0 1
+        I_ERROR[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 0
+        II_ERROR[LEAKAGE_TRANSITION_2: (1.0, 2_U-->3_2)] 0 1
+        M 0 1
+        """
+    )
+    gen = MarginalLeakageDemGenerator(loss_oracle=True)
+    gen.base_dem(circuit)
+    analysis = gen._analyses[False]
+    events = [LeakageEvent(1, 0, 0, 2), LeakageEvent(2, 0, 2, 3), LeakageEvent(2, 1, 0, 2)]
+    want = sorted([analysis.source_lookup[(1, 0, 2)], analysis.spread_lookup[(2, 1, 2)]])
+    assert _match_shot_sources(analysis, events) == (want, 0)
+
+
+def test_spread_made_by_a_hop_target_is_matched():
+    circuit = stim.Circuit(
+        """
+        R 0 1 2
+        I_ERROR[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 0
+        II_ERROR[LEAKAGE_TRANSITION_2: (1.0, 2_U-->U_2)] 0 1
+        II_ERROR[LEAKAGE_TRANSITION_2: (0.5, 2_U-->2_2)] 1 2
+        M 0 1 2
+        """
+    )
+    gen = MarginalLeakageDemGenerator(loss_oracle=True)
+    gen.base_dem(circuit)
+    analysis = gen._analyses[False]
+    events = [
+        LeakageEvent(1, 0, 0, 2),
+        LeakageEvent(2, 0, 2, 0),
+        LeakageEvent(2, 1, 0, 2),
+        LeakageEvent(3, 2, 0, 2),
+    ]
+    want = sorted([analysis.source_lookup[(1, 0, 2)], analysis.spread_lookup[(3, 2, 2)]])
+    assert _match_shot_sources(analysis, events) == (want, 1)
 
 
 def test_unmatched_event_and_repeated_qubits_raise():
@@ -401,3 +513,62 @@ def test_sinter_collect_with_two_workers_in_oracle_mode():
         max_shots=64,
     )
     assert sum(s.shots for s in stats) >= 64
+
+
+def _coset_records_and_events(circuit: stim.Circuit, shots: int, seed: int):
+    h = LeakageUint8Coset().compile_op_handler(circuit=circuit, batch_size=shots)
+    sim = CosetsideSimulator(
+        circuit, compiled_op_handler=h, batch_size=shots, seed=seed, record_leakage_events=True
+    )
+    sim.run()
+    return sim.get_final_measurement_records(), sim.get_leakage_events()
+
+
+def _assert_fused_and_unfused_oracle_dems_match(fused, unfused, shots, seed):
+    rec_f, ev_f = _coset_records_and_events(fused, shots, seed)
+    rec_u, ev_u = _coset_records_and_events(unfused, shots, seed)
+    np.testing.assert_array_equal(rec_f, rec_u)
+    assert any(ev_f)
+    gen = MarginalLeakageDemGenerator(loss_oracle=True)
+    assert [str(d) for d in gen(fused, rec_f, leakage_events=ev_f)] == [
+        str(d) for d in gen(unfused, rec_u, leakage_events=ev_u)
+    ]
+
+
+def test_oracle_on_stim_fused_mpad_and_conditioned_on_other_matches_unfused():
+    _assert_fused_and_unfused_oracle_dems_match(
+        stim.Circuit(_FUSABLE_TAGS_CIRCUIT.replace("{SEP}", "")),
+        stim.Circuit(_FUSABLE_TAGS_CIRCUIT.replace("{SEP}", "TICK\n")),
+        shots=64,
+        seed=7,
+    )
+
+
+def test_oracle_on_repeat_seam_fusion_matches_unfused():
+    # flattened() fuses the last LEAKAGE_TRANSITION_1 of an iteration (on 2) with
+    # the first of the next one (on 0); a TICK at the end of the body prevents it.
+    body = """R 0 1 2 3
+    REPEAT 3 {
+        I_ERROR[LEAKAGE_TRANSITION_1: (0.2, U-->2) (0.5, 2-->U)] 0
+        CX 0 1 2 3
+        MR 1 3
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+        MPAD[LEAKAGE_MEASUREMENT: (1.0, 2): 0 2] 0 0
+        I_ERROR[LEAKAGE_TRANSITION_1: (0.2, U-->2) (0.5, 2-->U)] 2
+        {SEP}
+    }
+    M 0 2
+    DETECTOR rec[-1]
+    OBSERVABLE_INCLUDE(0) rec[-2]
+    """
+    fused = stim.Circuit(body.replace("{SEP}", ""))
+    unfused = stim.Circuit(body.replace("{SEP}", "TICK"))
+    assert [len(op.targets_copy()) for op in fused.flattened() if op.name == "I_ERROR"] == [1, 2, 2, 1]
+    _assert_fused_and_unfused_oracle_dems_match(fused, unfused, shots=256, seed=11)
+    # A fused op listing a qubit twice is still rejected clearly.
+    seam_dup = stim.Circuit(
+        "R 0\nREPEAT 2 {\n    I_ERROR[LEAKAGE_TRANSITION_1: (0.1, U-->2)] 0\n}\nM 0\nDETECTOR rec[-1]"
+    )
+    with pytest.raises(NotImplementedError, match="a qubit listed twice"):
+        MarginalLeakageDemGenerator(loss_oracle=True).base_dem(seam_dup)

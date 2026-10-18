@@ -687,7 +687,8 @@ class _CompiledBranchAndBoundDecoder(CompiledLeakageDecoder):
         dem = hyper.baseline.copy()
         for sym in sorted(sym_probs):
             if sym_probs[sym] > 0:
-                dem.append("error", sym_probs[sym], sym_targets[sym])
+                # An envelope mixed from certain (p = 1) entries can round above 1.
+                dem.append("error", min(sym_probs[sym], 1.0), sym_targets[sym])
         return dem
 
     def _decode_hyper(

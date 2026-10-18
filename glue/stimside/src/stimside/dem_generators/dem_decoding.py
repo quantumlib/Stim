@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import inspect
 import math
 from typing import Any, Sequence
 import warnings
@@ -38,6 +39,12 @@ def _is_pymatching_decoder(decoder: object) -> bool:
     cls_name = type(decoder).__name__.lower()
     mod_name = getattr(type(decoder), "__module__", "").lower()
     return "pymatching" in cls_name or "pymatching" in mod_name
+
+
+def _matching_supports_edge_reweights() -> bool:
+    import pymatching  # type: ignore[import-untyped]
+
+    return "edge_reweights" in inspect.signature(pymatching.Matching.decode_batch).parameters
 
 
 def _dem_has_hyperedge(dem: stim.DetectorErrorModel) -> bool:
@@ -263,20 +270,19 @@ def _ensure_base_dem_has_reweight_edges(
 
 
 def _apply_edge_reweights_to_dem(
-    base_dem: stim.DetectorErrorModel,
+    eff_base: stim.DetectorErrorModel,
+    base_edges: tuple[dict[tuple[int, int], float], dict[tuple[int, int], tuple[int, ...]]],
     rw: NDArray[np.float64] | None,
 ) -> stim.DetectorErrorModel:
-    eff_base = _decompose_dem_graphlike(base_dem)
+    """``eff_base`` is a graphlike base DEM and ``base_edges`` its ``_extract_graphlike_edges``."""
     if rw is None or rw.shape[0] == 0:
         return eff_base
-    base_probs, base_obs = _extract_graphlike_edges(eff_base)
+    base_probs, base_obs = base_edges
     updated_probs = dict(base_probs)
     for row in rw:
         u, v, w = int(row[0]), int(row[1]), float(row[2])
         edge = (max(u, v), -1) if (u < 0 or v < 0) else (min(u, v), max(u, v))
         updated_probs[edge] = _weight_to_prob(w)
-        if edge not in base_obs:
-            base_obs[edge] = ()
     out = stim.DetectorErrorModel()
     for inst in eff_base.flattened():
         if inst.type != "error":
@@ -344,7 +350,9 @@ def _decode_with_edge_reweights(
                 )
             rw_list.append(seen_arrays[rid])
 
-    if not hasattr(decoder, "decode_batch") and not _is_pymatching_decoder(decoder):
+    if not hasattr(decoder, "decode_batch") and (
+        not _is_pymatching_decoder(decoder) or not _matching_supports_edge_reweights()
+    ):
         eff_base_dem = base_dem or (
             analysis.matching_base_dem if analysis is not None else None
         )
@@ -354,7 +362,7 @@ def _decode_with_edge_reweights(
                 "when decoding edge_reweights."
             )
         if num_shots == 0:
-            return np.zeros((0, 0), dtype=np.uint8)
+            return np.zeros((0, (eff_base_dem.num_observables + 7) // 8), dtype=np.uint8)
         shots_by_rw: dict[int, list[int]] = {}
         rw_by_key: dict[int, NDArray[np.float64] | None] = {}
         for shot_idx, rw_item in enumerate(rw_list):
@@ -362,9 +370,11 @@ def _decode_with_edge_reweights(
             shots_by_rw.setdefault(key, []).append(shot_idx)
             rw_by_key[key] = rw_item
         out: NDArray[np.uint8] | None = None
+        graphlike_base = _decompose_dem_graphlike(eff_base_dem)
+        base_edges = _extract_graphlike_edges(graphlike_base)
         for key, shots in shots_by_rw.items():
             dem_for_group = _apply_edge_reweights_to_dem(
-                eff_base_dem, rw_by_key[key]
+                graphlike_base, base_edges, rw_by_key[key]
             )
             preds = decoder.compile_decoder_for_dem(
                 dem=dem_for_group
@@ -431,7 +441,12 @@ def decode_with_generated_dems(
 
     Args:
         decoder: A ``sinter.Decoder`` (such as ``sinter.BUILT_IN_DECODERS["pymatching"]``)
-            or a ``pymatching.Matching`` instance.
+            or a ``pymatching.Matching`` instance. A ``Matching`` only decodes
+            ``edge_reweights``, with ``Matching.decode_batch(..., edge_reweights=...)``,
+            which needs the PyMatching version with per-shot ``edge_reweights``: with the
+            released ``pymatching`` package it raises ``TypeError``. A ``sinter.Decoder``
+            (or ``"pymatching"``) works with either: without per-shot ``edge_reweights``
+            it decodes each distinct reweighted DEM instead, which is slower.
         dems: One DEM for the whole batch, one DEM per shot, or PyMatching
             ``edge_reweights`` array(s) of shape ``(num_reweights, 3)``.
         bit_packed_dets: Bit-packed detection event array of shape

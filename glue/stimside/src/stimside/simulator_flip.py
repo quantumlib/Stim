@@ -439,6 +439,8 @@ class FlipsideSimulator(UnleakedToLeakedRecordsMixin):
         return self._flip_simulator.batch_size
 
     def get_detector_flips(self, *args, bit_packed: bool = False, **kwargs):
+        """Detector-major ``(num_detectors, batch_size)``; with ``bit_packed=True``,
+        shot-major ``(batch_size, ceil(num_detectors / 8))``."""
         offset = self._stim_reference_offsets()[0]
         if bit_packed:
             raw_packed = self._flip_simulator.get_detector_flips(
@@ -497,6 +499,8 @@ class FlipsideSimulator(UnleakedToLeakedRecordsMixin):
         return np.logical_xor(self._reference_sample[: len(flips), None], flips).T
 
     def get_observable_flips(self, *args, bit_packed: bool = False, **kwargs):
+        """Observable-major ``(num_observables, batch_size)``; with ``bit_packed=True``,
+        shot-major ``(batch_size, ceil(num_observables / 8))``."""
         offset = self._stim_reference_offsets()[1]
         if bit_packed:
             raw_packed = self._flip_simulator.get_observable_flips(

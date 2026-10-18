@@ -57,6 +57,7 @@ class SourceDescC(ctypes.Structure):
         ("weight", ctypes.c_double),
         ("partner", ctypes.c_int32),
         ("partner_channel_id", ctypes.c_int32),
+        ("init_tracked", ctypes.c_int32),
     ]
 
 
@@ -65,6 +66,8 @@ class Trans1RuleC(ctypes.Structure):
         ("state", ctypes.c_int32),
         ("p_unleak", ctypes.c_double),
         ("next_state", ctypes.c_int32),
+        ("fork_offset", ctypes.c_int32),
+        ("fork_count", ctypes.c_int32),
     ]
 
 
@@ -79,6 +82,11 @@ class Trans2RuleC(ctypes.Structure):
         ("max_move_state", ctypes.c_int32),
         ("stay_next_state", ctypes.c_int32),
         ("channel_id", ctypes.c_int32),
+        ("fork_offset", ctypes.c_int32),
+        ("fork_count", ctypes.c_int32),
+        ("fork_channel_id", ctypes.c_int32),
+        ("spread_offset", ctypes.c_int32),
+        ("spread_count", ctypes.c_int32),
     ]
 
 
@@ -86,6 +94,7 @@ class MoveBranchC(ctypes.Structure):
     _fields_ = [
         ("state", ctypes.c_int32),
         ("prob", ctypes.c_double),
+        ("channel_id", ctypes.c_int32),
     ]
 
 
@@ -117,7 +126,8 @@ def get_marginal_dem_kernels_lib() -> ctypes.CDLL:
     if _LIB_INSTANCE is not None:
         return _LIB_INSTANCE
 
-    lib = load_cdll(_resolve_marginal_dem_kernels_so, "marginal_trace_source_flows")
+    # The version of the .cpp's struct layouts and function signatures: an older library is rebuilt.
+    lib = load_cdll(_resolve_marginal_dem_kernels_so, "marginal_dem_kernels_abi_v4")
 
     lib.marginal_trace_flows.argtypes = [
         ctypes.c_int32,
@@ -142,7 +152,6 @@ def get_marginal_dem_kernels_lib() -> ctypes.CDLL:
 
     lib.marginal_trace_result_get_counts.argtypes = [
         void_p,
-        i32_p,
         i32_p,
         i32_p,
         i32_p,
@@ -323,7 +332,6 @@ def trace_flows_cpp(
     sources_arr: ctypes.Array[SourceDescC],
     source_mode: bool = False,
 ) -> tuple[
-    int,
     NDArray[np.int32],
     NDArray[np.int32],
     NDArray[np.int32],
@@ -370,7 +378,6 @@ def trace_flows_cpp(
         else ctypes.cast(None, ctypes.POINTER(SourceDescC)),
     )
     try:
-        c_err = ctypes.c_int32(-1)
         c_num_sites = ctypes.c_int32(0)
         c_num_used_flows = ctypes.c_int32(0)
         c_total_flow_sites = ctypes.c_int32(0)
@@ -378,28 +385,12 @@ def trace_flows_cpp(
         c_total_preds = ctypes.c_int32(0)
         lib.marginal_trace_result_get_counts(
             res_ptr,
-            ctypes.byref(c_err),
             ctypes.byref(c_num_sites),
             ctypes.byref(c_num_used_flows),
             ctypes.byref(c_total_flow_sites),
             ctypes.byref(c_total_cands),
             ctypes.byref(c_total_preds),
         )
-        err_op = int(c_err.value)
-        if err_op >= 0:
-            empty_i32 = np.empty(0, dtype=np.int32)
-            empty_f64 = np.empty(0, dtype=np.float64)
-            return (
-                err_op,
-                empty_i32,
-                empty_i32,
-                empty_i32,
-                empty_i32,
-                empty_i32,
-                empty_f64,
-                empty_i32,
-                empty_i32,
-            )
         num_sites = int(c_num_sites.value)
         num_used_flows = int(c_num_used_flows.value)
         total_flow_sites = int(c_total_flow_sites.value)
@@ -427,7 +418,6 @@ def trace_flows_cpp(
             _ptr_i32(pred_flags),
         )
         return (
-            -1,
             sites,
             flow_site_offsets,
             flow_site_ids,

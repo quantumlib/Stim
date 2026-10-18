@@ -23,7 +23,11 @@ from stimside.dem_generators.dem_decoding import (
     decode_with_generated_dems,
 )
 from stimside.dem_generators.dem_generator_base import DemGenerator
-from stimside.dem_generators.dem_generator_marginal import MarginalLeakageDemGenerator
+from stimside.dem_generators.dem_generator_marginal import (
+    MarginalLeakageDemGenerator,
+    _LEAKAGE_SWAP_UNSUPPORTED,
+    _has_leakage_swap,
+)
 from stimside.util.leakage_events import ShotLeakageEvents
 
 
@@ -82,10 +86,7 @@ class LeakageDecoder(abc.ABC):
     if ``needs_leakage_events``. Both flags must not depend on the task; the
     samplers read them when compiling for a task.
     ``needs_records`` is a settable attribute: a class default (False here)
-    that an instance may override, e.g. ``dec.needs_records = True``. Leave it
-    False when records are not used: fetching them makes Tableside with
-    ``batch_size > 1`` sample full measurement records instead of only the
-    detection events.
+    that an instance may override, e.g. ``dec.needs_records = True``.
     ``name`` identifies the decoder; with ``sinter.collect`` use it as the
     task's ``decoder`` and as the ``custom_decoders`` key of the sampler.
     """
@@ -206,6 +207,16 @@ class BaseDecoder(LeakageDecoder):
             dem = task.detector_error_model or task.circuit.detector_error_model(
                 decompose_errors=self.decompose_errors
             )
+        if dem.num_detectors != task.circuit.num_detectors:
+            raise ValueError(
+                f"BaseDecoder's dem has num_detectors={dem.num_detectors} but the "
+                f"circuit has num_detectors={task.circuit.num_detectors}."
+            )
+        if dem.num_observables != task.circuit.num_observables:
+            raise ValueError(
+                f"BaseDecoder's dem has num_observables={dem.num_observables} but the "
+                f"circuit has num_observables={task.circuit.num_observables}."
+            )
         if self.decompose_errors:
             dem = _decompose_dem_graphlike(dem)
         else:
@@ -239,8 +250,7 @@ class CallableDecoder(LeakageDecoder):
             ``DecoderCallable``. With ``sinter.collect`` it must pickle (e.g. a
             module-level function).
         needs_records: whether the samplers pass the shots' measurement records.
-            If False, ``fn`` gets ``records=None`` and Tableside with
-            ``batch_size > 1`` samples only the detection events (faster).
+            If False, ``fn`` gets ``records=None``.
         name: the decoder's name; defaults to ``fn.__name__``.
     """
 
@@ -297,7 +307,10 @@ class MarginalDecoder(LeakageDecoder):
     Args:
         dem_gen: the generator of each shot's DEM from its measurement records.
             ``None`` uses ``MarginalLeakageDemGenerator()`` (default settings).
-            For one static DEM use ``BaseDecoder``.
+            For one static DEM use ``BaseDecoder``. ``compile_for_task`` raises
+            NotImplementedError for a circuit with ``SWAP[LEAKAGE_SWAP]`` (an
+            unsupported feature) unless ``dem_gen`` has ``loss_oracle=True``,
+            which accepts it with a warning.
         decoder: a ``sinter.Decoder`` or the name of one in
             ``sinter.BUILT_IN_DECODERS``.
         decompose_errors: decompose the DEM(s) into graphlike components
@@ -354,6 +367,11 @@ class MarginalDecoder(LeakageDecoder):
     def compile_for_task(self, task: sinter.Task) -> CompiledLeakageDecoder:
         if task.circuit is None:
             raise ValueError("MarginalDecoder requires a circuit in the task.")
+        # A loss_oracle dem_gen accepts SWAP[LEAKAGE_SWAP] with a warning when it analyses the
+        # circuit; a weighted one rejects it, here rather than at the first decode. (To reject it
+        # with every dem_gen, drop the `not self.dem_gen.loss_oracle` condition.)
+        if not self.dem_gen.loss_oracle and _has_leakage_swap(task.circuit):
+            raise NotImplementedError(_LEAKAGE_SWAP_UNSUPPORTED)
         decoder = self.decoder
         if isinstance(decoder, str):
             decoder = sinter.BUILT_IN_DECODERS[decoder]
@@ -394,6 +412,8 @@ class _CompiledMarginalDecoder(CompiledLeakageDecoder):
             raise ValueError(
                 "MarginalDecoder with a loss_oracle dem_gen requires leakage_events."
             )
+        if bit_packed_detection_event_data.shape[0] == 0:
+            return np.zeros((0, (self.circuit.num_observables + 7) // 8), dtype=np.uint8)
         dem = _call_dem_gen(
             self.dem_gen,
             self.circuit,

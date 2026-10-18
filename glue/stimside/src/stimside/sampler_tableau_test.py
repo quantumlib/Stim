@@ -96,3 +96,24 @@ def test_sampler_sample_and_dem_gen():
     with pytest.raises(ValueError, match="MarginalDecoder requires a decoder"):
         MarginalDecoder(decoder=None)
 
+
+def test_batched_sampler_without_records_counts_leak_errors():
+    # The leaked qubit skips the X, so in every shot L0 differs from the circuit's
+    # reference and a vacuous decoder (which doesn't need the records) errs.
+    from stimside.op_handlers.leakage_handlers.leakage_uint8_tableau import LeakageUint8
+
+    circuit = stim.Circuit(
+        "R 0\nI[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 0\nX 0\nM 0\nDETECTOR rec[-1]\n"
+        "OBSERVABLE_INCLUDE(0) rec[-1]"
+    )
+    sampler = TablesideSampler(
+        op_handler=LeakageUint8(),
+        batch_size=10,
+        dem_decoder=BaseDecoder(decoder="vacuous"),
+        seed=0,
+    )
+    stats = sampler.compiled_sampler_for_task(sinter.Task(circuit=circuit)).sample(
+        suggested_shots=20
+    )
+    assert stats.shots == 20
+    assert stats.errors == 20

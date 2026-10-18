@@ -109,9 +109,8 @@ class CompiledTablesideSampler(sinter.CompiledSampler):
             self.tab_simulator.clear()
             self.tab_simulator.run()
 
-            # With batch_size > 1, detection events are sampled on their own unless
-            # the measurement records were sampled first; the dem_decoder needs the
-            # records of the very shots that get decoded.
+            # Detection events are derived from the measurement records, so the
+            # dem_decoder sees the records of the very shots that get decoded.
             records = (
                 self.tab_simulator.get_final_measurement_records()
                 if self.needs_records

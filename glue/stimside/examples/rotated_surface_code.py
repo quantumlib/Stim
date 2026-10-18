@@ -64,7 +64,7 @@ class TaskMetadata:
                         else:
                             raise ValueError(f"Do not know what to do with measurement op {op.name}")
                         
-                        # mpad_tag = "LEAKAGE_MEASUREMENT: (0.01, U) (0.99, 2):"
+                        # mpad_tag = "LEAKAGE_MEASUREMENT: (0.01, 0) (0.01, 1) (0.99, 2):"
                         # for target in op.targets_copy():
                         #     mpad_tag += " " + str(target.value)
                         # return_circuit.append(stim.CircuitInstruction("MPAD", [0 for _ in range(len(op.targets_copy()))], tag=mpad_tag))

@@ -365,7 +365,7 @@ def test_samplers_pass_records_iff_needs_records(kind, make, needs_records):
 
 
 @pytest.mark.parametrize("needs_records", [False, True])
-def test_tableside_without_records_samples_only_detection_events(needs_records):
+def test_tableside_detection_events_come_from_the_sampled_records(needs_records):
     sampler = TablesideSampler(
         op_handler=LeakageUint8(),
         batch_size=4,
@@ -375,7 +375,48 @@ def test_tableside_without_records_samples_only_detection_events(needs_records):
         sinter.Task(circuit=COIN_CIRCUIT, decoder="_dets_decoder")
     )
     assert compiled.sample(suggested_shots=64).errors == 0
-    # Records are only sampled (compile_sampler + m2d) when fetched; otherwise
-    # the detection events come from compile_detector_sampler.
-    fetched = compiled.tab_simulator._final_measurement_records is not None
-    assert fetched is needs_records
+    # Whether or not the decoder needs the records, the detection events are
+    # those of the sampled records (converted with the circuit's detectors).
+    sim = compiled.tab_simulator
+    np.testing.assert_array_equal(
+        sim.get_detector_flips(append_observables=True),
+        COIN_CIRCUIT.compile_m2d_converter().convert(
+            measurements=sim.get_final_measurement_records(), append_observables=True
+        ),
+    )
+
+
+def test_base_decoder_rejects_a_dem_that_does_not_match_the_circuit():
+    # sinter.Task's rule: the DEM has the circuit's detector and observable counts.
+    # A (shots, 1) prediction against (shots, 2) observables would broadcast.
+    two_obs = stim.Circuit(
+        "R 0 1\nX_ERROR(0.2) 0\nM 0 1\nDETECTOR rec[-2]\n"
+        "OBSERVABLE_INCLUDE(0) rec[-2]\nOBSERVABLE_INCLUDE(1) rec[-1]"
+    )
+    task = sinter.Task(circuit=two_obs, decoder="base")
+    one_obs = BaseDecoder(stim.DetectorErrorModel("error(0.2) D0 L0"))
+    with pytest.raises(ValueError, match="num_observables=1 but the circuit has num_observables=2"):
+        one_obs.compile_for_task(task)
+    with pytest.raises(ValueError, match="num_observables=1 but the circuit has num_observables=2"):
+        CosetsideSampler(
+            op_handler=LeakageUint8Coset(), batch_size=16, dem_decoder=one_obs
+        ).compiled_sampler_for_task(task)
+    two_dets = BaseDecoder(stim.DetectorErrorModel("error(0.2) D0 L0 L1\nerror(0.1) D1"))
+    with pytest.raises(ValueError, match="num_detectors=2 but the circuit has num_detectors=1"):
+        two_dets.compile_for_task(task)
+    BaseDecoder(
+        stim.DetectorErrorModel("error(0.2) D0 L0\nlogical_observable L1")
+    ).compile_for_task(task)
+
+
+@pytest.mark.parametrize("decompose_errors", [False, True])
+@pytest.mark.parametrize("reweight_only", [False, True])
+def test_marginal_decoder_decodes_zero_shots(decompose_errors, reweight_only):
+    compiled = MarginalDecoder(
+        decompose_errors=decompose_errors, reweight_only=reweight_only
+    ).compile_for_task(sinter.Task(circuit=REP_CIRCUIT))
+    out = compiled.decode_shots_bit_packed(
+        bit_packed_detection_event_data=np.zeros((0, 1), dtype=np.uint8),
+        records=np.zeros((0, REP_CIRCUIT.num_measurements), dtype=bool),
+    )
+    assert out.shape == (0, 1) and out.dtype == np.uint8  # like BaseDecoder

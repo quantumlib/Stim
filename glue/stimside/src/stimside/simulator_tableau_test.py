@@ -597,4 +597,34 @@ def test_interactive_do_past_the_end(batch_size):
             tss.interactive_do(stim.Circuit(op))
 
 
+@pytest.mark.parametrize("use_cpp_kernels", [True, False])
+@pytest.mark.parametrize("records_first", [False, True])
+@pytest.mark.parametrize(
+    "text",
+    [
+        # The leaked qubit skips the X: M 0 is 0, the circuit's reference is 1.
+        "R 0\nI[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 0\nX 0\nM 0\nDETECTOR rec[-1]\n"
+        "OBSERVABLE_INCLUDE(0) rec[-1]",
+        # The leak resets the qubit to 0: M 0 is 0, the circuit's reference is 1.
+        "X 0\nI[LEAKAGE_TRANSITION_1: (1.0, U-->2)] 0\nI[LEAKAGE_TRANSITION_1: (1.0, 2-->0)] 0\n"
+        "M 0\nDETECTOR rec[-1]",
+    ],
+)
+def test_batched_detection_events_are_relative_to_the_circuit_reference(
+    text, records_first, use_cpp_kernels
+):
+    from stimside.op_handlers.leakage_handlers.leakage_uint8_tableau import LeakageUint8
 
+    circuit = stim.Circuit(text)
+    tss = TablesideSimulator(
+        circuit=circuit,
+        compiled_op_handler=LeakageUint8().compile_op_handler(circuit=circuit, batch_size=4),
+        batch_size=4,
+        seed=0,
+        use_cpp_kernels=use_cpp_kernels,
+    )
+    tss.run()
+    if records_first:
+        tss.get_final_measurement_records()
+    assert tss.get_detector_flips()[:, 0].tolist() == [True] * 4
+    assert tss.get_final_measurement_records()[:, 0].tolist() == [False] * 4

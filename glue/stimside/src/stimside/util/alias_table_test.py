@@ -1,6 +1,14 @@
+import math
+import random
+
 import numpy as np
 import pytest
 
+from stimside.op_handlers.leakage_handlers.leakage_parameters import (
+    LeakageTransition1Params,
+    LeakageTransition2Params,
+    LeakageTransitionZParams,
+)
 from stimside.util.alias_table import build_alias_table, sample_from_alias_table
 
 class TestBuildAliasTable:
@@ -64,6 +72,139 @@ class TestBuildAliasTable:
         elements = [(1, 0.25), (2, 1.25)]
         with pytest.raises(ValueError, match="probabilities outside 0<=p<=1."):
             build_alias_table(elements)
+
+    def test_build_alias_table_total_off_by_rounding(self):
+        # LEAKAGE_TRANSITION_2 (0.1, 2_U-->3_X) (0.13, 2_U-->3_Y) (0.11, 2_U-->3_Z) plus its
+        # remainder 1 - sum: with Python >= 3.12's compensated sum() these total 1 - 1 ulp.
+        # The other two total 1 - 1 ulp and 1 + 1 ulp in any Python.
+        probs = [((3, "X"), 0.1), ((3, "Y"), 0.13), ((3, "Z"), 0.11)]
+        for elements in (
+            [*probs, ((2, "U"), 1 - sum(p for _, p in probs))],
+            [(1, 0.5), (2, 0.5 - 2**-53)],
+            [(1, 0.5), (2, 0.5 + 2**-52)],
+        ):
+            got = _implied_distribution(build_alias_table(elements))
+            assert got == pytest.approx({_key(e): p for e, p in elements}, abs=1e-15)
+
+    @pytest.mark.parametrize(
+        "elements",
+        [
+            [(1, 0.7), (2, 0.7)],
+            [(1, 0.5), (2, 0.49998)],
+            [(1, 0.25), (2, 0.75002)],
+            # Off 1 by more than rounding, though np.isclose to it.
+            [(1, 0.25), (2, 0.750005)],
+            [(1, 0.5), (2, 0.5 + 1e-9)],
+            [(1, 0.5), (2, 0.5 - 1e-9)],
+            [(1, 0.5), (2, float("nan"))],
+        ],
+    )
+    def test_build_alias_table_total_off_by_more_than_rounding_raises(self, elements):
+        with pytest.raises(ValueError, match="complete set of disjoint probabilities"):
+            build_alias_table(elements)
+
+
+def _key(element):
+    """An element or table entry (an int, a str, or a tuple / numpy row of them) as a tuple of str."""
+    return tuple(str(v) for v in np.atleast_1d(np.asarray(element, dtype=object)).tolist())
+
+
+def _implied_distribution(table):
+    """The distribution sample_from_alias_table draws from, keyed by _key."""
+    bases, aliases, thresholds = table
+    n = len(thresholds)
+    dist = {}
+    for base, alias, t in zip(bases, aliases, thresholds):
+        dist[_key(base)] = dist.get(_key(base), 0.0) + t / n
+        dist[_key(alias)] = dist.get(_key(alias), 0.0) + (1 - t) / n
+    return dist
+
+
+def test_transition_params_build_alias_tables_for_totals_off_1_by_rounding():
+    # Randomized grid over LEAKAGE_TRANSITION_1 / _2 / _Z argument sets from one input state:
+    # decimals (summing to <= 1, or to exactly 1 in decimal), floats (scaled to a total <= 1,
+    # or normalized to 1), and totals above 1 by rounding (accepted), by more than rounding
+    # though np.isclose to 1, or beyond np.isclose (both rejected with the validation error).
+    # Each accepted set must sample transition i with p_i (p_i / total if total > 1) and stay
+    # with max(0, 1 - total).
+    rng = random.Random(2026)
+    one_q = ["U", 2, 3, 4, 5, 6, 7, 8, 9]
+    leg_out = ["U", "X", "Y", "Z", "D", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    num_accepted = num_rejected_np_isclose = 0
+    for trial in range(1400):
+        mode = trial % 7
+        k = rng.randint(2 if mode >= 4 else 1, 5)
+        if mode == 0:
+            d = rng.choice([2, 3, 4, 6])
+            ps = [round(rng.random() / k, d) for _ in range(k)]
+        elif mode in (1, 4, 5, 6):
+            d = rng.choice([1, 2, 3, 4])
+            cuts = sorted(rng.sample(range(1, 10**d), k - 1))
+            ps = [(b - a) / 10**d for a, b in zip([0, *cuts], [*cuts, 10**d])]
+            i = ps.index(max(ps))
+            if mode == 4:
+                for _ in range(rng.randint(1, 3)):
+                    ps[i] = math.nextafter(ps[i], 2.0)
+            if mode == 5:
+                ps[i] += rng.choice([1e-12, 1e-9, 1e-6, 9e-6])
+            if mode == 6:
+                ps[0] += rng.choice([2e-5, 1e-3, 0.4])
+        else:
+            u = [rng.random() for _ in range(k)]
+            scale = rng.random() / sum(u) if mode == 2 else 1 / sum(u)
+            ps = [x * scale for x in u]
+        kind = rng.choice(["LT1", "LT2", "LTZ"])
+        if kind == "LT2":
+            s0 = (rng.choice(one_q), rng.choice(one_q))
+            outs = list(dict.fromkeys((rng.choice(leg_out), rng.choice(leg_out)) for _ in range(40)))
+            outs = [o for o in outs if o != s0][:k]
+            cls = LeakageTransition2Params
+        else:
+            states = one_q if kind == "LT1" else list(range(10))
+            s0 = rng.choice(states)
+            outs = rng.sample([s for s in states if s != s0], k)
+            cls = LeakageTransition1Params if kind == "LT1" else LeakageTransitionZParams
+        args = tuple((p, s0, out) for p, out in zip(ps, outs))
+        total = sum(p for p, _, _ in args)
+        if total > 1 and not np.isclose(total, 1):
+            with pytest.raises(ValueError, match="total probability"):
+                cls(args=args, from_tag="grid")
+            continue
+        if mode == 5:
+            with pytest.raises(ValueError, match="total probability"):
+                cls(args=args, from_tag="grid")
+            num_rejected_np_isclose += 1
+            continue
+        got = _implied_distribution(cls(args=args, from_tag="grid").alias_table_by_input_state[s0])
+        want = {_key(out): p / max(total, 1.0) for p, _, out in args}
+        want[_key(s0)] = want.get(_key(s0), 0.0) + max(0.0, 1 - total)
+        for key in set(got) | set(want):
+            assert abs(got.get(key, 0.0) - want.get(key, 0.0)) <= 1e-12, (kind, args)
+        num_accepted += 1
+    assert num_accepted > 900 and num_rejected_np_isclose > 150
+
+
+@pytest.mark.parametrize("kind", ["LT1", "LT2", "LTZ"])
+def test_transition_params_validate_totals_above_1_with_the_alias_table_tolerance(kind):
+    # A total above 1 passes the params' validation iff the alias table builds it: within 4 ulps
+    # (of 1) per nonzero probability, so zero-probability transitions do not widen it. Beyond
+    # that it gets the validation error, not the alias table's.
+    cls, s0, outs = {
+        "LT1": (LeakageTransition1Params, "U", [2, 3, 4, 5]),
+        "LT2": (LeakageTransition2Params, ("U", "U"), [("U", "X"), ("U", "Y"), ("U", "Z"), (2, "U")]),
+        "LTZ": (LeakageTransitionZParams, 0, [2, 3, 4, 5]),
+    }[kind]
+    for num_zeros in (0, 2):
+        for ulps in (8, 9):  # two nonzero probabilities: up to 8 ulps is rounding
+            ps = [0.5, 0.5 + ulps * math.ulp(1.0), *[0.0] * num_zeros]  # total exactly 1 + ulps ulps
+            args = tuple((p, s0, out) for p, out in zip(ps, outs))
+            if ulps == 8:
+                got = _implied_distribution(cls(args=args, from_tag="t").alias_table_by_input_state[s0])
+                want = {_key(out): p / sum(ps) for p, out in zip(ps, outs) if p}
+                assert got == pytest.approx(want, abs=1e-15)
+            else:
+                with pytest.raises(ValueError, match="total probability 1.000000000000002>1"):
+                    cls(args=args, from_tag="t")
 
 
 class TestSampleFromAliasTable:

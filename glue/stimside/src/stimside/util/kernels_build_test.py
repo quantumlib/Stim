@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import ctypes
+import functools
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -8,7 +11,7 @@ from unittest import mock
 import pytest
 
 import stimside
-from stimside.util import coset_kernels, marginal_dem_kernels, tableside_kernels
+from stimside.util import _kernel_loader, coset_kernels, marginal_dem_kernels, tableside_kernels
 
 KERNELS = pytest.mark.parametrize(
     "mod,name",
@@ -88,3 +91,33 @@ def test_missing_so_and_cpp_raises_clear_file_not_found(
     monkeypatch.setattr(mod, "__file__", str(empty_util / f"{name}.py"))
     with pytest.raises(FileNotFoundError, match="pip install"):
         _resolve(mod, name)
+
+
+def _stale_tiny_library(tmp_path: Path) -> tuple[functools.partial[Path], Path]:
+    # A prebuilt library from an older layout, not older than the .cpp (so only the sentinel
+    # can tell).
+    util = tmp_path / "src" / "stimside" / "util"
+    util.mkdir(parents=True)
+    (tmp_path / "setup.py").write_text("# dummy\n", encoding="utf-8")
+    cpp = util / "tiny.cpp"
+    resolve = functools.partial(_kernel_loader.resolve_so, str(util / "tiny.py"), "tiny")
+    cpp.write_text('extern "C" int tiny_abi_v1() { return 1; }\n', encoding="utf-8")
+    so = resolve(force_recompile=True)
+    cpp.write_text('extern "C" int tiny_abi_v2() { return 2; }\n', encoding="utf-8")
+    t = cpp.stat().st_mtime + 10
+    os.utime(so, (t, t))
+    return resolve, so
+
+
+def test_library_without_the_sentinel_is_rebuilt_and_used(tmp_path: Path) -> None:
+    # The rebuilt library must be returned, not the stale one already loaded.
+    resolve, _ = _stale_tiny_library(tmp_path)
+    assert _kernel_loader.load_cdll(resolve, "tiny_abi_v2").tiny_abi_v2() == 2
+
+
+def test_stale_library_that_stays_loaded_raises_instead_of_being_used(tmp_path: Path) -> None:
+    resolve, so = _stale_tiny_library(tmp_path)
+    held = ctypes.CDLL(str(so))  # another handle, so the stale library cannot be unloaded
+    with pytest.raises(RuntimeError, match="restart Python"):
+        _kernel_loader.load_cdll(resolve, "tiny_abi_v2")
+    assert not hasattr(held, "tiny_abi_v2")

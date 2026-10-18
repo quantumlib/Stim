@@ -36,27 +36,28 @@ class LeakageMeasurementParams:
         )
 
     def _validate(self):
+        name = self.from_tag.split(":", 1)[0].strip() or self.name
         seen_states = set()
         for p, state in self.args:
             if not 0 <= p <= 1:
                 raise ValueError(
-                    f"{self.name} has probability argument {p} outside [0,1]"
+                    f"{name} has probability argument {p} outside [0,1]"
                 )
             if state < 0 or state > 9 or isinstance(state, str):
                 raise ValueError(
-                    f"{self.name} has invalid state {state}, must be an int between 0 and 9"
+                    f"{name} has invalid state {state}, must be an int between 0 and 9"
                 )
             if state in seen_states:
-                raise ValueError(f"{self.name} has repeated state {state}")
+                raise ValueError(f"{name} has repeated state {state}")
             seen_states.add(state)
 
         if self.targets:
             seen_qubits = set()
             for qubit in self.targets:
                 if qubit < 0:
-                    raise ValueError(f"{self.name} has target qubit index {qubit} < 0")
+                    raise ValueError(f"{name} has target qubit index {qubit} < 0")
                 if qubit in seen_qubits:
-                    raise ValueError(f"{self.name} has repeated qubit target {qubit}")
+                    raise ValueError(f"{name} has repeated qubit target {qubit}")
                 seen_qubits.add(qubit)
 
     def _build_prob_for_input_state(self):

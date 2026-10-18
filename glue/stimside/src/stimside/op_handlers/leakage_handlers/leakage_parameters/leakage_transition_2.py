@@ -3,7 +3,7 @@ from typing import ClassVar, Literal
 
 import numpy as np
 
-from stimside.util.alias_table import build_alias_table, sample_from_alias_table
+from stimside.util.alias_table import build_alias_table, is_1_up_to_rounding, sample_from_alias_table
 
 InState = int | Literal["U"]
 OutState = int | Literal["U", "V", "X", "Y", "Z", "D"]
@@ -33,10 +33,10 @@ class LeakageTransition2Params:
         object.__setattr__(
             self, "args_by_input_state", self._build_args_by_input_state()
         )
+        self._validate()
         object.__setattr__(
             self, "alias_table_by_input_state", self._build_alias_table_by_input_state()
         )
-        self._validate()
 
     def __eq__(self, other):
         if not isinstance(other, LeakageTransition2Params):
@@ -49,7 +49,7 @@ class LeakageTransition2Params:
     def _validate(self):
         for s0, transitions in self.args_by_input_state.items():
             total_p = sum(p for s1, p in transitions)
-            if total_p > 1 and not np.isclose(total_p, 1):
+            if total_p > 1 and not is_1_up_to_rounding(total_p, [p for s1, p in transitions]):
                 raise ValueError(
                     f"{self.name} total probability {total_p}>1 "
                     f"for input state {s0}"
@@ -67,18 +67,20 @@ class LeakageTransition2Params:
 
             for state in pair0:
                 if not (isinstance(state, str) and state in ["U"]):
-                    if not (isinstance(state, int) and state >= 0):
+                    if not (isinstance(state, int) and 0 <= state <= 9):
                         raise ValueError(
-                            f"{self.name} has invalid start state {pair0}->{pair1}"
+                            f"{self.name} has invalid start state {pair0}->{pair1}, "
+                            "states must be 'U' or an int between 0 and 9"
                         )
 
             for state in pair1:
                 if not (
                     isinstance(state, str) and state in OUT_ERROR_STATES + ["U", "V"]
                 ):
-                    if not (isinstance(state, int) and state >= 0):
+                    if not (isinstance(state, int) and 0 <= state <= 9):
                         raise ValueError(
-                            f"{self.name} has invalid end state {pair0}->{pair1}"
+                            f"{self.name} has invalid end state {pair0}->{pair1}, "
+                            "states must be 'U', 'V', 'X', 'Y', 'Z', 'D' or an int between 0 and 9"
                         )
 
             if (pair1[0] == "V" and pair0[0] != "U") or (
@@ -100,7 +102,7 @@ class LeakageTransition2Params:
         alias_tables_by_input_state = {}
         for input_state, args in self.args_by_input_state.items():
             sum_probs = sum(a[1] for a in args)
-            args_list = [*args, (input_state, 1 - sum_probs)]
+            args_list = [*args, (input_state, max(0.0, 1 - sum_probs))]
             alias_table = build_alias_table(args_list)
             alias_tables_by_input_state[input_state] = alias_table
         return alias_tables_by_input_state

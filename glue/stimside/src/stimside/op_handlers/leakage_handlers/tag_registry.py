@@ -34,6 +34,18 @@ class TagDef:
             )
 
         gd = stim.gate_data(op.name)
+
+        if self.name.startswith("CONDITIONED_ON") and gd.produces_measurements:
+            raise ValueError(
+                f"Tag '{self.name}' cannot be attached to '{op.name}', which produces "
+                "measurement results: a conditioned instruction would drop its results "
+                "in the shots where its condition fails."
+            )
+        if self.name.startswith("CONDITIONED_ON") and gd.is_reset:
+            raise ValueError(
+                f"Tag '{self.name}' cannot be attached to '{op.name}', which is a reset: "
+                "conditioned resets are not supported."
+            )
         
         if self.allowed_arity == 1 and not gd.is_single_qubit_gate:
             raise ValueError(f"1Q leakage tag '{op.tag}' attached to not-1Q stim gate '{op.name}'.")
@@ -181,3 +193,16 @@ def _parse_leakage_in_circuit_recurse(
                 parsed_tags[op] = parsed
 
     return parsed_tags
+
+
+def check_tag_qubits(
+    ops_to_params: dict[stim.CircuitInstruction, LeakageParams], num_qubits: int
+) -> None:
+    """Raise ValueError if a tag lists a qubit index >= the circuit's ``num_qubits``."""
+    for op, params in ops_to_params.items():
+        qubits = getattr(params, "targets", None) or ()
+        if any(q >= num_qubits for q in qubits):
+            raise ValueError(
+                f"{op} lists qubit {max(qubits)} in its tag, but the circuit has "
+                f"num_qubits={num_qubits}."
+            )

@@ -276,7 +276,7 @@ def test_unrolled_to_flattened_indices():
 
 
 def test_unrolled_to_flattened_indices_detects_fusion():
-    # circuit.flattened() fuses the identical ops of consecutive iterations.
+    # circuit.flattened() fuses the identical ops of consecutive iterations
+    # (X_ERROR(0.1) 0 0); both unrolled copies map to the fused op.
     circuit = stim.Circuit("R 0 1\nREPEAT 2 {\n    X_ERROR(0.1) 0\n}\nM 0 1")
-    with pytest.raises(ValueError, match="flattened"):
-        unrolled_to_flattened_indices(circuit)
+    assert unrolled_to_flattened_indices(circuit).tolist() == [0, 1, 1, 2]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import _ctypes
 from collections.abc import Callable
 import ctypes
 import os
@@ -131,11 +132,25 @@ def resolve_so(
 
 
 def load_cdll(resolve: Callable[..., Path], sentinel: str | None = None) -> ctypes.CDLL:
-    """Load the resolved library; recompile once if loading fails or `sentinel` is not exported."""
+    """Load the resolved library; recompile once if loading fails or `sentinel` is not exported.
+
+    Raises RuntimeError rather than return a rebuilt library that still lacks `sentinel`.
+    """
     try:
         lib = ctypes.CDLL(str(resolve()))
         if sentinel is not None:
             getattr(lib, sentinel)
-    except (OSError, AttributeError):
-        lib = ctypes.CDLL(str(resolve(force_recompile=True)))
+        return lib
+    except AttributeError:
+        # Else dlopen hands this stale library back for the rebuilt one (same path).
+        _ctypes.dlclose(lib._handle)
+    except OSError:
+        pass
+    lib = ctypes.CDLL(str(resolve(force_recompile=True)))
+    if sentinel is not None and not hasattr(lib, sentinel):
+        # dlopen handed back the stale library: another handle keeps it loaded (or the source lacks it).
+        raise RuntimeError(
+            f"{lib._name} does not export {sentinel} even after a rebuild: restart Python if an "
+            "older copy of it was loaded earlier in this process."
+        )
     return lib

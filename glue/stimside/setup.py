@@ -190,6 +190,7 @@ else:
             "numpy",
             "stim",
             "sinter",
+            "pymatching",
         ],
         options={"build": {"build_base": "python_build_stimside"}},
     )

@@ -21,14 +21,15 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters import (
 
 # --- PARSER HELPERS ---
 
-def _combine_conditioned_states(states: list[int | str]) -> list[int | str]:
+def _combine_conditioned_states(states: list[int | str], name: str) -> list[int | str]:
+    bad = "must be 'U' or an int between 0 and 9"
     if "U" in states:
         new_states: list[int | str] = ["U"]
         for st in states:
             if isinstance(st, int):
                 if 1 < st < 10: new_states.append(st)
-                elif st < 0 or st > 9: raise ValueError(f"State {st} out of range 0-9.")
-            elif st != "U": raise ValueError("Invalid state element.")
+                elif st < 0 or st > 9: raise ValueError(f"{name} has invalid state {st}, {bad}")
+            elif st != "U": raise ValueError(f"{name} has invalid state {st}, {bad}")
         return new_states
     else:
         new_states, qubit_states = [], []
@@ -36,16 +37,16 @@ def _combine_conditioned_states(states: list[int | str]) -> list[int | str]:
             if isinstance(st, int) and not isinstance(st, bool) and st in [0, 1]:
                 qubit_states.append(st)
             elif not isinstance(st, int) or isinstance(st, bool) or not (1 < st < 10):
-                raise ValueError(f"State {st} out of range 0-9.")
+                raise ValueError(f"{name} has invalid state {st}, {bad}")
             else:
                 new_states.append(st)
         if 0 in qubit_states and 1 in qubit_states: new_states.append("U")
         else: new_states += qubit_states
         return new_states
 
-def _parse_list_of_states(args: str) -> set[str | int]:
+def _parse_list_of_states(args: str, name: str) -> set[str | int]:
     states = [try_as_integer(st.strip()) for st in args.split()]
-    return set(_combine_conditioned_states(cast(list[int | str], states)))
+    return set(_combine_conditioned_states(cast(list[int | str], states), name))
 
 # --- TAG-SPECIFIC PARSER FUNCTIONS ---
 
@@ -57,11 +58,15 @@ def _parse_controlled_error(op: stim.CircuitInstruction, match: Any, sim: str) -
         a_parsed = [a[0]] + [s.strip() for s in a[1].split("-->")]
         if len(a_parsed) != 3: raise ValueError(f"Malformed transition '{a_parsed}' in {op.tag}.")
         p, state, pauli = float(a_parsed[0]), try_as_integer(a_parsed[1]), a_parsed[2]
-        if not isinstance(state, int) or state <= 1: raise ValueError(f"State must be >= 2, got {state}")
+        if not isinstance(state, int) or state <= 1 or state > 9:
+            raise ValueError(
+                f"{LeakageControlledErrorParams.name} has invalid state {state}, "
+                "must be a leaked state between 2 and 9"
+            )
         errors.append((p, state, cast(Literal["X", "Y", "Z"], pauli)))
     return LeakageControlledErrorParams(args=tuple(errors), from_tag=op.tag)
 
-def _parse_transition_1(op: stim.CircuitInstruction, match: Any, sim: str) -> LeakageTransition1Params:
+def _parse_transitions_1(op: stim.CircuitInstruction, match: Any) -> list[Any]:
     args_tuples = split_arguments(match.group("args"))
     transitions = []
     for a in args_tuples:
@@ -72,12 +77,14 @@ def _parse_transition_1(op: stim.CircuitInstruction, match: Any, sim: str) -> Le
         s0, s1 = try_as_integer(m.group("s0")), try_as_integer(m.group("s1"))
         transitions.append((p, s0, s1))
         if m.group("direction") == "<->": transitions.append((p, s1, s0))
-    return LeakageTransition1Params(args=cast(Any, tuple(transitions)), from_tag=op.tag)
+    return transitions
+
+def _parse_transition_1(op: stim.CircuitInstruction, match: Any, sim: str) -> LeakageTransition1Params:
+    return LeakageTransition1Params(args=cast(Any, tuple(_parse_transitions_1(op, match))), from_tag=op.tag)
 
 def _parse_transition_z(op: stim.CircuitInstruction, match: Any, sim: str) -> LeakageTransitionZParams:
-    # Use transition 1 logic but return Z params
-    res = _parse_transition_1(op, match, sim)
-    return LeakageTransitionZParams(args=cast(Any, res.args), from_tag=op.tag)
+    # Use transition 1 parsing (not its validation) but return Z params
+    return LeakageTransitionZParams(args=cast(Any, tuple(_parse_transitions_1(op, match))), from_tag=op.tag)
 
 def _parse_transition_2(op: stim.CircuitInstruction, match: Any, sim: str) -> LeakageTransition2Params:
     args_tuples = split_arguments(match.group("args"))
@@ -115,13 +122,13 @@ def _parse_measurement(op: stim.CircuitInstruction, match: Any, sim: str) -> Lea
     )
 
 def _parse_conditioned_self(op: stim.CircuitInstruction, match: Any, sim: str) -> LeakageConditioningParams:
-    states = _parse_list_of_states(match.group("args"))
+    states = _parse_list_of_states(match.group("args"), match.group("name"))
     return LeakageConditioningParams(args=(tuple(states),), from_tag=op.tag, targets=None)
 
 def _parse_conditioned_other(op: stim.CircuitInstruction, match: Any, sim: str) -> LeakageConditioningParams:
     args, targets = match.group("args"), match.group("targets")
     if not targets: raise ValueError("CONDITIONED_ON_OTHER tag needs to specify targets.")
-    states = _parse_list_of_states(args)
+    states = _parse_list_of_states(args, match.group("name"))
     return LeakageConditioningParams(
         args=(tuple(states),), 
         from_tag=op.tag, 

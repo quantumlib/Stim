@@ -14,6 +14,7 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters import (
     LeakageMeasurementParams,
     LeakageSwapParams,
 )
+from stimside.op_handlers.leakage_handlers.tag_registry import check_tag_qubits
 from stimside.simulator_tableau import TablesideSimulator
 from stimside.util.numpy_types import Bool2DArray, Int2DArray
 from stimside.util.stim_workarounds import split_fused_instruction
@@ -25,7 +26,7 @@ class LeakageUint8(OpHandler[TablesideSimulator]):
 
     Basically, we're straight up storing the leakage state for each qubit.
     Pro: hard to mess up
-        Supports leakage states up to 255
+        Supports leakage states up to 9 (tags with higher states are rejected)
         Easy to store and work with using numpy
     Con: probably not as fast as using a bool array for each leakage level we care about
         We spend a reasonable amount of time computing masks like state==2
@@ -52,6 +53,7 @@ class LeakageUint8(OpHandler[TablesideSimulator]):
         from stimside.util.tableside_kernels import get_precompiled_circuit
 
         pre = get_precompiled_circuit(circuit, self.unconditional_condition_on_U)
+        check_tag_qubits(pre.parsed_ops, circuit.num_qubits)
 
         handler = CompiledLeakageUint8(
             num_qubits=circuit.num_qubits,

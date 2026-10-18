@@ -19,6 +19,7 @@ from stimside.op_handlers.leakage_handlers.leakage_parameters import (
 from stimside.op_handlers.leakage_handlers.leakage_tag_parsing_tableau import (
     parse_leakage_in_circuit,
 )
+from stimside.op_handlers.leakage_handlers.tag_registry import check_tag_qubits
 from stimside.simulator_coset import CosetsideSimulator
 from stimside.util.stim_workarounds import broadcast_pauli_errors, split_fused_instruction
 
@@ -96,6 +97,7 @@ class LeakageUint8Coset(OpHandler[CosetsideSimulator]):
         self, *, circuit: stim.Circuit, batch_size: int
     ) -> "CompiledLeakageUint8Coset":
         parsed_ops = parse_leakage_in_circuit(circuit)
+        check_tag_qubits(parsed_ops, circuit.num_qubits)
         return CompiledLeakageUint8Coset(
             num_qubits=circuit.num_qubits,
             batch_size=batch_size,

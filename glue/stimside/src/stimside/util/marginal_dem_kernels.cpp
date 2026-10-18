@@ -57,7 +57,7 @@ struct OpDescC {
     int32_t ctrl_leg0_basis;  // 0=None, 1=+X, 3=+Y, 5=+Z
     int32_t ctrl_leg1_basis;  // 0=None, 1=+X, 3=+Y, 5=+Z
     int32_t cond_base_fires;
-    int32_t cond_subkind;     // 0=other, 1=produces_meas, 2=is_reset, 3=noisy_gate, 4=1q_unitary, 5=2q_unitary, 6=heralded_or_noisy_nonmeas
+    int32_t cond_subkind;     // 0=other, 3=noisy_gate, 4=1q_unitary, 5=2q_unitary, 6=heralded_or_noisy_nonmeas
     int32_t cond_channel_id;
 };
 
@@ -69,12 +69,15 @@ struct SourceDescC {
     double weight;
     int32_t partner;
     int32_t partner_channel_id;  // -1 if None
+    int32_t init_tracked;  // Pauli id (0 = unknown) of the qubit's noiseless reference state just before the leak
 };
 
 struct Trans1RuleC {
     int32_t state;
     double p_unleak;
-    int32_t next_state;  // -1 if no state has p >= kOne
+    int32_t next_state;  // the leaked state the flow goes on in; -1 to keep its state
+    int32_t fork_offset;  // into move_branches: the other leaked states a forkable flow branches into
+    int32_t fork_count;
 };
 
 struct Trans2RuleC {
@@ -87,11 +90,19 @@ struct Trans2RuleC {
     int32_t max_move_state;
     int32_t stay_next_state;
     int32_t channel_id;  // -1 if None
+    // Into move_branches: the other leaked states a forkable flow branches into, on its own
+    // qubit if p_move < kOne, else on the partner (a certain hop into one of several states).
+    int32_t fork_offset;
+    int32_t fork_count;
+    int32_t fork_channel_id;  // the partner channel of a flow that forked on its own qubit; -1 if None
+    int32_t spread_offset;  // into move_branches: {partner's new leaked state, p, -1} of the outcomes where
+    int32_t spread_count;   // this qubit stays leaked and the partner leaks too (a spread)
 };
 
 struct MoveBranchC {
     int32_t state;
     double prob;
+    int32_t channel_id;  // fork branches on the flow's own qubit: their partner channel; -1 if None
 };
 
 struct MeasStateProbC {
@@ -142,7 +153,6 @@ struct FlowRecord {
 };
 
 struct TraceResult {
-    int32_t error_op_index = -1;
     std::vector<SiteKey> unique_sites;
     std::vector<int32_t> flow_site_offsets;
     std::vector<int32_t> flow_site_ids;
@@ -525,6 +535,12 @@ bool flat_dem_has_hyperedge(const std::vector<DemLine>& lines) {
 
 extern "C" {
 
+// The version of the struct layouts and function signatures in this file: marginal_dem_kernels.py
+// loads this library with this symbol as its load_cdll sentinel, so a library built from an older
+// version lacks it and is rebuilt instead of being misread. On any layout or signature change, bump
+// the version (name and value) here and in marginal_dem_kernels.py.
+int32_t marginal_dem_kernels_abi_v4() { return 4; }
+
 // source_mode == false: the weighted (flag-attributed) trace of marginal_trace_flows.
 // source_mode == true: the per-source trace of marginal_trace_source_flows (the
 // "flags" of the result are the sources; see that function).
@@ -579,6 +595,7 @@ static TraceResult* trace_flows_impl(
         double mix;  // source_mode: the flow's weight within its source's envelope
         std::vector<int32_t> sites;
         std::vector<FlagVisit> flags;
+        bool ref_known = false;  // `tracked` comes from the noiseless reference: trusted by 1Q skips only
     };
 
     auto depolarize_1 = [&](ActiveFlow& f, int32_t is_before, int32_t q) {
@@ -603,7 +620,7 @@ static TraceResult* trace_flows_impl(
     };
 
     auto do_bare = [&](ActiveFlow& f, const OpDescC& op, const int32_t* t_ptr, int32_t t_cnt, int32_t subkind) {
-        if (subkind == 3 || subkind == 6 || subkind == 7) {  // heralded or noisy non-measurement
+        if (subkind == 3 || subkind == 6) {  // heralded or noisy non-measurement
             return;
         }
         if (subkind == 4) {  // 1Q unitary
@@ -617,6 +634,7 @@ static TraceResult* trace_flows_impl(
         }
         if (subkind == 2) {  // pure reset (not producing measurements)
             f.tracked = op.reset_basis;
+            f.ref_known = false;  // an in-flow reset makes the state actually known
             f.desynced = false;
             return;
         }
@@ -624,12 +642,19 @@ static TraceResult* trace_flows_impl(
             depolarize_1(f, 1, f.h);
         }
         f.tracked = op.reset_basis;
+        f.ref_known = false;
     };
 
     auto do_skip = [&](ActiveFlow& f, const OpDescC& op, const int32_t* t_ptr, int32_t t_cnt, bool is_1q) {
         if (is_1q) {
+            const int32_t* c_row = conj_table + op.gate_id * 7;
             if (f.tracked != 0) {
-                f.tracked = conj_table[op.gate_id * 7 + f.tracked];
+                int32_t next_t = c_row[f.tracked];
+                bool fixes = (next_t == f.tracked);
+                f.tracked = next_t;
+                if (fixes) return;  // U fixes both eigenspaces of P: skipping U is applying it, even after a Pauli error
+            } else if (c_row[1] == 1 && c_row[2] == 2 && c_row[3] == 3) {
+                return;  // the identity
             }
             f.desynced = true;
             return;
@@ -640,9 +665,11 @@ static TraceResult* trace_flows_impl(
         int32_t partner = (leg == 0) ? q1 : q0;
         int32_t needed = (leg == 0) ? op.ctrl_leg0_basis : op.ctrl_leg1_basis;
         if (needed != 0 && partner >= 0) {
-            if (f.tracked != needed) {
+            int32_t actual_tracked = f.ref_known ? 0 : f.tracked;  // a reference state is not robust to Pauli noise here
+            if (actual_tracked != needed) {
                 depolarize_1(f, 1, f.h);
                 f.tracked = needed;
+                f.ref_known = false;
                 f.desynced = true;
             }
         } else {
@@ -650,9 +677,30 @@ static TraceResult* trace_flows_impl(
         }
     };
 
-    std::vector<ActiveFlow> branches;
+    // A branch of the flow `f` (not done) that goes on in leaked state `s` on qubit `h` with
+    // probability `prob`; `f` itself is unchanged. Like a hop branch it does not branch again,
+    // and a branch on another qubit forgets the tracked state.
+    auto fork_branch = [&](const ActiveFlow& f, int32_t h, int32_t s, double prob,
+                           std::vector<ActiveFlow>* out_branches) {
+        ActiveFlow br = f;
+        if (h != f.h) {
+            br.h = h;
+            br.tracked = 0;
+            br.ref_known = false;
+            br.desynced = false;
+        }
+        br.s = s;
+        br.alive = f.alive * prob;
+        br.mix = br.alive;
+        br.can_fork = false;
+        for (auto& fl : br.flags) fl.alive *= prob;
+        out_branches->push_back(std::move(br));
+    };
 
-    auto run_single_flow = [&](ActiveFlow& f, std::vector<ActiveFlow>* out_branches) -> bool {
+    std::vector<ActiveFlow> branches;
+    std::vector<ActiveFlow> partner_seeds;  // weighted mode: spread partners' flows, traced after the source's flows
+
+    auto run_single_flow = [&](ActiveFlow& f, std::vector<ActiveFlow>* out_branches) {
         while (!f.done) {
             if (f.next_group < 0) {
                 if (f.h < 0 || f.h >= num_qubits) break;
@@ -702,13 +750,27 @@ static TraceResult* trace_flows_impl(
                         if (t_ptr[g] != f.h) continue;
                         double p_unleak = 0.0;
                         int32_t next_s = -1;
+                        const Trans1RuleC* matched_rule = nullptr;
                         for (int32_t r = 0; r < op.aux_count; ++r) {
                             const Trans1RuleC& rule = trans1_rules[op.aux_offset + r];
                             if (rule.state == f.s) {
                                 p_unleak = rule.p_unleak;
                                 next_s = rule.next_state;
+                                matched_rule = &rule;
                                 break;
                             }
+                        }
+                        // A random next leaked state: branch into the other states, before the
+                        // depolarization (which belongs to unleaking).
+                        double forked = 0.0;
+                        if (matched_rule && matched_rule->fork_count > 0 && f.can_fork && out_branches != nullptr) {
+                            f.next_group = g + 1;  // the branches go on with the later targets of this op
+                            for (int32_t m = 0; m < matched_rule->fork_count; ++m) {
+                                const MoveBranchC& fb = move_branches[matched_rule->fork_offset + m];
+                                fork_branch(f, f.h, fb.state, fb.prob, out_branches);
+                                forked += fb.prob;
+                            }
+                            for (auto& fl : f.flags) fl.alive *= 1.0 - forked;
                         }
                         if (p_unleak > 0.0) {
                             depolarize_1(f, 0, f.h);
@@ -717,7 +779,7 @@ static TraceResult* trace_flows_impl(
                             f.done = true;
                             break;
                         }
-                        f.alive *= (1.0 - p_unleak);
+                        f.alive *= (1.0 - p_unleak - forked);
                         if (next_s >= 2) {
                             f.s = next_s;
                         }
@@ -745,8 +807,53 @@ static TraceResult* trace_flows_impl(
                         }
                         double p_clear = matched_rule ? matched_rule->p_clear : 0.0;
                         double p_move = matched_rule ? matched_rule->p_move : 0.0;
+                        // A spread starts the partner's own flow: an extra flow of the source with weight
+                        // P(the leak is here) * p, not a split of this flow. Only roots seed, like hops; the
+                        // loss oracle matches spreads as sources instead.
+                        if (!source_mode && f.can_fork && matched_rule) {
+                            for (int32_t m = 0; m < matched_rule->spread_count; ++m) {
+                                const MoveBranchC& sb = move_branches[matched_rule->spread_offset + m];
+                                ActiveFlow pf;
+                                pf.h = partner;
+                                pf.s = sb.state;
+                                pf.tracked = 0;
+                                pf.desynced = false;
+                                pf.alive = f.alive * sb.prob;
+                                pf.done = false;
+                                pf.j = f.j;
+                                pf.next_group = k + 1;
+                                pf.can_fork = false;
+                                pf.src_weight = f.src_weight;
+                                pf.mix = 0.0;
+                                partner_seeds.push_back(std::move(pf));
+                            }
+                        }
+                        // Branch into the other leaked states the flow can go on in: on its own
+                        // qubit before the depolarization (which belongs to the clear and move
+                        // outcomes), or on the partner after it (a certain hop).
+                        const bool can_branch = matched_rule && matched_rule->fork_count > 0 && f.can_fork &&
+                                                out_branches != nullptr;
+                        double forked = 0.0;
+                        if (can_branch && p_move < kOne) {
+                            for (int32_t m = 0; m < matched_rule->fork_count; ++m) {
+                                const MoveBranchC& fb = move_branches[matched_rule->fork_offset + m];
+                                fork_branch(f, f.h, fb.state, fb.prob, out_branches);
+                                if (fb.channel_id >= 0) {
+                                    out_branches->back().sites.push_back(
+                                        get_site_id(f.j, 0, partner, -1, fb.channel_id));
+                                }
+                                forked += fb.prob;
+                            }
+                        }
                         if (p_clear + p_move > 0.0) {
                             depolarize_1(f, 0, f.h);
+                        }
+                        if (can_branch && p_move >= kOne) {
+                            for (int32_t m = 0; m < matched_rule->fork_count; ++m) {
+                                const MoveBranchC& fb = move_branches[matched_rule->fork_offset + m];
+                                fork_branch(f, partner, fb.state, fb.prob, out_branches);
+                                forked += fb.prob;
+                            }
                         }
                         if (p_move > 0.0 && p_move < kOne && f.can_fork && out_branches != nullptr && matched_rule) {
                             for (int32_t m = 0; m < matched_rule->move_count; ++m) {
@@ -762,15 +869,22 @@ static TraceResult* trace_flows_impl(
                                 for (auto& fl : br.flags) fl.alive *= mb.prob;
                                 out_branches->push_back(std::move(br));
                             }
-                            double stay_scale = 1.0 - p_move;
+                            double stay_scale = 1.0 - p_move - forked;
                             for (auto& fl : f.flags) {
                                 fl.alive *= stay_scale;
                             }
+                        } else if (forked > 0.0) {
+                            for (auto& fl : f.flags) fl.alive *= 1.0 - forked;
                         }
-                        if (matched_rule && matched_rule->channel_id >= 0) {
-                            f.sites.push_back(get_site_id(f.j, 0, partner, -1, matched_rule->channel_id));
+                        int32_t channel_id = matched_rule ? matched_rule->channel_id : -1;
+                        if (forked > 0.0 && p_move < kOne) {
+                            channel_id = matched_rule->fork_channel_id;  // the branches took their outcomes' channels
+                        }
+                        if (channel_id >= 0) {
+                            f.sites.push_back(get_site_id(f.j, 0, partner, -1, channel_id));
                         }
                         if (p_move >= kOne && matched_rule) {
+                            f.alive *= 1.0 - forked;
                             f.h = partner;
                             f.s = matched_rule->max_move_state;
                             f.tracked = 0;
@@ -778,7 +892,7 @@ static TraceResult* trace_flows_impl(
                             f.done = true;
                             break;
                         } else {
-                            f.alive *= (1.0 - p_clear - p_move);
+                            f.alive *= (1.0 - p_clear - p_move - forked);
                             if (matched_rule && matched_rule->stay_next_state >= 2) {
                                 f.s = matched_rule->stay_next_state;
                             }
@@ -844,10 +958,6 @@ static TraceResult* trace_flows_impl(
                             }
                             continue;
                         }
-                        if (op.cond_subkind == 1 || op.cond_subkind == 7 || (traj && op.cond_subkind == 2)) {
-                            res->error_op_index = f.j;
-                            return false;
-                        }
                         if (op.cond_subkind == 3 || op.cond_subkind == 6) {
                             if (traj && op.cond_channel_id >= 0 && q0 >= 0) {
                                 f.sites.push_back(get_site_id(f.j, 0, q0, q1, op.cond_channel_id));
@@ -867,7 +977,6 @@ static TraceResult* trace_flows_impl(
             }
             f.next_group = -1;
         }
-        return true;
     };
 
     std::vector<int32_t> flow_source;  // source_mode only
@@ -877,7 +986,8 @@ static TraceResult* trace_flows_impl(
         ActiveFlow root;
         root.h = src.qubit;
         root.s = src.state;
-        root.tracked = 0;
+        root.tracked = src.init_tracked;
+        root.ref_known = (src.init_tracked != 0);
         root.desynced = false;
         root.alive = 1.0;
         root.done = false;
@@ -891,9 +1001,7 @@ static TraceResult* trace_flows_impl(
         }
 
         branches.clear();
-        if (!run_single_flow(root, &branches)) {
-            return res;
-        }
+        run_single_flow(root, &branches);
         if (source_mode) {
             double branch_total = 0.0;
             for (const auto& br : branches) branch_total += br.mix;
@@ -903,15 +1011,18 @@ static TraceResult* trace_flows_impl(
         all_flows.push_back(FlowRecord{root.src_weight, std::move(root.sites), std::move(root.flags)});
 
         for (auto& br : branches) {
-            if (!run_single_flow(br, nullptr)) {
-                return res;
-            }
+            run_single_flow(br, nullptr);
             if (source_mode) {
                 flow_source.push_back(s_idx);
                 flow_mix.push_back(br.mix);
             }
             all_flows.push_back(FlowRecord{br.src_weight, std::move(br.sites), std::move(br.flags)});
         }
+        for (auto& pf : partner_seeds) {  // they neither fork nor spread
+            run_single_flow(pf, nullptr);
+            all_flows.push_back(FlowRecord{pf.src_weight, std::move(pf.sites), std::move(pf.flags)});
+        }
+        partner_seeds.clear();
     }
 
     // Build candidates and predecessors per flag (per source in source_mode)
@@ -1017,13 +1128,14 @@ TraceResult* marginal_trace_flows(
 // Per-source trace for the loss-oracle DEMs. Same arguments and result layout as
 // marginal_trace_flows, but the result's "flags" are the sources (num_sources of
 // them): the candidates of source s are all flows of s (its root flow and the hop
-// branches forked from it), none dropped for not reaching a leakage flag, each
-// with its weight pi within the source's envelope:
-//   pi(branch forked at an LEAKAGE_TRANSITION_2 op into leaked state m)
-//       = P(the leak is still on the root flow's qubit just before that op) * p_m,
+// and leaked-state branches forked from it), none dropped for not reaching a leakage
+// flag, each with its weight pi within the source's envelope:
+//   pi(branch forked at an op into leaked state m)
+//       = P(the leak is still on the root flow (its qubit and leaked state) just before that op) * p_m,
 //   pi(root) = max(0, 1 - sum of the branch weights).
-// "Still on the qubit" uses the same unleak / move factors as the weighted model
-// (the branch's alive at creation). There are no predecessors.
+// "Still on the root flow" uses the same unleak / move / fork factors as the weighted model
+// (the branch's alive at creation). There are no predecessors. Spreads are not followed:
+// the loss oracle matches them as sources of their own.
 TraceResult* marginal_trace_source_flows(
     int32_t num_ops,
     int32_t num_qubits,
@@ -1049,14 +1161,12 @@ TraceResult* marginal_trace_source_flows(
 
 void marginal_trace_result_get_counts(
     const TraceResult* res,
-    int32_t* out_error_op_index,
     int32_t* out_num_sites,
     int32_t* out_num_used_flows,
     int32_t* out_total_flow_sites,
     int32_t* out_total_cands,
     int32_t* out_total_preds
 ) {
-    *out_error_op_index = res->error_op_index;
     *out_num_sites = static_cast<int32_t>(res->unique_sites.size());
     *out_num_used_flows = res->flow_site_offsets.empty() ? 0 : static_cast<int32_t>(res->flow_site_offsets.size()) - 1;
     *out_total_flow_sites = static_cast<int32_t>(res->flow_site_ids.size());
