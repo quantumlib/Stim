@@ -1,9 +1,12 @@
 import collections
 
 import numpy as np
+import stim
 
+from sinter._data import Task
+from sinter._decoding._decoding_vacuous import VacuousDecoder
 from sinter._decoding._stim_then_decode_sampler import \
-    classify_discards_and_errors
+    classify_discards_and_errors, _CompiledStimThenDecodeSampler
 
 
 def test_classify_discards_and_errors():
@@ -190,3 +193,23 @@ def test_classify_discards_and_errors():
         num_obs=13,
     ) == (0, 1)
     assert counter == collections.Counter(["obs_mistake_mask=_________E___"])
+
+def test_detector_post_selection():
+    circuit = stim.Circuit("""
+        X_ERROR(1) 0
+        M 0
+        DETECTOR rec[-1]
+    """)
+    sampler = _CompiledStimThenDecodeSampler(
+        decoder=VacuousDecoder(),
+        task = Task(
+            circuit=circuit,
+            detector_error_model=circuit.detector_error_model(),
+            postselection_mask=np.array([1], dtype=np.uint8),
+        ),
+        count_observable_error_combos=False,
+        count_detection_events=False,
+        tmp_dir=None
+    )
+    result = sampler.sample(max_shots=1)
+    assert result.discards == 1
