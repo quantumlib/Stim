@@ -16,6 +16,9 @@ import platform
 from setuptools import setup, Extension
 import glob
 import pybind11
+from pybind11.setup_helpers import ParallelCompile
+
+ParallelCompile().install()
 
 ALL_SOURCE_FILES = glob.glob("src/**/*.cc", recursive=True)
 MUX_SOURCE_FILES = glob.glob("src/**/march.pybind.cc", recursive=True)
