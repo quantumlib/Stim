@@ -3,6 +3,8 @@ from typing import Any, Dict, Iterable, List, Tuple
 import cirq
 import stim
 
+from ._annotation_gates import DetAnnotationGate
+
 
 @cirq.value_equality
 class DetAnnotation(cirq.Operation):
@@ -38,6 +40,11 @@ class DetAnnotation(cirq.Operation):
 
     def with_qubits(self, *new_qubits) -> 'DetAnnotation':
         return self
+
+    @property
+    def gate(self) -> DetAnnotationGate:
+        """The gate form of this annotation, e.g. for matching against a `cirq.Gateset`."""
+        return DetAnnotationGate(self)
 
     def _value_equality_values_(self) -> Any:
         return self.parity_keys, self.relative_keys, self.coordinate_metadata

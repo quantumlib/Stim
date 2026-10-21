@@ -2,6 +2,7 @@ import math
 import time
 from typing import Callable, Iterable
 
+import numpy as np
 import stim
 
 
@@ -183,6 +184,28 @@ def benchmark(
         return wrap
     else:
         return wrap(original_method)
+
+
+@benchmark(goal_micros=79, units={"shots": 1024, "detectors": 1024*336, "ops": 1024*5858})
+def benchmark_sample_detectors():
+    c = stim.Circuit.generated("surface_code:rotated_memory_x", distance=7, rounds=7, after_clifford_depolarization=1e-3)
+    sampler = c.compile_detector_sampler()
+
+    def run():
+        sampler.sample(shots=1024, bit_packed=True, separate_observables=True)
+    return benchmark_go(run)
+
+
+@benchmark(goal_micros=59, units={"shots": 1024, "detectors": 1024*336, "ops": 1024*5858})
+def benchmark_sample_detectors_transposed_buffered():
+    c = stim.Circuit.generated("surface_code:rotated_memory_x", distance=7, rounds=7, after_clifford_depolarization=1e-3)
+    sampler = c.compile_detector_sampler()
+    dets_out = np.zeros(dtype=np.uint8, shape=(c.num_detectors, 1024 // 8))
+    obs_out = np.zeros(dtype=np.uint8, shape=(c.num_observables, 1024 // 8))
+
+    def run():
+        sampler.sample(shots=1024, bit_packed=True, transposed=True, separate_observables=True, dets_out=dets_out, obs_out=obs_out)
+    return benchmark_go(run)
 
 
 @benchmark(goal_micros=27, units={"targets": 2000})

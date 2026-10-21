@@ -2435,3 +2435,23 @@ def test_append_odd_types():
         CX rec[-1] 3
         MPP X0*Y1*Z2 X0*X1
     """)
+
+def test_decomposition_preserves_large_single_qubit_error():
+    for num_measurements in (32, 33, 63):
+        circuit = stim.Circuit(
+            "R 0\nX_ERROR(0.25) 0\n"
+            + "M(0.125) 0\nDETECTOR rec[-1]\n" * num_measurements
+        )
+        dem = circuit.detector_error_model(decompose_errors=True)
+        joint_errors = [
+            instruction for instruction in dem
+            if instruction.type == "error" and instruction.args_copy() == [0.25]
+        ]
+        assert len(joint_errors) == 1
+        detector_mask = 0
+        for target in joint_errors[0].targets_copy():
+            if target.is_relative_detector_id():
+                detector_mask ^= 1 << target.val
+            else:
+                assert target.is_separator()
+        assert detector_mask == (1 << num_measurements) - 1, num_measurements
