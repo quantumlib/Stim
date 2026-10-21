@@ -67,17 +67,17 @@ jobs:
           # {os: ubuntu-latest, dist: cp310-musllinux_x86_64},
           # {os: ubuntu-latest, dist: cp310-musllinux_i686},
 
-          {os: macos-14, dist: cp310-macosx_x86_64, macosarch: x86_64},
-          {os: macos-14, dist: cp311-macosx_x86_64, macosarch: x86_64},
-          {os: macos-14, dist: cp312-macosx_x86_64, macosarch: x86_64},
-          {os: macos-14, dist: cp313-macosx_x86_64, macosarch: x86_64},
-          {os: macos-14, dist: cp314-macosx_x86_64, macosarch: x86_64},
+          {os: macos-15, dist: cp310-macosx_x86_64, macosarch: x86_64},
+          {os: macos-15, dist: cp311-macosx_x86_64, macosarch: x86_64},
+          {os: macos-15, dist: cp312-macosx_x86_64, macosarch: x86_64},
+          {os: macos-15, dist: cp313-macosx_x86_64, macosarch: x86_64},
+          {os: macos-15, dist: cp314-macosx_x86_64, macosarch: x86_64},
 
-          {os: macos-14, dist: cp310-macosx_arm64, macosarch: arm64},
-          {os: macos-14, dist: cp311-macosx_arm64, macosarch: arm64},
-          {os: macos-14, dist: cp312-macosx_arm64, macosarch: arm64},
-          {os: macos-14, dist: cp313-macosx_arm64, macosarch: arm64},
-          {os: macos-14, dist: cp314-macosx_arm64, macosarch: arm64},
+          {os: macos-15, dist: cp310-macosx_arm64, macosarch: arm64},
+          {os: macos-15, dist: cp311-macosx_arm64, macosarch: arm64},
+          {os: macos-15, dist: cp312-macosx_arm64, macosarch: arm64},
+          {os: macos-15, dist: cp313-macosx_arm64, macosarch: arm64},
+          {os: macos-15, dist: cp314-macosx_arm64, macosarch: arm64},
 
           # pypy OSX builds disabled because numpy isn't prebuilt and fails to build.
           #
