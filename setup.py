@@ -121,7 +121,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     ext_modules=_get_extensions(),
-    python_requires='>=3.6.0',
+    python_requires='>=3.11',
     packages=['stim'],
     package_dir={'stim': 'glue/python/src/stim'},
     package_data={'': [*HEADER_FILES, 'glue/python/src/stim/__init__.pyi', 'glue/python/README.md', 'pyproject.toml']},
