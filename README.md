@@ -13,12 +13,12 @@ High-performance simulation of quantum stabilizer circuits for quantum error cor
 
 ## <a name="what-is-stim"></a>What is Stim?
 
-Stim is a tool for high performance simulation and analysis of quantum stabilizer circuits,
+Stim is a tool for high-performance simulation and analysis of quantum stabilizer circuits,
 especially quantum error correction (QEC) circuits.
-Typically Stim is used as a Python package (`pip install stim`), though Stim can also be used as
+Typically, Stim is used as a Python package (`pip install stim`), though Stim can also be used as
 a command-line tool or a C++ library.
 
-*   [Watch the 15 minute lightning talk presenting Stim at QPL2021](https://youtu.be/7m_JrJIskPM?t=895)
+*   [Watch the 15-minute lightning talk presenting Stim at QPL2021](https://youtu.be/7m_JrJIskPM?t=895)
 *   [Watch Stim being used to estimate the threshold of the honeycomb code over a
     weekend](https://www.youtube.com/watch?v=E9yj0o1LGII)
 
@@ -34,7 +34,7 @@ Stim's key features:
     a noisy circuit into a detector error model (a [Tanner graph](https://en.wikipedia.org/wiki/Tanner_graph)) which can
     be used to configure decoders.
     Adding the option `decompose_operations=True` will additionally suggest how hyper errors can be decomposed into
-    graphlike errors, making it easier to configure matching-based decoders.
+    graph-like errors, making it easier to configure matching-based decoders.
 
 3.  **Useful building blocks for working with stabilizers**, such as
     [`stim.PauliString`](doc/python_api_reference_vDev.md#stim.PauliString),
@@ -46,7 +46,7 @@ Stim's main limitations are:
 1.  There is no support for non-Clifford operations, such as T gates and Toffoli gates. Only stabilizer operations are
     supported.
 
-2.  `stim.Circuit` only supports Pauli noise channels (eg. no amplitude decay). For more complex noise you must manually
+2.  `stim.Circuit` only supports Pauli noise channels (eg., no amplitude decay). For more complex noise you must manually
     drive a `stim.TableauSimulator`.
 
 3.  `stim.Circuit` only supports single-control Pauli feedback. For multi-control feedback, or non-Pauli feedback, you
@@ -55,7 +55,7 @@ Stim's main limitations are:
 Stim's design philosophy:
 
 *   **Performance is king.**
-    The goal is not to be fast *enough*, it is to be fast in an absolute sense.
+    The goal is not to be fast *enough*; it is to be fast in an absolute sense.
     Think of it this way.
     The difference between doing one thing per second (human speeds) and doing ten billion things
     per second (computer speeds) is 100 decibels (100 factors of 1.26).
@@ -79,7 +79,7 @@ Stim's design philosophy:
 *   **Backwards compatibility.**
     Stim's Python package uses semantic versioning.
     Within a major version (1.X), Stim guarantees backwards compatibility of its Python API and of its command-line API.
-    Note Stim DOESN'T guarantee backwards compatibility of the underlying C++ API.
+    Note: Stim DOESN'T guarantee backwards compatibility of the underlying C++ API.
 
 ## <a name="how-use-stim"></a>How do I use Stim?
 
@@ -105,7 +105,7 @@ See [the paper describing Stim](https://quantum-journal.org/papers/q-2021-07-06-
 Stim makes three core improvements over previous stabilizer simulators:
 
 1.  **Vectorized code.**
-    Stim's hot loops are heavily vectorized, using 256 bit wide AVX instructions.
+    Stim's hot loops are heavily vectorized, using 256-bit-wide AVX instructions.
     This makes them very fast.
     For example, Stim can multiply Pauli strings with 100 billion terms in one second.
 
@@ -120,7 +120,7 @@ Stim makes three core improvements over previous stabilizer simulators:
     When doing general stabilizer simulation, Stim tracks the inverse of the stabilizer tableau that was historically
     used.
     This has the unexpected benefit of making measurements that commute with the current stabilizers take
-    linear time instead of quadratic time. This is beneficial in error correcting codes, because the measurements
+    linear time instead of quadratic time. This is beneficial in error-correcting codes, because the measurements
     they perform are usually redundant and so commute with the current stabilizers.
 
 ## <a name="how-cite-stim"></a>How do I cite Stim?
