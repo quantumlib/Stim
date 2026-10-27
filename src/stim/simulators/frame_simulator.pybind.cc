@@ -1400,7 +1400,7 @@ void stim_pybind::pybind_frame_simulator_methods(
             if (p != 1 && p != 0) {
                 for (size_t i = 0; i < mask_num_qubits; i++) {
                     biased_randomize_bits(
-                        p, self.rng_buffer.u64, self.rng_buffer.u64 + (mask_batch_size / 64), self.rng);
+                        p, self.rng_buffer.u64, self.rng_buffer.u64 + ((mask_batch_size + 63) / 64), self.rng);
                     for (size_t j = 0; j < mask_batch_size; j++) {
                         bool b = *u.data(i, j);
                         bool r = self.rng_buffer[j];
@@ -1408,7 +1408,7 @@ void stim_pybind::pybind_frame_simulator_methods(
                         self.z_table[i][j] ^= b & p_z & r;
                     }
                 }
-            } else {
+            } else if (p == 1) {
                 for (size_t i = 0; i < mask_num_qubits; i++) {
                     for (size_t j = 0; j < mask_batch_size; j++) {
                         bool b = *u.data(i, j);

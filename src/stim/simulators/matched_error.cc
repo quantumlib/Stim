@@ -381,8 +381,7 @@ bool CircuitTargetsInsideInstruction::operator<(const CircuitTargetsInsideInstru
 
 bool CircuitErrorLocation::is_simpler_than(const CircuitErrorLocation &other) const {
     if (flipped_measurement.measured_observable.size() != other.flipped_measurement.measured_observable.size()) {
-        return other.flipped_measurement.measured_observable.size() <
-               other.flipped_measurement.measured_observable.size();
+        return flipped_measurement.measured_observable.size() < other.flipped_measurement.measured_observable.size();
     }
     if (flipped_pauli_product.size() != other.flipped_pauli_product.size()) {
         return flipped_pauli_product.size() < other.flipped_pauli_product.size();

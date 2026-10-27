@@ -139,6 +139,63 @@ def test_no_observables(decoder: str, force_streaming: Optional[bool]):
     assert result.errors == 0
 
 
+@pytest.mark.parametrize('decoder_name', TEST_DECODER_NAMES)
+@pytest.mark.parametrize('num_obs', [0, 1, 7, 8, 9])
+def test_observable_output_size_from_empty_problem(decoder_name: str, num_obs: int):
+    decoder = TEST_CUSTOM_DECODERS.get(decoder_name, BUILT_IN_DECODERS.get(decoder_name))
+
+    with tempfile.TemporaryDirectory() as d:
+        dem = stim.DetectorErrorModel(f"""
+            logical_observable L{num_obs-1}
+        """ * (num_obs > 0))
+        assert dem.num_observables == num_obs
+        dem.to_file(pathlib.Path(d) / 'dem.dem')
+        with open(pathlib.Path(d) / 'dets.b8', 'wb'):
+            pass
+        decoder.decode_via_files(
+            num_shots=11,
+            num_dets=0,
+            num_obs=dem.num_observables,
+            dem_path=pathlib.Path(d) / 'dem.dem',
+            dets_b8_in_path=pathlib.Path(d) / 'dets.b8',
+            obs_predictions_b8_out_path=pathlib.Path(d) / 'obs.b8',
+            tmp_dir=pathlib.Path(d) / 'tmp_dir',
+        )
+        with open(pathlib.Path(d) / 'obs.b8', 'rb') as f:
+            data = f.read()
+        print(len(data), num_obs)
+        assert len(data) == (num_obs + 7) // 8 * 11
+
+
+@pytest.mark.parametrize('decoder_name', TEST_DECODER_NAMES)
+@pytest.mark.parametrize('num_obs', [0, 1, 7, 8, 9])
+def test_observable_output_size_from_trivial_problem(decoder_name: str, num_obs: int):
+    decoder = TEST_CUSTOM_DECODERS.get(decoder_name, BUILT_IN_DECODERS.get(decoder_name))
+
+    with tempfile.TemporaryDirectory() as d:
+        dem = stim.DetectorErrorModel(f"""
+            logical_observable L{num_obs-1}
+            error(0.1) D0
+        """ * (num_obs > 0))
+        assert dem.num_observables == num_obs
+        dem.to_file(pathlib.Path(d) / 'dem.dem')
+        with open(pathlib.Path(d) / 'dets.b8', 'wb') as f:
+            f.write(b"\0\0")
+        decoder.decode_via_files(
+            num_shots=11,
+            num_dets=0,
+            num_obs=dem.num_observables,
+            dem_path=pathlib.Path(d) / 'dem.dem',
+            dets_b8_in_path=pathlib.Path(d) / 'dets.b8',
+            obs_predictions_b8_out_path=pathlib.Path(d) / 'obs.b8',
+            tmp_dir=pathlib.Path(d) / 'tmp_dir',
+        )
+        with open(pathlib.Path(d) / 'obs.b8', 'rb') as f:
+            data = f.read()
+        print(len(data), num_obs)
+        assert len(data) == (num_obs + 7) // 8 * 11
+
+
 @pytest.mark.parametrize('decoder,force_streaming', DECODER_CASES)
 def test_invincible_observables(decoder: str, force_streaming: Optional[bool]):
     circuit = stim.Circuit("""

@@ -31,7 +31,7 @@ class LayerSqrtPP(Layer):
             interact.targets1.append(q1)
             interact.targets2.append(q2)
             interact.bases1.append(b)
-            interact.bases1.append(b)
+            interact.bases2.append(b)
             if b == "X":
                 r = "SQRT_X"
             elif b == "Y":

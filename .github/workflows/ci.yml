@@ -301,7 +301,7 @@ jobs:
       with:
         version: latest
         platform: x64
-    - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
+    - run: cmake . -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
     - run: cmake --build . --target stim_test
   build_clang_stim:
     permissions: {}
@@ -321,7 +321,7 @@ jobs:
         with:
           version: latest
           platform: x64
-      - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
+      - run: cmake . -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
       - run: cmake --build . --target stim
   build_clang_stim_perf:
     permissions: {}
@@ -341,7 +341,7 @@ jobs:
         with:
           version: latest
           platform: x64
-      - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
+      - run: cmake . -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
       - run: cmake --build . --target stim_perf
   build_lib:
     permissions: {}

@@ -392,6 +392,7 @@ void DetectorErrorModel::clear() {
     target_buf.clear();
     arg_buf.clear();
     instructions.clear();
+    tag_buf.clear();
     blocks.clear();
 }
 
@@ -596,7 +597,8 @@ DetectorErrorModel DetectorErrorModel::py_get_slice(int64_t start, int64_t step,
         } else {
             auto args = result.arg_buf.take_copy(op.arg_data);
             auto targets = result.target_buf.take_copy(op.target_data);
-            result.instructions.push_back(DemInstruction{args, targets, op.tag, op.type});
+            auto tag = result.tag_buf.take_copy(op.tag);
+            result.instructions.push_back(DemInstruction{args, targets, tag, op.type});
         }
     }
     return result;

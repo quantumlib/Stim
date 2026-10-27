@@ -342,9 +342,9 @@ class CircuitTranslationTracker:
         targets: List[stim.GateTarget] = instruction.targets_copy()
         for k in range(0, len(targets), 2):
             obs = cirq.DensePauliString(basis * 2)
-            if targets[0].is_inverted_result_target ^ targets[1].is_inverted_result_target:
+            if targets[k].is_inverted_result_target ^ targets[k+1].is_inverted_result_target:
                 obs *= -1
-            qubits = [cirq.LineQubit(targets[0].value), cirq.LineQubit(targets[1].value)]
+            qubits = [cirq.LineQubit(targets[k].value), cirq.LineQubit(targets[k+1].value)]
             key = self.get_next_measure_key()
             self.append_operation(cirq.PauliMeasurementGate(obs, key=key).on(*qubits).with_tags(*tags))
 
