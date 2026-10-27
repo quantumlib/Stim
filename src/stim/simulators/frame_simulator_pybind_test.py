@@ -622,3 +622,24 @@ def test_get_measurement_flips_negative_index():
     np.testing.assert_array_equal(sim.get_measurement_flips(record_index=-1), [True] * 8)
     np.testing.assert_array_equal(sim.get_measurement_flips(record_index=0), [False] * 8)
     np.testing.assert_array_equal(sim.get_measurement_flips(record_index=1), [True] * 8)
+
+
+@pytest.mark.parametrize('batch_size', [7, 8, 9, 63, 64, 65])
+def test_broadcast_pauli_errors_few_qubits(batch_size: int):
+    sim = stim.FlipSimulator(batch_size=batch_size, disable_stabilizer_randomization=True)
+    sim.broadcast_pauli_errors(pauli='X', p=0.99, mask=np.ones(shape=(10, batch_size), dtype=np.bool_))
+    assert sum(e.weight for e in sim.peek_pauli_flips()) > 0
+
+
+@pytest.mark.parametrize('batch_size', [0, 7, 8, 9, 63, 64, 65])
+def test_broadcast_pauli_errors_zero_probability(batch_size: int):
+    sim = stim.FlipSimulator(batch_size=batch_size, disable_stabilizer_randomization=True)
+    sim.broadcast_pauli_errors(pauli='X', p=0, mask=np.ones(shape=(10, batch_size), dtype=np.bool_))
+    assert sum(e.weight for e in sim.peek_pauli_flips()) == 0
+
+
+@pytest.mark.parametrize('batch_size', [0, 7, 8, 9, 63, 64, 65])
+def test_broadcast_pauli_errors_one_probability(batch_size: int):
+    sim = stim.FlipSimulator(batch_size=batch_size, disable_stabilizer_randomization=True)
+    sim.broadcast_pauli_errors(pauli='X', p=1, mask=np.ones(shape=(10, batch_size), dtype=np.bool_))
+    assert sum(e.weight for e in sim.peek_pauli_flips()) == batch_size * 10

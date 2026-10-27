@@ -938,3 +938,15 @@ def test_repeat_blocks_split_a_tick_into_moments():
     )
     flat = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit, flatten=True)
     assert repr(flat) == repr(expected_flat)
+
+
+def test_stim_to_cirq_mxx_obs_inversion():
+    assert stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit("""
+        MXX 0 1 !2 3 4 !5 !6 !7 8 9
+    """)) == cirq.Circuit([cirq.Moment(
+        cirq.measure_single_paulistring(cirq.X(cirq.LineQubit(0))*cirq.X(cirq.LineQubit(1)), key='0'),
+        cirq.measure_single_paulistring(-cirq.X(cirq.LineQubit(2))*cirq.X(cirq.LineQubit(3)), key='1'),
+        cirq.measure_single_paulistring(-cirq.X(cirq.LineQubit(4))*cirq.X(cirq.LineQubit(5)), key='2'),
+        cirq.measure_single_paulistring(cirq.X(cirq.LineQubit(6))*cirq.X(cirq.LineQubit(7)), key='3'),
+        cirq.measure_single_paulistring(cirq.X(cirq.LineQubit(8))*cirq.X(cirq.LineQubit(9)), key='4'),
+    )])

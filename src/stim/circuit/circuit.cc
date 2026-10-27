@@ -400,6 +400,7 @@ void Circuit::safe_insert(size_t index, const Circuit &circuit) {
             target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
             target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
             operations[k].targets = target_buf.commit_tail();
+            operations[k].tag = tag_buf.take_copy(operations[k].tag);
         } else {
             operations[k].targets = target_buf.take_copy(operations[k].targets);
             operations[k].args = arg_buf.take_copy(operations[k].args);
@@ -530,6 +531,7 @@ void Circuit::clear() {
     arg_buf.clear();
     operations.clear();
     blocks.clear();
+    tag_buf.clear();
 }
 
 Circuit Circuit::operator+(const Circuit &other) const {

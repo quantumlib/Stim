@@ -35,8 +35,8 @@ void CircuitFlowReverser::do_rp_mrp_instruction(const CircuitInstruction &inst) 
     for_each_disjoint_target_segment_in_instruction_reversed(inst, qubit_workspace, [&](CircuitInstruction segment) {
         // Each reset effect becomes a measurement effect in the inverted circuit. Index these
         // measurements.
-        for (size_t k = inst.targets.size(); k-- > 0;) {
-            auto q = inst.targets[k].qubit_value();
+        for (size_t k = segment.targets.size(); k-- > 0;) {
+            auto q = segment.targets[k].qubit_value();
             for (auto d : rev.xs[q]) {
                 d2ms[d].insert(num_new_measurements);
             }

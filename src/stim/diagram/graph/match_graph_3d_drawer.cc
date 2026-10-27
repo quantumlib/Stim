@@ -21,7 +21,7 @@ Coord<3> flattened_3d(SpanRef<const double> c) {
     for (size_t k = 3; k < c.size(); k++) {
         x += c[k] / k;
         y += c[k] / (k * k);
-        x += c[k] / (k * k * k);
+        z += c[k] / (k * k * k);
     }
 
     return {x * 3, y * 3, z * 3};
