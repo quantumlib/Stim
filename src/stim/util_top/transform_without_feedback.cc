@@ -78,9 +78,9 @@ struct WithoutFeedbackHelper {
                     throw std::invalid_argument("Unknown feedback gate.");
                 }
             } else if (b2 > b1) {
-                if (op.gate_type == GateType::CX) {
+                if (op.gate_type == GateType::XCZ) {
                     do_single_feedback(t2, t1.qubit_value(), true, false);
-                } else if (op.gate_type == GateType::CY) {
+                } else if (op.gate_type == GateType::YCZ) {
                     do_single_feedback(t2, t1.qubit_value(), true, true);
                 } else if (op.gate_type == GateType::CZ) {
                     do_single_feedback(t2, t1.qubit_value(), false, true);

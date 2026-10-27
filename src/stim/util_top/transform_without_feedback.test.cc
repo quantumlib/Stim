@@ -45,6 +45,31 @@ TEST(circuit_with_inlined_feedback, basic) {
         )CIRCUIT"));
 }
 
+TEST(circuit_with_inlined_feedback, reversed) {
+    ASSERT_EQ(
+        circuit_with_inlined_feedback(Circuit(R"CIRCUIT(
+            MR 0
+            H 0
+            XCZ 0 sweep[5]
+            YCZ 0 rec[-1] 0 rec[-1] 3 2 0 rec[-1]
+            H 0
+            M 0
+            DETECTOR rec[-1]
+            OBSERVABLE_INCLUDE(2) rec[-1]
+        )CIRCUIT")),
+        Circuit(R"CIRCUIT(
+            MR 0
+            H 0
+            XCZ 0 sweep[5]
+            OBSERVABLE_INCLUDE(2) rec[-1]
+            YCZ 3 2
+            H 0
+            M 0
+            DETECTOR rec[-2] rec[-1]
+            OBSERVABLE_INCLUDE(2) rec[-1]
+        )CIRCUIT"));
+}
+
 TEST(circuit_with_inlined_feedback, demolition_feedback) {
     Circuit inp = Circuit(R"CIRCUIT(
         CX 0 1
