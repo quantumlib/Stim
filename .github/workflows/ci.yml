@@ -228,22 +228,22 @@ jobs:
         with:
           name: dist-stimflow
           path: dist-stimflow
-      - uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1.14.3
         with:
           user: __token__
           packages_dir: dist-stim
           password: ${{ secrets.pypi_token_stim }}
-      - uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1.14.3
         with:
           user: __token__
           packages_dir: dist-stimcirq
           password: ${{ secrets.pypi_token_stimcirq }}
-      - uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1.14.3
         with:
           user: __token__
           packages_dir: dist-sinter
           password: ${{ secrets.pypi_token_sinter }}
-      - uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1.14.3
         with:
           user: __token__
           packages_dir: dist-stimflow
