@@ -387,7 +387,7 @@ sudo perf report
 
 ## <a name="venv"></a>Creating a python dev environment
 
-First, create a fresh python 3.6+ virtual environment using your favorite
+First, create a fresh python 3.11+ virtual environment using your favorite
 method:
 [`python -m venv`](https://docs.python.org/3/library/venv.html),
 [`virtualenvwrapper`](https://virtualenvwrapper.readthedocs.io/en/latest/),

@@ -2010,3 +2010,26 @@ TEST(circuit, parse_tag_eof) {
         Circuit("H[");
     }, std::invalid_argument);
 }
+
+TEST(circuit, safe_insert_circuit_with_tagged_loop) {
+    Circuit dst(R"CIRCUIT(
+        X 0
+        Y 1
+    )CIRCUIT");
+    {
+        Circuit src(R"CIRCUIT(
+            REPEAT[test] 100 {
+                H[a] 5
+            }
+        )CIRCUIT");
+        dst.safe_insert(1, src);
+    }
+    Circuit expected = Circuit(R"CIRCUIT(
+        X 0
+        REPEAT[test] 100 {
+            H[a] 5
+        }
+        Y 1
+    )CIRCUIT");
+    ASSERT_EQ(dst, expected);
+}

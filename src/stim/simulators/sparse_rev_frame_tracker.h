@@ -127,12 +127,12 @@ struct SparseUnsignedRevFrameTracker {
     void undo_tableau(const Tableau<W> &tableau, SpanRef<const uint32_t> targets) {
         size_t n = tableau.num_qubits;
         if (n != targets.size()) {
-            throw new std::invalid_argument("tableau.num_qubits != targets.size()");
+            throw std::invalid_argument("tableau.num_qubits != targets.size()");
         }
         std::set<uint32_t> target_set;
         for (size_t k = 0; k < n; k++) {
             if (!target_set.insert(targets[k]).second) {
-                throw new std::invalid_argument("duplicate target");
+                throw std::invalid_argument("duplicate target");
             }
         }
 

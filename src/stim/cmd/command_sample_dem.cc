@@ -66,7 +66,7 @@ int stim::command_sample_dem(int argc, const char **argv) {
         out.responsible_for_closing = false;
     }
     if (in.f == stdin) {
-        out.responsible_for_closing = false;
+        in.responsible_for_closing = false;
     }
     if (num_shots == 0) {
         return EXIT_SUCCESS;
