@@ -275,7 +275,7 @@ jobs:
       with:
         version: latest
         platform: x64
-    - run: cmake . -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang
+    - run: cmake . -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
     - run: cmake --build . --target stim_test
   build_clang_stim:
     runs-on: 'ubuntu-24.04'
@@ -292,7 +292,7 @@ jobs:
         with:
           version: latest
           platform: x64
-      - run: cmake . -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang
+      - run: cmake . -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
       - run: cmake --build . --target stim
   build_clang_stim_perf:
     runs-on: 'ubuntu-24.04'
@@ -309,7 +309,7 @@ jobs:
         with:
           version: latest
           platform: x64
-      - run: cmake . -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang
+      - run: cmake . -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
       - run: cmake --build . --target stim_perf
   build_lib:
     runs-on: ubuntu-24.04
