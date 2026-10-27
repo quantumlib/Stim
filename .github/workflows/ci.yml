@@ -212,7 +212,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
+        uses: actions/upload-artifact/merge@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: dist-stim
           pattern: dist-stim-*
@@ -445,10 +445,11 @@ jobs:
           disk-cache: ${{ github.workflow }}
           repository-cache: true
           bazelisk-version: 1.x
-      - uses: actions/setup-node@f1f314fca9dfce2769ece7d933488f076716723e # v1
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: 16.x
-      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6
+          package-manager-cache: false
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: '3.13'
       - run: bazel build :stim_dev_wheel
@@ -590,9 +591,10 @@ jobs:
         with:
           version: 4.0.1
           actions-cache-folder: 'emsdk-cache'
-      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: 18.x
+          package-manager-cache: false
       - run: npm install
       - run: bash glue/javascript/build_wasm.sh
       - run: node puppeteer_run_tests.js
@@ -603,7 +605,8 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # release/v7.0.1
       with:
         persist-credentials: false
-    - uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3
+    - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
       with:
         node-version: 16
+        package-manager-cache: false
     - run: node glue/crumble/run_tests_headless.js
