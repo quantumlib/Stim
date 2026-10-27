@@ -9,6 +9,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Set,
     Tuple,
     Union,
 )
@@ -47,6 +48,18 @@ def _stim_targets_to_dense_pauli_string(
     return obs.frozen()
 
 
+def _moment_from_ops(ops: List[cirq.Operation]) -> cirq.Moment:
+    """Builds a moment from operations known not to overlap each other."""
+    if hasattr(cirq.Moment, 'from_ops'):  # Added in cirq 1.2.
+        try:
+            return cirq.Moment.from_ops(*ops)
+        except ValueError:
+            # `from_ops` also rejects a single operation that lists a qubit more than once (e.g. the
+            # annotation for `OBSERVABLE_INCLUDE X0 Z0`), which `with_operations` accepts.
+            pass
+    return cirq.Moment().with_operations(ops)
+
+
 def _proper_transform_circuit_qubits(circuit: cirq.AbstractCircuit, remap: Dict[cirq.Qid, cirq.Qid]) -> cirq.Circuit:
     # Note: doing this the hard way because cirq.CircuitOperation otherwise remembers the old indices in
     # its `remap` entry, instead of completely expunging those indices.
@@ -70,8 +83,13 @@ class CircuitTranslationTracker:
         self.qubit_coords: Dict[int, cirq.Qid] = {}
         self.origin: DefaultDict[float] = collections.defaultdict(float)
         self.num_measurements_seen = 0
-        self.full_circuit = cirq.Circuit()
-        self.tick_circuit = cirq.Circuit()
+        # Completed moments, in order.
+        self.full_moments: List[cirq.Moment] = []
+        # Operations of the moment currently being filled, and the qubits and keys they use.
+        self._open_ops: List[cirq.Operation] = []
+        self._open_qubits: Set[cirq.Qid] = set()
+        self._open_measurement_keys: Set[cirq.MeasurementKey] = set()
+        self._open_control_keys: Set[cirq.MeasurementKey] = set()
         self.flatten = flatten
         self.have_seen_loop = False
         self.single_measure_key = single_measure_key
@@ -86,7 +104,31 @@ class CircuitTranslationTracker:
         return self.single_measure_key
 
     def append_operation(self, op: cirq.Operation) -> None:
-        self.tick_circuit.append(op, strategy=cirq.InsertStrategy.INLINE)
+        # Operations share a moment until one conflicts with it (a shared qubit, or a measurement
+        # key that clashes with the moment's measurement or control keys); then a new moment
+        # starts.
+        measurement_keys = cirq.measurement_key_objs(op)
+        control_keys = cirq.control_keys(op)
+        if (
+            not self._open_qubits.isdisjoint(op.qubits)
+            or not control_keys.isdisjoint(self._open_measurement_keys)
+            or not measurement_keys.isdisjoint(self._open_measurement_keys)
+            or not measurement_keys.isdisjoint(self._open_control_keys)
+        ):
+            self._close_open_moment()
+        self._open_ops.append(op)
+        self._open_qubits.update(op.qubits)
+        self._open_measurement_keys.update(measurement_keys)
+        self._open_control_keys.update(control_keys)
+
+    def _close_open_moment(self) -> None:
+        """Moves the open moment, if it has any operations, to `full_moments`."""
+        if self._open_ops:
+            self.full_moments.append(_moment_from_ops(self._open_ops))
+            self._open_ops = []
+            self._open_qubits = set()
+            self._open_measurement_keys = set()
+            self._open_control_keys = set()
 
     def process_gate_instruction(
         self, gate: cirq.Gate, instruction: stim.CircuitInstruction
@@ -103,8 +145,9 @@ class CircuitTranslationTracker:
             self.append_operation(gate(*[cirq.LineQubit(t.value) for t in targets[k : k + m]]).with_tags(*tags))
 
     def process_tick(self, instruction: stim.CircuitInstruction) -> None:
-        self.full_circuit += self.tick_circuit or cirq.Moment()
-        self.tick_circuit = cirq.Circuit()
+        if not self._open_ops:
+            self.full_moments.append(cirq.Moment())
+        self._close_open_moment()
 
     def process_pauli_channel_1(self, instruction: stim.CircuitInstruction) -> None:
         args = instruction.gate_args_copy()
@@ -160,16 +203,17 @@ class CircuitTranslationTracker:
             tags = ()
         else:
             tags = (block.tag,)
-        if len(self.tick_circuit):
-            self.full_circuit += self.tick_circuit
-        self.full_circuit += cirq.Moment(
-            cirq.CircuitOperation(
-                cirq.FrozenCircuit(child.full_circuit + child.tick_circuit),
-                repetitions=block.repeat_count,
-                use_repetition_ids=False,
-            ).with_tags(*tags)
+        self._close_open_moment()
+        child._close_open_moment()
+        self.full_moments.append(
+            cirq.Moment(
+                cirq.CircuitOperation(
+                    cirq.FrozenCircuit(child.full_moments),
+                    repetitions=block.repeat_count,
+                    use_repetition_ids=False,
+                ).with_tags(*tags)
+            )
         )
-        self.tick_circuit = cirq.Circuit()
 
         self.qubit_coords = child.qubit_coords
         self.num_measurements_seen += (
@@ -221,7 +265,10 @@ class CircuitTranslationTracker:
                     raise NotImplementedError(f"instruction={instruction!r}")
 
     def output(self) -> cirq.Circuit:
-        out = self.full_circuit + self.tick_circuit
+        moments = list(self.full_moments)
+        if self._open_ops:
+            moments.append(_moment_from_ops(self._open_ops))
+        out = cirq.Circuit(moments)
 
         if self.qubit_coords:
             remap: Dict[cirq.Qid, cirq.Qid] = {

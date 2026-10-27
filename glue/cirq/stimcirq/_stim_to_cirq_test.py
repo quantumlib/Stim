@@ -826,3 +826,115 @@ def test_single_measure_key_order():
                 assert len(op.qubits) == 1
                 actual_order.append(op.qubits[0])
         assert expected_order == actual_order
+
+
+def test_operations_within_a_tick_start_new_moments_only_on_conflict():
+    a, b, c, d, e = cirq.LineQubit.range(5)
+    stim_circuit = stim.Circuit(
+        """
+        H 0 1
+        CX 0 1
+        X 2
+        M 1
+        DETECTOR rec[-1]
+        TICK
+        TICK
+        Y 0
+        """
+    )
+    expected = cirq.Circuit.from_moments(
+        cirq.Moment(cirq.H(a), cirq.H(b)),
+        cirq.Moment(cirq.CNOT(a, b), cirq.X(c)),
+        cirq.Moment(cirq.measure(b, key="0"), stimcirq.DetAnnotation(parity_keys=["0"])),
+        cirq.Moment(),
+        cirq.Moment(cirq.Y(a)),
+    )
+    # Compare reprs, since circuit equality ignores the order of operations within a moment.
+    assert repr(stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)) == repr(expected)
+
+    # Feedback and multi-qubit measurements join the moment when nothing conflicts.
+    stim_circuit = stim.Circuit("M 0\nCX rec[-1] 1\nMPP X2*Z3\nH 4\nTICK")
+    expected = cirq.Circuit.from_moments(
+        cirq.Moment(
+            cirq.measure(a, key="0"),
+            stimcirq.FeedbackPauli(relative_measurement_index=-1, pauli=cirq.X).on(b),
+            cirq.PauliMeasurementGate(cirq.DensePauliString("XZ"), key="1").on(c, d),
+            cirq.H(e),
+        )
+    )
+    assert repr(stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)) == repr(expected)
+
+    # Measurements reusing a key cannot share a moment, even on different qubits.
+    single_key = stimcirq.stim_circuit_to_cirq_circuit(
+        stim.Circuit("M 0 1\nTICK"), single_measure_key="m"
+    )
+    expected = cirq.Circuit.from_moments(
+        cirq.Moment(cirq.measure(a, key="m")), cirq.Moment(cirq.measure(b, key="m"))
+    )
+    assert repr(single_key) == repr(expected)
+
+
+def test_observable_include_with_repeated_qubit_shares_moment():
+    stim_circuit = stim.Circuit(
+        """
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1] X1 Z1
+        H 2
+        TICK
+        """
+    )
+    a, b, c = cirq.LineQubit.range(3)
+    # The annotation lists qubit 1 twice, which `cirq.Moment(...)` rejects but
+    # `with_operations` accepts.
+    expected = cirq.Circuit.from_moments(
+        cirq.Moment().with_operations(
+            cirq.measure(a, key="0"),
+            stimcirq.CumulativeObservableAnnotation(
+                parity_keys=["0"], pauli_keys=[(b, "X1"), (b, "Z1")], observable_index=0
+            ),
+            cirq.H(c),
+        )
+    )
+    assert repr(stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)) == repr(expected)
+
+
+def test_repeat_blocks_split_a_tick_into_moments():
+    a, b, c = cirq.LineQubit.range(3)
+    stim_circuit = stim.Circuit(
+        """
+        H 0
+        REPEAT 2 {
+            H 1
+        }
+        H 2
+        TICK
+        REPEAT 2 {
+            X 0
+        }
+        TICK
+        """
+    )
+
+    def loop(op: cirq.Operation) -> cirq.CircuitOperation:
+        return cirq.CircuitOperation(
+            cirq.FrozenCircuit(cirq.Moment(op)), repetitions=2, use_repetition_ids=False
+        )
+
+    expected = cirq.Circuit.from_moments(
+        cirq.Moment(cirq.H(a)),
+        cirq.Moment(loop(cirq.H(b))),
+        cirq.Moment(cirq.H(c)),
+        cirq.Moment(loop(cirq.X(a))),
+        # A TICK right after a REPEAT block emits an empty moment.
+        cirq.Moment(),
+    )
+    assert repr(stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)) == repr(expected)
+
+    expected_flat = cirq.Circuit.from_moments(
+        cirq.Moment(cirq.H(a), cirq.H(b)),
+        cirq.Moment(cirq.H(b), cirq.H(c)),
+        cirq.Moment(cirq.X(a)),
+        cirq.Moment(cirq.X(a)),
+    )
+    flat = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit, flatten=True)
+    assert repr(flat) == repr(expected_flat)

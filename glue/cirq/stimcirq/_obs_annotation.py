@@ -3,6 +3,8 @@ from typing import Any, Dict, Iterable, List, Tuple, Union
 import cirq
 import stim
 
+from ._annotation_gates import CumulativeObservableAnnotationGate
+
 
 @cirq.value_equality
 class CumulativeObservableAnnotation(cirq.Operation):
@@ -63,6 +65,11 @@ class CumulativeObservableAnnotation(cirq.Operation):
             )
 
         raise ValueError("Number of qubits does not match")
+
+    @property
+    def gate(self) -> CumulativeObservableAnnotationGate:
+        """The gate form of this annotation, e.g. for matching against a `cirq.Gateset`."""
+        return CumulativeObservableAnnotationGate(self)
 
     def _value_equality_values_(self) -> Any:
         return self.parity_keys, self.relative_keys, self._qubits_to_pauli_keys, self.observable_index

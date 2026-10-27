@@ -72,12 +72,16 @@ void CircuitFlowReverser::do_rp_mrp_instruction(const CircuitInstruction &inst) 
 void CircuitFlowReverser::do_m2r_instruction(const CircuitInstruction &inst) {
     // Figure out the type of reset each measurement might be turned into.
     GateType reset;
+    GateType err;
     if (inst.gate_type == GateType::MX) {
         reset = GateType::RX;
+        err = GateType::Z_ERROR;
     } else if (inst.gate_type == GateType::MY) {
         reset = GateType::RY;
+        err = GateType::X_ERROR;
     } else if (inst.gate_type == GateType::M) {
         reset = GateType::R;
+        err = GateType::X_ERROR;
     } else {
         throw std::invalid_argument("Don't know how to invert " + inst.str());
     }
@@ -87,9 +91,13 @@ void CircuitFlowReverser::do_m2r_instruction(const CircuitInstruction &inst) {
         GateTarget t = inst.targets[k];
         auto q = t.qubit_value();
         if (!dont_turn_measurements_into_resets && rev.xs[q].empty() && rev.zs[q].empty() &&
-            rev.rec_bits.contains(rev.num_measurements_in_past - 1) && inst.args.empty()) {
-            // Noiseless measurements with past-dependence and no future-dependence become resets.
-            inverted_circuit.safe_append(CircuitInstruction(reset, inst.args, &t, inst.tag));
+            rev.rec_bits.contains(rev.num_measurements_in_past - 1)) {
+            // Measurements with past-dependence and no future-dependence become resets.
+            inverted_circuit.safe_append(CircuitInstruction(reset, {}, &t, inst.tag));
+            if (!inst.args.empty()) {
+                // Noise on the measurement becomes noise after the reset.
+                inverted_circuit.safe_append(CircuitInstruction(err, inst.args, &t, inst.tag));
+            }
         } else {
             // Measurements that aren't turned into resets need to be re-indexed.
             auto f = rev.rec_bits.find(rev.num_measurements_in_past - 1);

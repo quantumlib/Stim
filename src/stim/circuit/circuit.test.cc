@@ -2004,3 +2004,9 @@ TEST(circuit, without_tags) {
         }
     )CIRCUIT"));
 }
+
+TEST(circuit, parse_tag_eof) {
+    ASSERT_THROW({
+        Circuit("H[");
+    }, std::invalid_argument);
+}

@@ -368,7 +368,7 @@ void read_tag(int &c, std::string_view name, SOURCE read_char, MonotonicBuffer<c
     c = read_char();
 
     while (c != ']') {
-        if (c == '\r' || c == '\n') {
+        if (c == '\r' || c == '\n' || c == EOF) {
             std::stringstream ss;
             ss << "A tag wasn't closed with ']' before the end of the line.\n";
             ss << "Hit a ";
