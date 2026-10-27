@@ -38,6 +38,33 @@ TEST_EACH_WORD_SIZE_W(circuit_inverse_qec, r_m_det, {
     )CIRCUIT"));
 })
 
+TEST_EACH_WORD_SIZE_W(circuit_inverse_qec, r_overlap, {
+    auto actual = circuit_inverse_qec<W>(
+        Circuit(R"CIRCUIT(
+            R 1 0 2 3 0 4
+            M 1 0 2 3 0 4
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+            DETECTOR rec[-3]
+            DETECTOR rec[-4]
+            DETECTOR rec[-5]
+            DETECTOR rec[-6]
+        )CIRCUIT"),
+        {});
+    ASSERT_EQ(actual.first, Circuit(R"CIRCUIT(
+        R 4 0 3 2
+        M 0
+        R 1
+        M 4 0 3 2 0 1
+        DETECTOR rec[-6]
+        DETECTOR rec[-5]
+        DETECTOR rec[-4]
+        DETECTOR rec[-3]
+        DETECTOR rec[-7] rec[-5]
+        DETECTOR rec[-1]
+    )CIRCUIT"));
+})
+
 TEST_EACH_WORD_SIZE_W(circuit_inverse_qec, r_m_det_keep_m, {
     auto actual = circuit_inverse_qec<W>(
         Circuit(R"CIRCUIT(
