@@ -21,7 +21,7 @@ class VacuousDecoder(Decoder):
                          tmp_dir: 'pathlib.Path',
                        ) -> None:
         with open(obs_predictions_b8_out_path, 'wb') as f:
-            f.write(b'\0' * (num_obs * num_shots))
+            f.write(b'\0' * ((num_obs + 7) // 8 * num_shots))
 
 
 class VacuousCompiledDecoder(CompiledDecoder):
