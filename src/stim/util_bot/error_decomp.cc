@@ -99,7 +99,7 @@ bool stim::try_disjoint_to_independent_xyz_errors_approx(
         // Make a Newton-Raphson step towards the solution.
         double da = bc_i - bc;
         double db = ac_i - ac;
-        double dc = ab_i - ac;
+        double dc = ab_i - ab;
         a -= dx / da;
         b -= dy / db;
         c -= dz / dc;
