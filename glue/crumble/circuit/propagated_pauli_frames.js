@@ -55,7 +55,7 @@ class PropagatedPauliFrameLayer {
         for (let q of this.errors) {
             num_qubits = Math.max(num_qubits, q + 1);
         }
-        for (let [q1, q2] of this.crossings) {
+        for (const {q1, q2} of this.crossings) {
             num_qubits = Math.max(num_qubits, q1 + 1);
             num_qubits = Math.max(num_qubits, q2 + 1);
         }
