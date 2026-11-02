@@ -57,7 +57,7 @@ A *spandrel* is an implementation detail that has observable effects, but which 
     - Trap fixes must be documented as breaking changes in the release notes.
     - The exact behavior of random seeding is a spandrel. The behavior must be consistent on a single machine for a single version, with the same seed always producing the same results, but it is **not** stable between minor versions. This is enforced by intentionally introducing changes for every single minor version.
 - **Stim Command Line API**
-    - The command land API must maintain backwards compatibility from minor version to minor version (except for bug fixes, trap fixes, and spandrels). Violating this requires a new major version.
+    - The command line API must maintain backwards compatibility from minor version to minor version (except for bug fixes, trap fixes, and spandrels). Violating this requires a new major version.
     - Trap fixes must be documented as breaking changes in the release notes.
     - It is explicitly **not** allowed for a command to stop working due to, for example, a cleanup effort to make the commands more consistent. Violating this requires a new major version.
     - The exact behavior of random seeding is a spandrel. The behavior must be consistent on a single machine for a single version, with the same seed always producing the same results, but it is **not** stable between minor versions. This is enforced by intentionally introducing changes for every single minor version.
