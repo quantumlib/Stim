@@ -27,6 +27,7 @@
 #include "stim/diagram/coord.h"
 #include "stim/diagram/crumble.h"
 #include "stim/diagram/crumble_data.h"
+#include "stim/diagram/detector_slice/detector_slice_animation.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/diagram_util.h"
 #include "stim/diagram/gate_data_3d.h"
