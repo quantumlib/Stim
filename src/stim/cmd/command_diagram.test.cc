@@ -147,6 +147,7 @@ TEST(command_diagram, run_captured_stim_main_works_various_arguments) {
         "detector-slice-svg",
         "time-slice-svg",
         "time+detector-slice-svg",
+        "animated-detslice-with-ops",
     };
     for (const auto &type : diagram_types) {
         auto actual = run_captured_stim_main(

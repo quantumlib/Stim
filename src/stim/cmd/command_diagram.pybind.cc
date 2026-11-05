@@ -18,6 +18,7 @@
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/diagram/base64.h"
 #include "stim/diagram/crumble.h"
+#include "stim/diagram/detector_slice/detector_slice_animation.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/graph/match_graph_3d_drawer.h"
 #include "stim/diagram/graph/match_graph_svg_drawer.h"
@@ -327,6 +328,14 @@ DiagramHelper stim_pybind::circuit_diagram(
         DiagramType d_type =
             type.find("html") != std::string::npos ? DiagramType::DIAGRAM_TYPE_SVG_HTML : DiagramType::DIAGRAM_TYPE_SVG;
         return DiagramHelper{d_type, out.str()};
+    } else if (type == "animated-detslice-with-ops") {
+        if (!rows.is_none()) {
+            throw std::invalid_argument("`rows` isn't used with type='animated-detslice-with-ops'");
+        }
+        return DiagramHelper{
+            DiagramType::DIAGRAM_TYPE_HTML,
+            make_detector_slice_animation_html(circuit, tick_min, num_ticks, filter_coords),
+        };
     } else if (type == "timeline-3d") {
         std::stringstream out;
         DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
