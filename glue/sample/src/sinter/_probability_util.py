@@ -130,9 +130,16 @@ def binary_intercept(*, func: Callable[[float], float], start_x: float, step: fl
     start_y = func(start_x)
     if abs(start_y - target_y) <= atol:
         return start_x
-    while (func(start_x + step) >= target_y) == (start_y >= target_y):
+    step = float(step)
+    while True:
+        try:
+            cond = (func(start_x + step) >= target_y) == (start_y >= target_y)
+        except OverflowError:
+            raise ValueError("Failed.")
+        if not cond:
+            break
         step *= 2
-        if np.isinf(step) or step == 0:
+        if math.isinf(step) or step == 0:
             raise ValueError("Failed.")
     xs = [start_x, start_x + step]
     min_x = min(xs)
@@ -252,6 +259,8 @@ def fit_line_y_at_x(*,
         ... )
         sinter.Fit(low=14.47247314453125, best=16.0, high=17.52752685546875)
     """
+    if max_extra_squared_error < 0:
+        raise ValueError(f"max_extra_squared_error={max_extra_squared_error} < 0")
 
     # Local import to reduce initial cost of importing sinter.
     from scipy.stats import linregress
@@ -307,6 +316,8 @@ def fit_line_slope(*,
         ... )
         sinter.Fit(low=1.2928924560546875, best=2.0, high=2.7071075439453125)
     """
+    if max_extra_squared_error < 0:
+        raise ValueError(f"max_extra_squared_error={max_extra_squared_error} < 0")
     # Local import to reduce initial cost of importing sinter.
     from scipy.stats import linregress
 

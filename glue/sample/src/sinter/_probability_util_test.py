@@ -98,6 +98,10 @@ def test_binary_intercept():
     t = binary_intercept(func=lambda x: -x**2, start_x=0, step=-1, target_y=-82.3, atol=0.2)
     assert t < 0 and abs(t**2 - 82.3) <= 0.2
 
+    with pytest.raises(ValueError, match="Failed"):
+        binary_intercept(func=lambda x: x**2, start_x=5, step=1, target_y=-10, atol=0.01)
+    with pytest.raises(ValueError, match="Failed"):
+        binary_intercept(func=lambda x: -x**2, start_x=5, step=1, target_y=10, atol=0.01)
 
 def test_fit_y_at_x():
     fit = fit_line_y_at_x(
@@ -117,6 +121,11 @@ def test_fit_slope():
     )
     np.testing.assert_allclose(fit.best, 4)
     assert 3 < fit.low < 3.5 < fit.best < 4.5 < fit.high < 5
+
+    with pytest.raises(ValueError, match='max_extra_squared_error'):
+        fit_line_y_at_x(xs=[1, 2, 3], ys=[1, 5, 9], target_x=100, max_extra_squared_error=-1)
+    with pytest.raises(ValueError, match='max_extra_squared_error'):
+        fit_line_slope(xs=[1, 2, 3], ys=[1, 5, 9], max_extra_squared_error=-1)
 
 
 def test_fit_binomial_shrink_towards_half():
