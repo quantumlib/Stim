@@ -147,7 +147,10 @@ class TaskStats:
             )
 
         return NotImplemented
-    __radd__ = __add__
+    def __radd__(self, other: Any) -> 'TaskStats':
+        if other == 0:
+            return self
+        return self.__add__(other)
 
     def to_anon_stats(self) -> AnonTaskStats:
         """Returns a `sinter.AnonTaskStats` with the same statistics.

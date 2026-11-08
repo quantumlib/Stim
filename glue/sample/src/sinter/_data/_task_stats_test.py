@@ -89,6 +89,9 @@ def test_add():
             custom_counts=collections.Counter({'a': 11, 'b': 20, 'c': 3}),
         )
 
+    assert sum([a, b]) == a + b
+    assert sum([a]) == a
+
 
 def test_with_edits():
     v = sinter.TaskStats(
