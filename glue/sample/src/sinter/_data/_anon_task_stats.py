@@ -1,6 +1,6 @@
 import collections
 import dataclasses
-from typing import Counter
+from typing import Counter, Any
 
 
 @dataclasses.dataclass(frozen=True)
@@ -77,4 +77,10 @@ class AnonTaskStats:
                 custom_counts=self.custom_counts + other.custom_counts,
             )
 
+
+    def __radd__(self, other: Any) -> 'AnonTaskStats':
+        if other == 0:
+            return self
+        if isinstance(other, AnonTaskStats):
+            return other + self
         return NotImplemented

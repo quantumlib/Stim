@@ -33,3 +33,6 @@ def test_add():
 
     assert a + b0 == sinter.AnonTaskStats(shots=270, errors=34, discards=43, seconds=52, custom_counts=collections.Counter({'a': 10, 'b': 20}))
     assert a0 + b == sinter.AnonTaskStats(shots=270, errors=34, discards=43, seconds=52, custom_counts=collections.Counter({'a': 1, 'c': 3}))
+
+    assert sum([a, b]) == a + b
+    assert sum([a0]) == a0
